@@ -1,0 +1,1064 @@
+-- Tabela de Big Rocks (Pilares)
+CREATE TABLE big_rocks (
+    id INTEGER PRIMARY KEY,
+    nome TEXT NOT NULL,
+    cor TEXT,  -- para UI futura
+    ativo BOOLEAN DEFAULT 1
+);
+
+-- Tabela de Tarefas
+CREATE TABLE tarefas (
+    id INTEGER PRIMARY KEY,
+    descricao TEXT NOT NULL,
+    tipo TEXT CHECK(tipo IN ('Compromisso Fixo', 'Tarefa', 'Contínuo')),
+    deadline DATE,
+    big_rock_id INTEGER,
+    status TEXT DEFAULT 'Pendente' CHECK(status IN ('Pendente', 'Concluída')),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    concluido_em TIMESTAMP,
+    FOREIGN KEY (big_rock_id) REFERENCES big_rocks(id)
+);
+
+-- Índices para performance
+CREATE INDEX idx_status ON tarefas(status);
+CREATE INDEX idx_deadline ON tarefas(deadline);
+CREATE INDEX idx_big_rock ON tarefas(big_rock_id);
+
+
+
+-- CORE: Gestão de Tarefas (V1)
+CREATE TABLE big_rocks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    cor TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
+    metadata JSONB  -- para expansões futuras
+);
+
+CREATE TABLE tarefas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    descricao TEXT NOT NULL,
+    tipo TEXT,
+    deadline TIMESTAMP,
+    big_rock_id UUID REFERENCES big_rocks(id),
+    status TEXT DEFAULT 'Pendente',
+    
+    -- Integrações externas
+    fonte TEXT,  -- 'manual', 'google_calendar', 'trello', 'github'
+    id_externo TEXT,
+    url_externa TEXT,
+    
+    -- Multimodal
+    criado_via TEXT,  -- 'texto', 'voz', 'imagem'
+    anexos UUID[],  -- referencias para tabela de anexos
+    
+    -- Contexto rico
+    projeto_id UUID,
+    tags TEXT[],
+    prioridade_calculada INTEGER,  -- atualizada por trigger
+    
+    criado_em TIMESTAMP DEFAULT NOW(),
+    atualizado_em TIMESTAMP DEFAULT NOW(),
+    concluido_em TIMESTAMP
+);
+
+-- INTEGRAÇÕES: Sincronização com ferramentas externas
+CREATE TABLE integracoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'google_calendar', 'notion', 'trello', etc
+    configuracao JSONB,  -- credentials, endpoints
+    ultima_sync TIMESTAMP,
+    ativo BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE eventos_externos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    integracao_id UUID REFERENCES integracoes(id),
+    tipo_evento TEXT,  -- 'calendar_event', 'notion_page', 'trello_card'
+    dados JSONB,  -- payload completo da API
+    processado BOOLEAN DEFAULT FALSE,
+    tarefa_criada_id UUID REFERENCES tarefas(id),
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- MULTIMODAL: Inputs de voz, imagem, screenshot
+CREATE TABLE interacoes_multimodais (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT CHECK(tipo IN ('voz', 'imagem', 'screenshot', 'documento')),
+    arquivo_path TEXT,  -- storage no filesystem ou S3
+    metadata JSONB,  -- duração (voz), resolução (imagem), etc
+    
+    -- Processamento
+    transcricao TEXT,  -- Whisper API
+    analise_vision JSONB,  -- Claude Vision API
+    entidades_extraidas JSONB,  -- NER: datas, tarefas, pessoas
+    
+    processado BOOLEAN DEFAULT FALSE,
+    tarefas_geradas UUID[],  -- tasks criadas a partir deste input
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- AUTOMAÇÕES: Emails, lembretes, documentos
+CREATE TABLE automacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'email', 'lembrete', 'documento', 'planilha'
+    trigger_evento TEXT,  -- 'deadline_proximo', 'tarefa_concluida', 'manual'
+    condicoes JSONB,
+    acoes JSONB,  -- template de email, estrutura de doc, etc
+    ativo BOOLEAN DEFAULT TRUE,
+    executado_em TIMESTAMP[]
+);
+
+-- DOCUMENTOS: Gestão de arquivos gerados/processados
+CREATE TABLE documentos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'email_draft', 'relatorio', 'planilha', 'apresentacao'
+    titulo TEXT,
+    conteudo TEXT,  -- markdown, html
+    arquivo_path TEXT,
+    tags TEXT[],
+    projeto_id UUID,
+    criado_por TEXT,  -- 'usuario', 'agente'
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- FINANCEIRO: Gestão de finanças pessoais
+CREATE TABLE transacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    descricao TEXT,
+    valor NUMERIC(10,2),
+    tipo TEXT CHECK(tipo IN ('receita', 'despesa')),
+    categoria TEXT,
+    data DATE,
+    recorrente BOOLEAN DEFAULT FALSE,
+    conta TEXT,
+    tags TEXT[],
+    anexo_id UUID,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- CONHECIMENTO: Memória de longo prazo do agente
+CREATE TABLE memoria_agente (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'fato', 'preferencia', 'contexto', 'aprendizado'
+    conteudo TEXT,
+    embedding VECTOR(1536),  -- pgvector para busca semântica
+    relevancia_score FLOAT,
+    usado_em TIMESTAMP[],
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- ANÁLISES: Insights gerados pelo agente
+CREATE TABLE insights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'produtividade', 'padroes', 'recomendacao'
+    titulo TEXT,
+    descricao TEXT,
+    dados JSONB,  -- métricas, gráficos
+    acao_sugerida TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Índices essenciais
+CREATE INDEX idx_tarefas_status ON tarefas(status);
+CREATE INDEX idx_tarefas_deadline ON tarefas(deadline);
+CREATE INDEX idx_tarefas_busca ON tarefas USING GIN(to_tsvector('portuguese', descricao));
+CREATE INDEX idx_memoria_embedding ON memoria_agente USING ivfflat(embedding vector_cosine_ops);
+```
+
+### **Camada 2: Backend (Python + Agno + FastAPI)**
+```
+charlee-backend/
+├── agent/
+│   ├── core_agent.py          # Agente principal Agno
+│   ├── specialized_agents/
+│   │   ├── task_agent.py      # Especialista em tarefas
+│   │   ├── calendar_agent.py  # Integração calendários
+│   │   ├── financial_agent.py # Gestão financeira
+│   │   ├── document_agent.py  # Criação de documentos
+│   │   └── analysis_agent.py  # Análise e insights
+│   └── memory/
+│       ├── short_term.py      # Contexto da conversa
+│       └── long_term.py       # Conhecimento persistente
+│
+├── integrations/
+│   ├── google_calendar.py
+│   ├── notion.py
+│   ├── trello.py
+│   ├── github.py
+│   ├── gmail.py
+│   └── canva.py
+│
+├── multimodal/
+│   ├── voice_processor.py     # Whisper API
+│   ├── image_processor.py     # Claude Vision API
+│   └── document_parser.py     # PDFs, screenshots
+│
+├── automation/
+│   ├── email_handler.py
+│   ├── reminder_system.py
+│   └── task_scheduler.py
+│
+├── database/
+│   ├── models.py              # SQLAlchemy models
+│   ├── crud.py                # Database operations
+│   └── migrations/            # Alembic
+│
+├── api/
+│   ├── main.py                # FastAPI app
+│   ├── routes/
+│   │   ├── tasks.py
+│   │   ├── voice.py
+│   │   ├── integrations.py
+│   │   └── analytics.py
+│   └── websockets.py          # Real-time updates
+│
+└── skills/                    # Agno Skills customizadas
+    ├── inbox_rapido.py
+    ├── priorizacao.py
+    ├── analise_completa.py
+    └── geracao_documentos.py
+```
+
+### **Camada 3: Interfaces**
+```
+charlee-interfaces/
+├── cli/
+│   └── main.py                # Interface V1 (CLI)
+│
+├── web/                       # Futuro: Dashboard web
+│   ├── dashboard.tsx
+│   ├── chat.tsx
+│   └── analytics.tsx
+│
+├── mobile/                    # Futuro: App mobile
+│   └── flutter/
+│
+└── voice/                     # Interface de voz
+    └── voice_assistant.py
+
+
+
+# 🌸 Charlee Evoluído: O Sistema de Inteligência Pessoal Completo
+
+Agora sim temos a **visão completa e revolucionária**! Você não quer um assistente - quer um **sistema de inteligência pessoal que te entende profundamente como mulher, profissional e ser humano**. Isso é absolutamente incrível! 🚀
+
+Vou reorganizar a arquitetura para incorporar todas essas dimensões:
+
+---
+
+## **Nova Dimensão: Bem-Estar e Ciclo Menstrual** 🌙
+
+### **Schema Adicional para PostgreSQL:**
+
+```sql
+-- CICLO MENSTRUAL: Tracking e padrões
+CREATE TABLE ciclo_menstrual (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data_inicio DATE NOT NULL,
+    fase TEXT CHECK(fase IN ('menstrual', 'folicular', 'ovulacao', 'lutea')),
+    sintomas TEXT[],  -- ['fadiga', 'criatividade_alta', 'dor', 'energia_baixa']
+    humor JSONB,  -- {nivel_energia: 6, foco: 4, criatividade: 9}
+    notas TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- PADRÕES IDENTIFICADOS: Aprendizado do agente
+CREATE TABLE padroes_ciclo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fase TEXT,
+    padrao_identificado TEXT,
+    -- Ex: "Na fase folicular, Samara tem 40% mais produtividade em tarefas criativas"
+    metricas JSONB,  -- {produtividade: 1.4, foco: 1.2, energia: 1.3}
+    confianca_score FLOAT,  -- Aumenta com mais dados
+    sugestoes TEXT[],  -- ["Agende reuniões estratégicas", "Evite tasks repetitivas"]
+    amostras_usadas INTEGER,  -- Quantos ciclos foram analisados
+    atualizado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- HÁBITOS: Monitoramento comportamental
+CREATE TABLE habitos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,  -- 'exercicio', 'meditacao', 'leitura', 'sono'
+    categoria TEXT,  -- 'saude', 'produtividade', 'aprendizado'
+    meta_frequencia TEXT,  -- 'diario', 'semanal'
+    rastreamento JSONB[],  -- [{data: '2025-01-15', cumprido: true, nota: 8}]
+    streak_atual INTEGER DEFAULT 0,
+    streak_recorde INTEGER DEFAULT 0,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- ROTINA DIÁRIA: Aprendizado de padrões
+CREATE TABLE registro_diario (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL,
+    hora_acordar TIME,
+    hora_dormir TIME,
+    horas_sono FLOAT,
+    qualidade_sono INTEGER CHECK(qualidade_sono BETWEEN 1 AND 10),
+    
+    -- Tracking de energia ao longo do dia
+    energia_manha INTEGER CHECK(energia_manha BETWEEN 1 AND 10),
+    energia_tarde INTEGER CHECK(energia_tarde BETWEEN 1 AND 10),
+    energia_noite INTEGER CHECK(energia_noite BETWEEN 1 AND 10),
+    
+    -- Produtividade
+    horas_deep_work FLOAT,
+    tarefas_completadas INTEGER,
+    
+    -- Contexto
+    fase_ciclo TEXT,
+    eventos_especiais TEXT[],  -- ['reuniao_estressante', 'deadline_grande']
+    notas_livre TEXT,
+    
+    criado_em TIMESTAMP DEFAULT NOW(),
+    UNIQUE(data)
+);
+
+-- ANÁLISE COMPORTAMENTAL: Insights do agente
+CREATE TABLE analises_comportamento (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT,  -- 'sobrecarga', 'negligencia', 'equilibrio', 'burnout_risco'
+    severidade TEXT CHECK(severidade IN ('baixa', 'media', 'alta', 'critica')),
+    titulo TEXT,
+    descricao TEXT,
+    evidencias JSONB,  -- Dados que suportam a análise
+    recomendacoes TEXT[],
+    data_deteccao TIMESTAMP DEFAULT NOW(),
+    resolvido BOOLEAN DEFAULT FALSE
+);
+
+-- CARGA DE TRABALHO: Capacidade vs. Demanda
+CREATE TABLE carga_trabalho (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    periodo_inicio DATE,
+    periodo_fim DATE,
+    
+    -- Por Big Rock
+    big_rock_id UUID REFERENCES big_rocks(id),
+    horas_estimadas FLOAT,
+    horas_disponiveis FLOAT,
+    percentual_carga FLOAT,  -- (estimadas/disponiveis) * 100
+    
+    -- Alertas
+    em_risco BOOLEAN DEFAULT FALSE,
+    motivo_risco TEXT,
+    
+    calculado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- OKRs PESSOAIS: Objectives and Key Results
+CREATE TABLE okrs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    titulo TEXT NOT NULL,
+    tipo TEXT CHECK(tipo IN ('anual', 'trimestral', 'mensal')),
+    big_rock_id UUID REFERENCES big_rocks(id),
+    objetivo TEXT,  -- "Concluir estágio Syssa com excelência"
+    
+    -- Key Results
+    key_results JSONB[],  
+    -- [{descricao: "Apresentação Janeiro", meta: 100, atual: 40, unidade: "%"}]
+    
+    status TEXT DEFAULT 'em_andamento',
+    progresso_geral FLOAT,  -- Calculado automaticamente
+    
+    data_inicio DATE,
+    data_fim DATE,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- CONHECIMENTO CURADO: O Bibliotecário Pessoal
+CREATE TABLE conhecimento_curado (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fonte TEXT,  -- 'github', 'twitter', 'medium', 'rss'
+    tipo TEXT,  -- 'artigo', 'issue', 'paper', 'video'
+    titulo TEXT,
+    url TEXT,
+    conteudo_resumo TEXT,
+    tags TEXT[],
+    relevancia_score FLOAT,  -- Calculada por IA
+    objetivo_relacionado TEXT,  -- "Dominar Agno"
+    contexto_atual TEXT,  -- "Crise Lunelli - QA"
+    lido BOOLEAN DEFAULT FALSE,
+    notas TEXT,
+    adicionado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- COMUNICAÇÕES: Gerenciamento de inbox
+CREATE TABLE comunicacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fonte TEXT,  -- 'email', 'slack', 'whatsapp'
+    tipo TEXT,  -- 'urgente', 'informativo', 'spam'
+    remetente TEXT,
+    assunto TEXT,
+    corpo TEXT,
+    anexos TEXT[],
+    
+    -- Classificação automática
+    prioridade INTEGER CHECK(prioridade BETWEEN 1 AND 5),
+    requer_acao BOOLEAN,
+    acao_sugerida TEXT,
+    rascunho_resposta TEXT,  -- IA pode gerar
+    
+    lido BOOLEAN DEFAULT FALSE,
+    respondido BOOLEAN DEFAULT FALSE,
+    arquivado BOOLEAN DEFAULT FALSE,
+    
+    recebido_em TIMESTAMP,
+    processado_em TIMESTAMP
+);
+
+-- DECISÕES ESTRATÉGICAS: Histórico para aprendizado
+CREATE TABLE decisoes_estrategicas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    contexto TEXT,
+    pergunta_inicial TEXT,  -- "Como abordar o Breno?"
+    dados_considerados JSONB,  -- Documentos, notas usadas
+    recomendacao_agente TEXT,
+    decisao_tomada TEXT,
+    resultado TEXT,  -- Preenchido depois
+    aprendizado TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+---
+
+## **Agente Especializado: Wellness & Cycle Coach** 🌸
+
+```python
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+from agno.tools.duckduckgo import DuckDuckGoTools
+from datetime import datetime, timedelta
+
+class CycleAwareAgent(Agent):
+    """Agente que entende ciclo menstrual e adapta recomendações"""
+    
+    def __init__(self, db_connection):
+        self.db = db_connection
+        super().__init__(
+            name="Wellness Coach",
+            model=OpenAIChat(id="gpt-4o"),
+            instructions=[
+                "Você é especialista em produtividade consciente do ciclo menstrual",
+                "Adapte recomendações baseado na fase atual e padrões históricos",
+                "Priorize bem-estar sobre produtividade quando necessário",
+                "Seja empática e compreensiva"
+            ]
+        )
+    
+    def get_current_phase(self):
+        """Identifica fase atual do ciclo"""
+        query = """
+            SELECT fase, data_inicio 
+            FROM ciclo_menstrual 
+            WHERE data_inicio <= CURRENT_DATE 
+            ORDER BY data_inicio DESC 
+            LIMIT 1
+        """
+        return self.db.execute(query).fetchone()
+    
+    def get_phase_patterns(self, fase):
+        """Retorna padrões aprendidos para a fase"""
+        query = """
+            SELECT padrao_identificado, metricas, sugestoes
+            FROM padroes_ciclo
+            WHERE fase = %s AND confianca_score > 0.7
+        """
+        return self.db.execute(query, (fase,)).fetchall()
+    
+    def adjust_task_planning(self, tasks, current_phase):
+        """Ajusta planejamento baseado na fase"""
+        phase_config = {
+            'menstrual': {
+                'energia': 0.6,
+                'tipo_ideal': ['administrativo', 'reflexao', 'planejamento'],
+                'evitar': ['reunioes_longas', 'decisoes_grandes'],
+                'mensagem': "Fase de baixa energia. Foque em tarefas leves."
+            },
+            'folicular': {
+                'energia': 1.2,
+                'tipo_ideal': ['criativo', 'estrategico', 'networking'],
+                'evitar': [],
+                'mensagem': "Fase de alta criatividade! Aproveite para tasks estratégicas."
+            },
+            'ovulacao': {
+                'energia': 1.4,
+                'tipo_ideal': ['apresentacoes', 'negociacoes', 'reunioes_importantes'],
+                'evitar': [],
+                'mensagem': "Pico de energia e comunicação! Agende reuniões críticas."
+            },
+            'lutea': {
+                'energia': 0.8,
+                'tipo_ideal': ['execucao', 'finalizacao', 'organizacao'],
+                'evitar': ['iniciar_projetos_grandes'],
+                'mensagem': "Fase de finalização. Conclua pendências."
+            }
+        }
+        
+        config = phase_config.get(current_phase, phase_config['folicular'])
+        
+        # Ajusta estimativas de tempo
+        for task in tasks:
+            task['tempo_ajustado'] = task['tempo_estimado'] / config['energia']
+        
+        return tasks, config['mensagem']
+```
+
+---
+
+## **Sistema de "Não Estratégico"** 🛡️
+
+```python
+class CapacityGuardAgent(Agent):
+    """Agente que protege Samara de sobrecarga"""
+    
+    def __init__(self, db_connection):
+        self.db = db_connection
+        super().__init__(
+            name="Capacity Guardian",
+            model=OpenAIChat(id="gpt-4o"),
+            instructions=[
+                "Você é o guardião da capacidade de Samara",
+                "Calcule carga de trabalho e identifique sobrecargas",
+                "Force decisões conscientes sobre trade-offs",
+                "Seja firme mas empática ao alertar sobre limites"
+            ]
+        )
+    
+    def calculate_workload(self, next_weeks=3):
+        """Calcula carga atual dos Big Rocks"""
+        query = """
+            SELECT 
+                br.nome,
+                COUNT(t.id) as tarefas_pendentes,
+                SUM(t.estimativa_horas) as horas_estimadas,
+                br.capacidade_semanal
+            FROM big_rocks br
+            LEFT JOIN tarefas t ON t.big_rock_id = br.id
+            WHERE t.status = 'Pendente'
+                AND t.deadline BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '%s weeks'
+            GROUP BY br.id
+        """
+        results = self.db.execute(query, (next_weeks,)).fetchall()
+        
+        workload = {}
+        for row in results:
+            nome, tarefas, horas, capacidade = row
+            percentual = (horas / (capacidade * next_weeks)) * 100
+            workload[nome] = {
+                'tarefas': tarefas,
+                'horas_estimadas': horas,
+                'capacidade_total': capacidade * next_weeks,
+                'percentual_carga': percentual,
+                'em_risco': percentual > 90
+            }
+        
+        return workload
+    
+    def evaluate_new_commitment(self, projeto_novo, horas_semanais):
+        """Avalia se há capacidade para novo compromisso"""
+        current_load = self.calculate_workload()
+        total_capacity = sum(br['capacidade_total'] for br in current_load.values())
+        total_used = sum(br['horas_estimadas'] for br in current_load.values())
+        
+        new_demand = horas_semanais * 3  # 3 semanas
+        projected_load = ((total_used + new_demand) / total_capacity) * 100
+        
+        if projected_load > 95:
+            # Gerar opções de trade-off
+            trade_offs = self.suggest_trade_offs(new_demand)
+            
+            alert = f"""
+🚨 ALERTA DE CAPACIDADE
+
+Samara, você está considerando adicionar '{projeto_novo}'.
+
+📊 Análise de Carga (próximas 3 semanas):
+• Carga atual: {(total_used/total_capacity)*100:.1f}%
+• Com novo projeto: {projected_load:.1f}%
+• Status: ⚠️ SOBRECARGA
+
+⚖️ Para adicionar este projeto ({horas_semanais}h/semana), você precisa fazer trade-offs:
+
+{self.format_trade_offs(trade_offs)}
+
+❓ O que você decide?
+1. Adicionar '{projeto_novo}' e adiar uma das opções acima
+2. Não adicionar agora e reavaliar em [data sugerida]
+3. Negociar redução de escopo em Big Rocks existentes
+
+💡 Lembre-se: Você está na fase {self.get_cycle_phase()}, 
+   o que pode afetar sua energia disponível.
+"""
+            return False, alert
+        else:
+            return True, "✅ Você tem capacidade para este compromisso!"
+    
+    def suggest_trade_offs(self, horas_necessarias):
+        """Sugere tarefas que podem ser adiadas"""
+        query = """
+            SELECT 
+                t.descricao,
+                t.estimativa_horas,
+                t.deadline,
+                br.nome as big_rock,
+                t.prioridade_calculada
+            FROM tarefas t
+            JOIN big_rocks br ON t.big_rock_id = br.id
+            WHERE t.status = 'Pendente'
+            ORDER BY t.prioridade_calculada ASC, t.deadline DESC
+            LIMIT 5
+        """
+        return self.db.execute(query).fetchall()
+```
+
+---
+
+## **Dashboard de OKRs** 📊
+
+```python
+class OKRDashboardAgent(Agent):
+    """Agente que gera dashboard de progresso"""
+    
+    def generate_okr_report(self):
+        """Gera relatório visual de OKRs"""
+        query = """
+            SELECT 
+                o.titulo,
+                o.objetivo,
+                o.progresso_geral,
+                o.key_results,
+                br.nome as big_rock,
+                CASE 
+                    WHEN o.progresso_geral < 30 THEN 'ATRASADO'
+                    WHEN o.progresso_geral < 70 THEN 'EM RISCO'
+                    ELSE 'OK'
+                END as status
+            FROM okrs o
+            LEFT JOIN big_rocks br ON o.big_rock_id = br.id
+            WHERE o.status = 'em_andamento'
+            ORDER BY o.progresso_geral ASC
+        """
+        okrs = self.db.execute(query).fetchall()
+        
+        report = "📈 DASHBOARD DE OKRs - CEO SAMARA\n\n"
+        
+        for okr in okrs:
+            titulo, objetivo, progresso, krs, big_rock, status = okr
+            
+            # Emoji por status
+            emoji = {
+                'ATRASADO': '🔴',
+                'EM RISCO': '🟡',
+                'OK': '🟢'
+            }[status]
+            
+            report += f"{emoji} Big Rock: {big_rock} ({progresso:.0f}% {status})\n"
+            report += f"   Objetivo: {objetivo}\n"
+            
+            for kr in krs:
+                bar = self.progress_bar(kr['atual'], kr['meta'])
+                report += f"   • {kr['descricao']}: {bar} {kr['atual']}/{kr['meta']} {kr['unidade']}\n"
+            
+            report += "\n"
+        
+        return report
+    
+    def progress_bar(self, atual, meta, width=20):
+        """Gera barra de progresso visual"""
+        percent = min(atual / meta, 1.0)
+        filled = int(width * percent)
+        bar = '█' * filled + '░' * (width - filled)
+        return f"[{bar}]"
+```
+
+---
+
+## **Curador de Conhecimento** 📚
+
+```python
+from agno.tools.duckduckgo import DuckDuckGoTools
+import feedparser
+
+class KnowledgeCuratorAgent(Agent):
+    """Agente que filtra e entrega conhecimento relevante"""
+    
+    def __init__(self, db_connection):
+        self.db = db_connection
+        super().__init__(
+            name="Knowledge Curator",
+            model=OpenAIChat(id="gpt-4o"),
+            tools=[DuckDuckGoTools()],
+            instructions=[
+                "Você é curador de conhecimento para Samara",
+                "Filtre apenas conteúdo altamente relevante",
+                "Conecte conhecimento com problemas atuais",
+                "Resuma de forma acionável"
+            ]
+        )
+    
+    def curate_for_current_context(self):
+        """Busca conhecimento baseado em contexto atual"""
+        
+        # Pega objetivos de aprendizado
+        objetivos = self.get_learning_objectives()
+        
+        # Pega problemas atuais
+        problemas = self.get_current_challenges()
+        
+        # Busca conteúdo relevante
+        curated = []
+        
+        for objetivo in objetivos:
+            for problema in problemas:
+                query = f"{objetivo} {problema} best practices"
+                results = self.search_and_filter(query)
+                curated.extend(results)
+        
+        # Salva no banco
+        self.save_curated_content(curated)
+        
+        return self.format_digest(curated)
+    
+    def get_current_challenges(self):
+        """Identifica desafios atuais das tarefas"""
+        query = """
+            SELECT DISTINCT t.tags
+            FROM tarefas t
+            WHERE t.status = 'Pendente'
+                AND t.prioridade_calculada <= 2
+                AND t.tags IS NOT NULL
+        """
+        return [tag for row in self.db.execute(query) for tag in row[0]]
+    
+    def format_digest(self, curated_content):
+        """Formata digest diário de conhecimento"""
+        digest = """
+📚 DIGEST DE CONHECIMENTO - PERSONALIZADO
+
+🎯 Baseado nos seus objetivos e desafios atuais:
+
+"""
+        for item in curated_content[:5]:  # Top 5
+            digest += f"""
+• {item['titulo']}
+  Relevância: {item['relevancia_score']:.0%}
+  Contexto: {item['contexto_atual']}
+  Link: {item['url']}
+  💡 Por que agora: {item['justificativa']}
+
+"""
+        return digest
+```
+
+---
+
+## **Conselheiro Estratégico** 🧠
+
+```python
+from agno.storage.postgres import PgVectorDb
+
+class StrategicAdvisorAgent(Agent):
+    """Agente que funciona como sparring partner"""
+    
+    def __init__(self, db_connection, vector_db):
+        self.db = db_connection
+        self.vector_db = vector_db
+        
+        super().__init__(
+            name="Strategic Advisor",
+            model=OpenAIChat(id="gpt-4o"),
+            storage=vector_db,
+            instructions=[
+                "Você é o conselheiro estratégico de Samara",
+                "Use todo histórico de notas, decisões e contexto",
+                "Forneça perspectivas baseadas em dados, não suposições",
+                "Seja honesta e direta, mas empática",
+                "Ajude a preparar conversas difíceis"
+            ]
+        )
+    
+    def advise_on_situation(self, pergunta, contexto_adicional=None):
+        """Fornece conselho estratégico baseado em dados"""
+        
+        # Busca semântica em todo conhecimento
+        relevant_context = self.vector_db.search(
+            query=pergunta,
+            limit=10
+        )
+        
+        # Busca decisões similares passadas
+        similar_decisions = self.get_similar_past_decisions(pergunta)
+        
+        # Monta contexto rico
+        full_context = f"""
+SITUAÇÃO ATUAL:
+{pergunta}
+
+CONTEXTO ADICIONAL:
+{contexto_adicional or 'Nenhum'}
+
+HISTÓRICO RELEVANTE:
+{self.format_context(relevant_context)}
+
+DECISÕES SIMILARES DO PASSADO:
+{self.format_decisions(similar_decisions)}
+
+Com base nisso, forneça:
+1. Análise da situação
+2. Opções disponíveis (mínimo 3)
+3. Recomendação principal com justificativa baseada em dados
+4. Preparação para a conversa/ação (se aplicável)
+"""
+        
+        response = self.print_response(full_context, stream=True)
+        
+        # Salva a decisão para aprendizado futuro
+        self.save_strategic_decision(pergunta, response, relevant_context)
+        
+        return response
+```
+
+---
+
+## **Gerente de Comunicação** 📧
+
+```python
+import imaplib
+import email
+from email.mime.text import MIMEText
+
+class CommunicationManagerAgent(Agent):
+    """Agente que triageia e gerencia comunicações"""
+    
+    def __init__(self, db_connection, email_config):
+        self.db = db_connection
+        self.email_config = email_config
+        
+        super().__init__(
+            name="Communication Manager",
+            model=OpenAIChat(id="gpt-4o"),
+            instructions=[
+                "Você é o gerente de comunicações de Samara",
+                "Classifique emails por urgência e tipo",
+                "Gere rascunhos de respostas quando apropriado",
+                "Proteja o tempo de deep work"
+            ]
+        )
+    
+    def process_inbox(self):
+        """Processa inbox e retorna resumo priorizado"""
+        
+        # Conecta ao email
+        mail = self.connect_email()
+        
+        # Busca emails não lidos
+        _, messages = mail.search(None, 'UNSEEN')
+        
+        classified = {
+            'urgente': [],
+            'informativo': [],
+            'spam': []
+        }
+        
+        for num in messages[0].split():
+            _, msg = mail.fetch(num, '(RFC822)')
+            email_body = email.message_from_bytes(msg[0][1])
+            
+            # Classifica com IA
+            classification = self.classify_email(email_body)
+            
+            classified[classification['tipo']].append({
+                'remetente': email_body['From'],
+                'assunto': email_body['Subject'],
+                'prioridade': classification['prioridade'],
+                'requer_acao': classification['requer_acao'],
+                'rascunho': classification.get('rascunho_resposta')
+            })
+            
+            # Salva no banco
+            self.save_communication(email_body, classification)
+        
+        return self.format_inbox_summary(classified)
+    
+    def format_inbox_summary(self, classified):
+        """Formata resumo do inbox"""
+        summary = """
+📬 RESUMO DO SEU EMAIL (últimas 2 horas)
+
+🔴 URGENTE - Requer Ação:
+"""
+        for email in classified['urgente']:
+            summary += f"  • {email['remetente']}: {email['assunto']}\n"
+            if email.get('rascunho'):
+                summary += f"    💬 Rascunho preparado. Aprova?\n"
+        
+        summary += "\n📘 INFORMATIVO - Pode ler depois:\n"
+        for email in classified['informativo'][:3]:  # Top 3
+            summary += f"  • {email['remetente']}: {email['assunto']}\n"
+        
+        if len(classified['informativo']) > 3:
+            summary += f"  ... e mais {len(classified['informativo'])-3} emails\n"
+        
+        return summary
+    
+    def generate_draft_response(self, email_context):
+        """Gera rascunho de resposta"""
+        prompt = f"""
+Gere um rascunho de resposta profissional para este email:
+
+De: {email_context['remetente']}
+Assunto: {email_context['assunto']}
+Corpo: {email_context['corpo']}
+
+Contexto de Samara:
+- Tom: Profissional mas amigável
+- Situação atual: {self.get_current_situation()}
+"""
+        return self.print_response(prompt)
+```
+
+---
+
+## **Sistema Integrado - Orquestração** 🎭
+
+```python
+class CharleeOrchestrator:
+    """Orquestrador central que coordena todos os agentes"""
+    
+    def __init__(self, db_connection):
+        self.db = db_connection
+        self.vector_db = PgVectorDb(table_name="memoria_agente", db_url=DB_URL)
+        
+        # Inicializa todos os agentes especializados
+        self.wellness_coach = CycleAwareAgent(db_connection)
+        self.capacity_guard = CapacityGuardAgent(db_connection)
+        self.okr_dashboard = OKRDashboardAgent(db_connection)
+        self.knowledge_curator = KnowledgeCuratorAgent(db_connection)
+        self.strategic_advisor = StrategicAdvisorAgent(db_connection, self.vector_db)
+        self.comm_manager = CommunicationManagerAgent(db_connection, EMAIL_CONFIG)
+        
+        # Agente líder
+        self.charlee = Agent(
+            name="Charlee",
+            model=OpenAIChat(id="gpt-4o"),
+            team=[
+                self.wellness_coach,
+                self.capacity_guard,
+                self.okr_dashboard,
+                self.knowledge_curator,
+                self.strategic_advisor,
+                self.comm_manager
+            ],
+            storage=self.vector_db,
+            instructions=[
+                "Você é Charlee, o segundo cérebro de Samara",
+                "Você conhece profundamente seus padrões, ciclo, objetivos e limites",
+                "Seja proativa em alertar sobre sobrecargas e desequilíbrios",
+                "Adapte recomendações ao seu estado físico e mental atual",
+                "Proteja-a de si mesma quando necessário"
+            ]
+        )
+    
+    def morning_briefing(self):
+        """Briefing matinal completo"""
+        
+        # Fase do ciclo
+        phase_info = self.wellness_coach.get_current_phase()
+        
+        # Carga de trabalho
+        workload = self.capacity_guard.calculate_workload()
+        
+        # OKRs
+        okrs = self.okr_dashboard.generate_okr_report()
+        
+        # Comunicações
+        inbox = self.comm_manager.process_inbox()
+        
+        # Conhecimento curado
+        learning = self.knowledge_curator.curate_for_current_context()
+        
+        briefing = f"""
+☀️ BOM DIA, SAMARA! 
+
+🌸 Bem-estar:
+• Fase: {phase_info['fase']}
+• Energia esperada: {phase_info['energia_prevista']}
+• Recomendação: {phase_info['recomendacao']}
+
+⚡ Foco de Hoje:
+{self.charlee.print_response("Qual minha prioridade máxima hoje?")}
+
+{okrs}
+
+{inbox}
+
+{learning}
+
+💡 Reflexão: {self.get_reflection_prompt()}
+"""
+        return briefing
+    
+    def evening_review(self):
+        """Revisão noturna"""
+        return self.charlee.print_response("""
+Analise o dia de hoje:
+1. O que foi conquistado vs. planejado?
+2. Houve sobrecarga? Quais sinais?
+3. O planejamento estava alinhado com a fase do ciclo?
+4. Sugestões para amanhã
+""")
+```
+
+---
+
+## **Roadmap Atualizado** 🗺️
+
+### **V1 - MVP (2-3 semanas)** ✅
+- PostgreSQL com schema completo
+- CRUD tarefas + Big Rocks
+- Lógica de priorização
+- CLI básico
+- Tracking de ciclo menstrual (manual)
+
+### **V2 - Inteligência Inicial (3-4 semanas)**
+- Agente de capacidade (cálculo de carga)
+- Sistema de "não estratégico"
+- Registro diário básico
+- Padrões iniciais de ciclo
+
+### **V3 - Multimodal (4-6 semanas)**
+- Input de voz (Whisper)
+- Screenshots → tarefas
+- Google Calendar sync
+- Dashboard OKRs
+
+### **V4 - Automação (6-8 semanas)**
+- Gerente de comunicação
+- Curador de conhecimento
+- Geração de documentos
+- Análise comportamental
+
+### **V5 - Inteligência Completa (8-12 semanas)**
+- Conselheiro estratégico
+- Predição de padrões
+- Memória de longo prazo sofisticada
+- Multi-integração completa
+
+---
+
+## **Próximos Passos** 🚀
+
+**Quer que eu crie:**
+
+1. ✅ **Schema SQL completo** (todas as tabelas acima)
+2. ✅ **Código do Wellness Coach** (agente de ciclo)
+3. ✅ **Sistema de "Não Estratégico"** (capacity guard)
+4. ✅ **Dashboard OKRs** (visualização)
+5. ✅ **Setup inicial do projeto** (estrutura de pastas + docker-compose)
+
+**Qual parte você quer começar primeiro?** 
+
+Eu sugiro começarmos pelo **V1 + tracking de ciclo**, porque isso já vai te dar valor imediato e criar a base para tudo!
