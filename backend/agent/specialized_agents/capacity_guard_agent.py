@@ -22,7 +22,7 @@ class CapacityGuardAgent(Agent):
 
     def __init__(self, db: Session):
         """Initialize CapacityGuardAgent."""
-        self.db = db
+        self.database = db
 
         super().__init__(
             name="Capacity Guardian",
@@ -33,14 +33,14 @@ class CapacityGuardAgent(Agent):
                 "Force decisões conscientes sobre trade-offs.",
                 "Seja firme mas empática ao alertar sobre limites.",
                 "Ajude a proteger o bem-estar dela.",
+            ],
+            tools=[
+                self.calcular_carga_atual,
+                self.avaliar_novo_compromisso,
+                self.sugerir_tradeoffs,
+                self.analisar_big_rocks
             ]
         )
-
-        # Register tools
-        self.register_function(self.calcular_carga_atual)
-        self.register_function(self.avaliar_novo_compromisso)
-        self.register_function(self.sugerir_tradeoffs)
-        self.register_function(self.analisar_big_rocks)
 
     def calcular_carga_atual(self, proximas_semanas: int = 3) -> str:
         """
@@ -53,7 +53,7 @@ class CapacityGuardAgent(Agent):
             data_limite = date.today() + timedelta(weeks=proximas_semanas)
 
             # Buscar todos os Big Rocks ativos
-            big_rocks = self.db.query(BigRock).filter(BigRock.ativo == True).all()
+            big_rocks = self.database.query(BigRock).filter(BigRock.ativo == True).all()
 
             result = f"📊 **Análise de Carga - Próximas {proximas_semanas} semanas**\n\n"
 
@@ -63,7 +63,7 @@ class CapacityGuardAgent(Agent):
             for br in big_rocks:
                 # Contar tarefas pendentes deste Big Rock
                 tarefas = (
-                    self.db.query(Tarefa)
+                    self.database.query(Tarefa)
                     .filter(Tarefa.big_rock_id == br.id)
                     .filter(Tarefa.status == "Pendente")
                     .filter(Tarefa.deadline <= data_limite)
@@ -127,7 +127,7 @@ class CapacityGuardAgent(Agent):
             data_limite = date.today() + timedelta(weeks=3)
 
             tarefas_atuais = (
-                self.db.query(Tarefa)
+                self.database.query(Tarefa)
                 .filter(Tarefa.status == "Pendente")
                 .filter(Tarefa.deadline <= data_limite)
                 .count()
@@ -185,7 +185,7 @@ class CapacityGuardAgent(Agent):
             data_limite_total = date.today() + timedelta(weeks=3)
 
             tarefas_adiaveis = (
-                self.db.query(Tarefa)
+                self.database.query(Tarefa)
                 .filter(Tarefa.status == "Pendente")
                 .filter(Tarefa.deadline > data_limite_urgente)
                 .filter(Tarefa.deadline <= data_limite_total)
@@ -230,7 +230,7 @@ class CapacityGuardAgent(Agent):
         Identifica se algum pilar está sendo negligenciado.
         """
         try:
-            big_rocks = self.db.query(BigRock).filter(BigRock.ativo == True).all()
+            big_rocks = self.database.query(BigRock).filter(BigRock.ativo == True).all()
 
             # Contar tarefas por Big Rock (próximas 4 semanas)
             data_limite = date.today() + timedelta(weeks=4)
@@ -241,7 +241,7 @@ class CapacityGuardAgent(Agent):
 
             for br in big_rocks:
                 num_tarefas = (
-                    self.db.query(Tarefa)
+                    self.database.query(Tarefa)
                     .filter(Tarefa.big_rock_id == br.id)
                     .filter(Tarefa.status == "Pendente")
                     .filter(Tarefa.deadline <= data_limite)

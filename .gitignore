@@ -63,3 +63,9 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+
+# Test outputs
+test_output/
+*.pyc
+
+docs/
