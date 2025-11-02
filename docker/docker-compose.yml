@@ -27,7 +27,7 @@ services:
       - redis_data:/data
 
   backend:
-    build: ./backend
+    build: ../backend
     container_name: charlee_backend
     depends_on:
       postgres:
@@ -37,8 +37,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-      - ./shared:/shared
+      - ../backend:/app
+      - ../shared:/shared
     env_file:
       - .env
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload

@@ -12,6 +12,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     message: str
+    user_id: str = "samara"
     session_id: str | None = None
 
 
@@ -31,16 +32,17 @@ async def chat_with_charlee(
 
     Send a message to Charlee and get a response.
     The agent has access to all Big Rocks and Tarefas tools.
+    The agent maintains conversation history and memory across sessions.
     """
     try:
-        # Create Charlee agent
-        charlee = create_charlee_agent(db)
+        # Create Charlee agent with session support
+        charlee = create_charlee_agent(
+            db=db,
+            user_id=request.user_id,
+            session_id=request.session_id
+        )
 
-        # Set session ID if provided
-        if request.session_id:
-            charlee.session_id = request.session_id
-
-        # Get response from agent
+        # Get response from agent (with history and memory)
         response = charlee.run(request.message)
 
         return ChatResponse(

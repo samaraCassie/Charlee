@@ -2,11 +2,11 @@
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from agno.storage.postgres import PgAgentStorage
+from agno.db.redis import RedisDb
 from sqlalchemy.orm import Session
 from typing import Optional
-from database.config import settings
 from database import crud, schemas
+from database.config import settings
 
 
 class CharleeAgent(Agent):
@@ -20,40 +20,55 @@ class CharleeAgent(Agent):
     - Planejamento estratégico
     """
 
-    def __init__(self, db: Session):
-        """Initialize Charlee agent with database session."""
-        self.db = db
+    def __init__(
+        self,
+        db: Session,
+        user_id: str = "samara",
+        session_id: Optional[str] = None,
+        redis_url: str = "redis://redis:6379"
+    ):
+        """Initialize Charlee agent with database session and memory."""
+        from datetime import datetime
 
-        # Initialize with GPT-4o mini model
+        self.database = db
+
+        # Initialize Redis storage for sessions and memory
+        redis_storage = RedisDb(db_url=redis_url)
+
+        # Get current date for context
+        hoje = datetime.now().strftime("%Y-%m-%d (%A)")
+
+        # Initialize with GPT-4o mini model with memory and session support
         super().__init__(
             name="Charlee",
             model=OpenAIChat(id="gpt-4o-mini"),
+            user_id=user_id,
+            session_id=session_id,
+            db=redis_storage,
+            add_history_to_context=True,
+            num_history_runs=3,
+            enable_user_memories=True,
             markdown=True,
-            show_tool_calls=True,
+            debug_mode=True,
+            stream=False,
             instructions=[
+                f"Data de hoje: {hoje}",
                 "Você é Charlee, o sistema de inteligência pessoal de Samara.",
                 "Seu papel é ajudar Samara a gerenciar suas tarefas, Big Rocks (pilares de vida) e prioridades.",
                 "Seja concisa, direta e empática.",
                 "Use linguagem natural e brasileira.",
                 "Quando criar tarefas, sempre pergunte qual Big Rock está associado.",
                 "Priorize clareza e ação sobre explicações longas.",
+                "Você tem memória das conversas anteriores e pode aprender sobre as preferências de Samara ao longo do tempo.",
             ],
-            storage=self._create_storage() if settings.database_url else None,
-        )
-
-        # Add tools
-        self.register_function(self.listar_big_rocks)
-        self.register_function(self.criar_big_rock)
-        self.register_function(self.listar_tarefas)
-        self.register_function(self.criar_tarefa)
-        self.register_function(self.marcar_tarefa_concluida)
-        self.register_function(self.atualizar_tarefa)
-
-    def _create_storage(self) -> PgAgentStorage:
-        """Create PostgreSQL storage for agent memory."""
-        return PgAgentStorage(
-            table_name="charlee_sessions",
-            db_url=settings.database_url
+            tools=[
+                self.listar_big_rocks,
+                self.criar_big_rock,
+                self.listar_tarefas,
+                self.criar_tarefa,
+                self.marcar_tarefa_concluida,
+                self.atualizar_tarefa
+            ]
         )
 
     # ==================== Big Rocks Tools ====================
@@ -65,7 +80,7 @@ class CharleeAgent(Agent):
         Args:
             ativo_apenas: Se True, lista apenas Big Rocks ativos
         """
-        big_rocks = crud.get_big_rocks(self.db, ativo_apenas=ativo_apenas)
+        big_rocks = crud.get_big_rocks(self.database, ativo_apenas=ativo_apenas)
 
         if not big_rocks:
             return "Nenhum Big Rock cadastrado ainda."
@@ -87,7 +102,7 @@ class CharleeAgent(Agent):
         """
         try:
             big_rock_data = schemas.BigRockCreate(nome=nome, cor=cor)
-            new_big_rock = crud.create_big_rock(self.db, big_rock_data)
+            new_big_rock = crud.create_big_rock(self.database, big_rock_data)
 
             return f"✅ Big Rock **'{new_big_rock.nome}'** criado com sucesso! (ID: {new_big_rock.id})"
         except Exception as e:
@@ -110,7 +125,7 @@ class CharleeAgent(Agent):
             limite: Número máximo de tarefas a retornar
         """
         tarefas = crud.get_tarefas(
-            self.db,
+            self.database,
             status=status,
             big_rock_id=big_rock_id,
             limit=limite
@@ -177,7 +192,7 @@ class CharleeAgent(Agent):
                 deadline=deadline_date
             )
 
-            new_tarefa = crud.create_tarefa(self.db, tarefa_data)
+            new_tarefa = crud.create_tarefa(self.database, tarefa_data)
 
             big_rock_info = ""
             if new_tarefa.big_rock:
@@ -196,7 +211,7 @@ class CharleeAgent(Agent):
             tarefa_id: ID da tarefa
         """
         try:
-            tarefa = crud.marcar_tarefa_concluida(self.db, tarefa_id)
+            tarefa = crud.marcar_tarefa_concluida(self.database, tarefa_id)
 
             if not tarefa:
                 return f"❌ Tarefa com ID {tarefa_id} não encontrada."
@@ -241,7 +256,7 @@ class CharleeAgent(Agent):
                 deadline=deadline_date
             )
 
-            tarefa = crud.update_tarefa(self.db, tarefa_id, update_data)
+            tarefa = crud.update_tarefa(self.database, tarefa_id, update_data)
 
             if not tarefa:
                 return f"❌ Tarefa com ID {tarefa_id} não encontrada."
@@ -252,6 +267,11 @@ class CharleeAgent(Agent):
             return f"❌ Erro ao atualizar tarefa: {str(e)}"
 
 
-def create_charlee_agent(db: Session) -> CharleeAgent:
-    """Factory function to create a Charlee agent instance."""
-    return CharleeAgent(db)
+def create_charlee_agent(
+    db: Session,
+    user_id: str = "samara",
+    session_id: Optional[str] = None,
+    redis_url: str = "redis://redis:6379"
+) -> CharleeAgent:
+    """Factory function to create a Charlee agent instance with session support."""
+    return CharleeAgent(db, user_id=user_id, session_id=session_id, redis_url=redis_url)

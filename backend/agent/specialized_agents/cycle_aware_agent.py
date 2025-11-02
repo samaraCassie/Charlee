@@ -22,7 +22,7 @@ class CycleAwareAgent(Agent):
 
     def __init__(self, db: Session):
         """Initialize CycleAwareAgent."""
-        self.db = db
+        self.database = db
 
         super().__init__(
             name="Wellness Coach",
@@ -33,14 +33,14 @@ class CycleAwareAgent(Agent):
                 "Priorize bem-estar sobre produtividade quando necessário.",
                 "Seja empática e compreensiva.",
                 "Use linguagem natural e brasileira.",
+            ],
+            tools=[
+                self.registrar_fase_ciclo,
+                self.obter_fase_atual,
+                self.sugerir_tarefas_fase,
+                self.analisar_carga_para_fase
             ]
         )
-
-        # Register tools
-        self.register_function(self.registrar_fase_ciclo)
-        self.register_function(self.obter_fase_atual)
-        self.register_function(self.sugerir_tarefas_fase)
-        self.register_function(self.analisar_carga_para_fase)
 
     def registrar_fase_ciclo(
         self,
@@ -79,9 +79,9 @@ class CycleAwareAgent(Agent):
                 notas=notas
             )
 
-            self.db.add(ciclo)
-            self.db.commit()
-            self.db.refresh(ciclo)
+            self.database.add(ciclo)
+            self.database.commit()
+            self.database.refresh(ciclo)
 
             return f"✅ Fase '{fase}' registrada para {data_inicio}!"
 
@@ -94,7 +94,7 @@ class CycleAwareAgent(Agent):
         """
         try:
             ultimo_registro = (
-                self.db.query(CicloMenstrual)
+                self.database.query(CicloMenstrual)
                 .filter(CicloMenstrual.data_inicio <= date.today())
                 .order_by(CicloMenstrual.data_inicio.desc())
                 .first()
@@ -120,7 +120,7 @@ class CycleAwareAgent(Agent):
 
             # Buscar padrões conhecidos para essa fase
             padroes = (
-                self.db.query(PadroesCiclo)
+                self.database.query(PadroesCiclo)
                 .filter(PadroesCiclo.fase == ultimo_registro.fase)
                 .filter(PadroesCiclo.confianca_score > 0.5)
                 .first()
@@ -205,7 +205,7 @@ class CycleAwareAgent(Agent):
         # Se não passou fase, usa a atual
         if not fase:
             ultimo_registro = (
-                self.db.query(CicloMenstrual)
+                self.database.query(CicloMenstrual)
                 .filter(CicloMenstrual.data_inicio <= date.today())
                 .order_by(CicloMenstrual.data_inicio.desc())
                 .first()
@@ -246,7 +246,7 @@ class CycleAwareAgent(Agent):
         try:
             # Obter fase atual
             ultimo_registro = (
-                self.db.query(CicloMenstrual)
+                self.database.query(CicloMenstrual)
                 .filter(CicloMenstrual.data_inicio <= date.today())
                 .order_by(CicloMenstrual.data_inicio.desc())
                 .first()
@@ -261,7 +261,7 @@ class CycleAwareAgent(Agent):
             data_limite = date.today() + timedelta(days=dias_futuro)
 
             tarefas_proximas = (
-                self.db.query(Tarefa)
+                self.database.query(Tarefa)
                 .filter(Tarefa.status == "Pendente")
                 .filter(Tarefa.deadline.isnot(None))
                 .filter(Tarefa.deadline <= data_limite)
