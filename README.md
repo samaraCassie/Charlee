@@ -23,8 +23,18 @@ Charlee/
 ├── backend/                 # Backend FastAPI + Agno
 │   ├── agent/              # Agentes AI (Core, Cycle-Aware, Capacity Guard)
 │   ├── api/                # Rotas REST API
+│   │   └── routes/         # Analytics, Inbox, Settings, etc.
 │   ├── database/           # Models, CRUD, migrations
 │   └── services/           # Serviços de negócio
+├── interfaces/             # Interfaces de usuário
+│   └── web/               # ✨ Frontend React (NEW!)
+│       ├── src/
+│       │   ├── pages/     # Dashboard, BigRocks, Tasks, etc.
+│       │   ├── components/# UI components (Calendar, DatePicker)
+│       │   ├── stores/    # Zustand state management
+│       │   ├── services/  # API integration layer
+│       │   └── __tests__/ # Unit tests (71 tests, 88% coverage)
+│       └── vitest.config.ts
 ├── docker/                 # Arquivos Docker
 │   ├── docker-compose.yml
 │   └── .env
@@ -32,13 +42,11 @@ Charlee/
 │   ├── V1_IMPLEMENTATION.md
 │   ├── V2_IMPLEMENTATION.md
 │   ├── MEMORY_IMPLEMENTATION.md
-│   └── info_charlee.txt
-├── interfaces/             # Frontends (futuros)
+│   └── Charlee_Documentacao.docx.md
 ├── scripts/                # Scripts utilitários
 │   ├── setup.sh
 │   └── clear_session.py
-├── shared/                 # Recursos compartilhados
-└── tests/                  # Testes automatizados
+└── tests/                  # Testes backend
     ├── test_memory.py
     └── test_conversation_history.py
 ```
@@ -140,11 +148,17 @@ Documentação detalhada em [`docs/`](docs/):
 - [x] V1: Sistema base (Big Rocks, Tarefas, CRUD)
 - [x] V2: Bem-estar consciente + Capacity Guard
 - [x] V2.1: Memória e sessões persistentes
-- [ ] V3: CLI interativo
-- [ ] V3: Frontend web
-- [ ] V3: Integração Google Calendar
-- [ ] V3: Input multimodal (voz, imagens)
-- [ ] V3: Bot Telegram/WhatsApp
+- [x] **V3.0: Frontend Web React** ✨ **NEW!**
+  - [x] Dashboard com visão geral
+  - [x] Gerenciamento de Big Rocks e Tasks
+  - [x] Analytics e relatórios
+  - [x] Chat interface com IA
+  - [x] Wellness tracking
+  - [x] Test coverage > 80%
+- [ ] V3.1: Integração Google Calendar
+- [ ] V3.2: Input multimodal (voz, imagens)
+- [ ] V3.3: CLI interativo aprimorado
+- [ ] V4: Bot Telegram/WhatsApp
 
 ## 🤝 Contribuindo
 
@@ -161,5 +175,5 @@ Projeto privado - Todos os direitos reservados
 
 ---
 
-**Status**: ✅ V2.1 - Memória Persistente Implementada
-**Última atualização**: 2025-11-01
+**Status**: 🎉 V3.0 - Frontend Web React + MVP Complete!
+**Última atualização**: 2025-01-08
