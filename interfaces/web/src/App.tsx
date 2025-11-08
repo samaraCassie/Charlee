@@ -4,7 +4,11 @@ import { Moon, Sun, Menu } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import BigRocks from './pages/BigRocks';
+import BigRockDetail from './pages/BigRockDetail';
+import BigRockAnalytics from './pages/BigRockAnalytics';
 import Chat from './pages/Chat';
+import Tasks from './pages/Tasks';
+import Wellness from './pages/Wellness';
 import { Button } from './components/ui/button';
 import {
   Sheet,
@@ -119,7 +123,11 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/big-rocks" element={<BigRocks />} />
+          <Route path="/big-rocks/:id" element={<BigRockDetail />} />
+          <Route path="/big-rocks/:id/analytics" element={<BigRockAnalytics />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/wellness" element={<Wellness />} />
         </Routes>
       </main>
 
