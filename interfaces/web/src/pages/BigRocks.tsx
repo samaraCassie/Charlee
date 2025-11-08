@@ -10,425 +10,472 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Activity, Heart, Target, TrendingUp, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Target, Plus, Settings, List, BarChart3, AlertCircle } from 'lucide-react';
 import { useTaskStore } from '@/stores/taskStore';
 import { useBigRockStore } from '@/stores/bigRockStore';
-import { useCycleStore } from '@/stores/cycleStore';
 import { useToast } from '@/hooks/use-toast';
-import { inboxService } from '@/services/inboxService';
 
-export default function Dashboard() {
+export default function BigRocks() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState<1 | 2 | 3>(2);
-  const [inboxText, setInboxText] = useState<string>('');
-  const [tarefasHoje, setTarefasHoje] = useState(0);
-  const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0);
+  const [newBigRockDialogOpen, setNewBigRockDialogOpen] = useState(false);
+  const [newBigRockName, setNewBigRockName] = useState('');
+  const [newBigRockColor, setNewBigRockColor] = useState('bg-blue-500');
+  const [newBigRockHoursPerWeek, setNewBigRockHoursPerWeek] = useState(20);
 
-  const { tasks, getPendingTasks, toggleTaskStatus, addTask, fetchTasks } = useTaskStore();
-  const { bigRocks, fetchBigRocks } = useBigRockStore();
-  const { currentPhase } = useCycleStore();
+  const [editBigRockDialogOpen, setEditBigRockDialogOpen] = useState(false);
+  const [selectedBigRock, setSelectedBigRock] = useState<string | null>(null);
+  const [editBigRockName, setEditBigRockName] = useState('');
+  const [editBigRockColor, setEditBigRockColor] = useState('bg-blue-500');
+  const [editBigRockHoursPerWeek, setEditBigRockHoursPerWeek] = useState(20);
+
+  const { tasks, fetchTasks } = useTaskStore();
+  const { bigRocks, fetchBigRocks, getTotalCapacity, getCapacityPercentage, addBigRock, updateBigRock, deleteBigRock, getBigRockById } = useBigRockStore();
 
   // Fetch data on mount
   useEffect(() => {
     fetchTasks();
     fetchBigRocks();
-    loadInboxData();
   }, [fetchTasks, fetchBigRocks]);
 
-  // Load inbox data
-  const loadInboxData = async () => {
-    try {
-      const [inbox, hoje, atrasadas] = await Promise.all([
-        inboxService.getInboxRapido(3),
-        inboxService.getTarefasHoje(),
-        inboxService.getTarefasAtrasadas()
-      ]);
-      
-      setInboxText(inbox.inbox_text);
-      setTarefasHoje(hoje.length);
-      setTarefasAtrasadas(atrasadas.length);
-    } catch (error) {
-      console.error('Failed to load inbox data:', error);
-    }
-  };
+  const totalCapacity = getTotalCapacity();
+  const usedCapacity = getCapacityPercentage();
 
-  const pendingTasks = getPendingTasks();
-  const completedThisWeek = tasks.filter((t) => t.status === 'completed').length;
-  console.log('inboxText',inboxText);
-  console.log('tarefasHoje',tarefasHoje);
-  
-  const stats = [
-    { 
-      label: 'Tarefas Pendentes', 
-      value: pendingTasks.length.toString(), 
-      icon: Activity, 
-      color: 'text-blue-500',
-      onClick: () => navigate('/tasks')
-    },
-    { 
-      label: 'Big Rocks Ativos', 
-      value: bigRocks.length.toString(), 
-      icon: Target, 
-      color: 'text-teal-500',
-      onClick: () => navigate('/big-rocks')
-    },
-    { 
-      label: 'Concluídas (Semana)', 
-      value: completedThisWeek.toString(), 
-      icon: CheckCircle2, 
-      color: 'text-green-500',
-      onClick: () => navigate('/analytics')
-    },
-    { 
-      label: 'Fase do Ciclo', 
-      value: currentPhase.charAt(0).toUpperCase() + currentPhase.slice(1), 
-      icon: Heart, 
-      color: 'text-pink-500',
-      onClick: () => navigate('/wellness')
-    },
+  const availableColors = [
+    { name: 'Azul', value: 'bg-blue-500' },
+    { name: 'Rosa', value: 'bg-pink-500' },
+    { name: 'Roxo', value: 'bg-purple-500' },
+    { name: 'Verde', value: 'bg-teal-500' },
+    { name: 'Laranja', value: 'bg-orange-500' },
+    { name: 'Vermelho', value: 'bg-red-500' },
+    { name: 'Amarelo', value: 'bg-yellow-500' },
+    { name: 'Índigo', value: 'bg-indigo-500' },
   ];
 
-  // Show only top 3 pending tasks
-  const topTasks = pendingTasks.slice(0, 3);
-
-  // Show only top 3 big rocks
-  const topBigRocks = bigRocks.slice(0, 3);
-
-  const handleToggleTask = async (id: string) => {
-    try {
-      await toggleTaskStatus(id);
-      toast({
-        title: 'Tarefa atualizada',
-        description: 'Status da tarefa alterado com sucesso.',
-      });
-      loadInboxData(); // Reload inbox
-    } catch (error) {
+  const handleCreateBigRock = async () => {
+    if (!newBigRockName.trim()) {
       toast({
         title: 'Erro',
-        description: `Não foi possível atualizar a tarefa.`,
+        description: 'Por favor, digite um nome para o Big Rock.',
         variant: 'destructive',
       });
-      console.log(error);      
+      return;
     }
-  };
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) {
+    if (newBigRockHoursPerWeek <= 0 || newBigRockHoursPerWeek > 168) {
       toast({
         title: 'Erro',
-        description: 'Por favor, digite um título para a tarefa.',
+        description: 'As horas por semana devem estar entre 1 e 168.',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      await addTask({
-        title: newTaskTitle,
-        priority: newTaskPriority,
-        status: 'pending',
+      await addBigRock({
+        name: newBigRockName,
+        description: newBigRockName,
+        color: newBigRockColor,
+        hoursPerWeek: newBigRockHoursPerWeek,
+        priority: 1,
       });
 
       toast({
-        title: 'Tarefa criada',
-        description: 'Nova tarefa adicionada com sucesso!',
+        title: 'Big Rock criado',
+        description: 'Novo Big Rock adicionado com sucesso!',
       });
 
-      setNewTaskTitle('');
-      setNewTaskPriority(2);
-      setNewTaskDialogOpen(false);
-      loadInboxData(); // Reload inbox
-    } catch (error) {
+      setNewBigRockName('');
+      setNewBigRockColor('bg-blue-500');
+      setNewBigRockHoursPerWeek(20);
+      setNewBigRockDialogOpen(false);
+    } catch {
       toast({
         title: 'Erro',
-        description: 'Não foi possível criar a tarefa.',
+        description: 'Não foi possível criar o Big Rock.',
         variant: 'destructive',
       });
-      console.log(error);
     }
   };
 
-  const handleViewAllTasks = () => {
-    navigate('/tasks');
+  const handleViewTasks = (rockId: string) => {
+    navigate(`/big-rocks/${rockId}`);
   };
 
-  const handleViewBigRock = (rockId: string) => {
-    navigate(`/big-rocks/${rockId}`);
+  const handleViewAnalytics = (rockId: string) => {
+    navigate(`/big-rocks/${rockId}/analytics`);
+  };
+
+  const handleOpenSettings = (rockId: string) => {
+    const rock = getBigRockById(rockId);
+    if (rock) {
+      setSelectedBigRock(rockId);
+      setEditBigRockName(rock.name);
+      setEditBigRockColor(rock.color || 'bg-blue-500');
+      setEditBigRockHoursPerWeek(rock.hoursPerWeek || 20);
+      setEditBigRockDialogOpen(true);
+    }
+  };
+
+  const handleUpdateBigRock = async () => {
+    if (!selectedBigRock) return;
+
+    if (!editBigRockName.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, digite um nome para o Big Rock.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (editBigRockHoursPerWeek <= 0 || editBigRockHoursPerWeek > 168) {
+      toast({
+        title: 'Erro',
+        description: 'As horas por semana devem estar entre 1 e 168.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateBigRock(selectedBigRock, {
+        name: editBigRockName,
+        description: editBigRockName,
+        color: editBigRockColor,
+        hoursPerWeek: editBigRockHoursPerWeek,
+      });
+
+      toast({
+        title: 'Big Rock atualizado',
+        description: 'Alterações salvas com sucesso!',
+      });
+
+      setEditBigRockDialogOpen(false);
+      setSelectedBigRock(null);
+      setEditBigRockName('');
+      setEditBigRockColor('bg-blue-500');
+      setEditBigRockHoursPerWeek(20);
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o Big Rock.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteBigRock = async () => {
+    if (!selectedBigRock) return;
+
+    try {
+      await deleteBigRock(selectedBigRock);
+
+      toast({
+        title: 'Big Rock arquivado',
+        description: 'Big Rock foi arquivado e não aparecerá mais na lista.',
+      });
+
+      setEditBigRockDialogOpen(false);
+      setSelectedBigRock(null);
+      setEditBigRockName('');
+      setEditBigRockColor('bg-blue-500');
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível arquivar o Big Rock.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-2xl md:text-4xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
-          Bem-vinda de volta! Aqui está seu resumo de hoje.
-        </p>
-      </div>
-
-      {/* Alerts */}
-      {tarefasAtrasadas > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-          <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">
-              Você tem {tarefasAtrasadas} tarefa{tarefasAtrasadas > 1 ? 's' : ''} atrasada{tarefasAtrasadas > 1 ? 's' : ''}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Considere priorizar ou reagendar estas tarefas
-            </p>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => navigate('/tasks?filter=overdue')}>
-            Ver Atrasadas
-          </Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight">Big Rocks</h1>
+          <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
+            Gerencie os pilares mais importantes da sua vida.
+          </p>
         </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card 
-              key={stat.label} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={stat.onClick}
-            >
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <Button onClick={() => setNewBigRockDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Big Rock
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
-        {/* Inbox Rápido */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <CardTitle className="text-lg md:text-xl">Inbox Rápido</CardTitle>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1">
-                  Top {topTasks.length} tarefas priorizadas para hoje
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={handleViewAllTasks}
-              >
-                Ver Todas ({pendingTasks.length})
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {topTasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Nenhuma tarefa pendente!</p>
-                <p className="text-sm mt-1">Adicione uma nova tarefa para começar.</p>
-              </div>
-            ) : (
-              <div className="space-y-2 md:space-y-3">
-                {topTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 md:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start gap-3 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={task.status === 'completed'}
-                        onChange={() => handleToggleTask(task.id)}
-                        className="h-4 w-4 rounded border-gray-300 mt-0.5 cursor-pointer"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium text-sm md:text-base ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>
-                          {task.title}
-                        </div>
-                        <div className="flex items-center flex-wrap gap-2 mt-1.5 text-xs md:text-sm text-muted-foreground">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                              task.priority === 1
-                                ? 'bg-red-500/10 text-red-500'
-                                : task.priority === 2
-                                ? 'bg-orange-500/10 text-orange-500'
-                                : 'bg-blue-500/10 text-blue-500'
-                            }`}
-                          >
-                            P{task.priority}
-                          </span>
-                          {task.bigRockId && (
-                            <span className="truncate">
-                              {bigRocks.find((r) => r.id === task.bigRockId)?.name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {task.deadline && (
-                      <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground pl-7 sm:pl-0">
-                        <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {new Date(task.deadline).toLocaleDateString('pt-BR')}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Big Rocks */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg md:text-xl">Big Rocks</CardTitle>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">Pilares de vida</p>
-          </CardHeader>
-          <CardContent>
-            {topBigRocks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhum Big Rock configurado</p>
-                <Button 
-                  size="sm" 
-                  className="mt-4"
-                  onClick={() => navigate('/big-rocks')}
-                >
-                  Criar Big Rock
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3 md:space-y-4">
-                {topBigRocks.map((rock) => {
-                  const rockTasks = tasks.filter((t) => t.bigRockId === rock.id);
-                  const completed = rockTasks.filter((t) => t.status === 'completed').length;
-                  const capacity = rockTasks.length > 0 ? (completed / rockTasks.length) * 100 : 0;
-
-                  return (
-                    <div 
-                      key={rock.id} 
-                      className="space-y-2 cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors"
-                      onClick={() => handleViewBigRock(rock.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`h-9 w-9 md:h-10 md:w-10 rounded-full ${rock.color} flex items-center justify-center text-white text-sm md:text-base font-bold shrink-0`}
-                          >
-                            {rock.name[0]}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm md:text-base truncate">{rock.name}</div>
-                            <div className="text-xs text-muted-foreground">{rockTasks.length} tarefas</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
-                        <div
-                          className={`absolute top-0 left-0 h-full ${rock.color} transition-all`}
-                          style={{ width: `${capacity}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-muted-foreground text-right">{capacity.toFixed(0)}% concluído</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
+      {/* Capacity Overview */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg md:text-xl">Ações Rápidas</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-lg md:text-xl">Visão Geral da Capacidade</CardTitle>
+          <p className="text-xs md:text-sm text-muted-foreground">
+            {totalCapacity.toFixed(1)} de 168 horas semanais alocadas
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-            <Button className="flex-1" onClick={() => setNewTaskDialogOpen(true)}>
-              <Activity className="mr-2 h-4 w-4" />
-              Nova Tarefa
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/analytics')}>
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Ver Analytics
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/chat')}>
-              <Heart className="mr-2 h-4 w-4" />
-              Chat com Charlee
-            </Button>
+          <div className="space-y-2">
+            <div className="relative h-4 bg-secondary/20 rounded-full overflow-hidden">
+              <div
+                className={`absolute top-0 left-0 h-full transition-all ${
+                  usedCapacity > 100 ? 'bg-red-500' : usedCapacity > 80 ? 'bg-orange-500' : 'bg-teal-500'
+                }`}
+                style={{ width: `${Math.min(usedCapacity, 100)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {usedCapacity.toFixed(1)}% da capacidade semanal
+              </span>
+              {usedCapacity > 100 && (
+                <div className="flex items-center gap-1 text-red-500">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="font-medium">Sobrecarga!</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* New Task Dialog */}
-      <Dialog open={newTaskDialogOpen} onOpenChange={setNewTaskDialogOpen}>
+      {/* Big Rocks Grid */}
+      {bigRocks.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Nenhum Big Rock configurado</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Comece criando seu primeiro Big Rock para organizar suas prioridades de vida.
+              </p>
+              <Button onClick={() => setNewBigRockDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Primeiro Big Rock
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+          {bigRocks.map((rock) => {
+            const rockTasks = tasks.filter((t) => t.bigRockId === rock.id);
+            const completedTasks = rockTasks.filter((t) => t.status === 'completed');
+            const pendingTasks = rockTasks.filter((t) => t.status !== 'completed');
+            const completionRate = rockTasks.length > 0 ? (completedTasks.length / rockTasks.length) * 100 : 0;
+
+            return (
+              <Card key={rock.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-12 w-12 rounded-full ${rock.color} flex items-center justify-center text-white text-xl font-bold shrink-0`}
+                      >
+                        {rock.name[0]}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg md:text-xl">{rock.name}</CardTitle>
+                        {rock.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{rock.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleOpenSettings(rock.id)}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-2 md:gap-4">
+                    <div className="text-center p-3 rounded-lg bg-secondary/20">
+                      <div className="text-xl md:text-2xl font-bold">{rockTasks.length}</div>
+                      <div className="text-xs text-muted-foreground">Tarefas</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-secondary/20">
+                      <div className="text-xl md:text-2xl font-bold">{pendingTasks.length}</div>
+                      <div className="text-xs text-muted-foreground">Pendentes</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-secondary/20">
+                      <div className="text-xl md:text-2xl font-bold">{rock.hoursPerWeek}h</div>
+                      <div className="text-xs text-muted-foreground">Por semana</div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Taxa de Conclusão</span>
+                      <span className="font-medium">{completionRate.toFixed(0)}%</span>
+                    </div>
+                    <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute top-0 left-0 h-full ${rock.color} transition-all`}
+                        style={{ width: `${completionRate}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleViewTasks(rock.id)}
+                    >
+                      <List className="mr-2 h-4 w-4" />
+                      Ver Tarefas
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleViewAnalytics(rock.id)}
+                    >
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Analytics
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* New Big Rock Dialog */}
+      <Dialog open={newBigRockDialogOpen} onOpenChange={setNewBigRockDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova Tarefa</DialogTitle>
-            <DialogDescription>Adicione uma nova tarefa ao seu inbox.</DialogDescription>
+            <DialogTitle>Novo Big Rock</DialogTitle>
+            <DialogDescription>
+              Crie um novo pilar de vida para organizar suas prioridades.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Título</label>
+              <label className="text-sm font-medium">Nome</label>
               <input
                 type="text"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Ex: Revisar código do projeto"
+                value={newBigRockName}
+                onChange={(e) => setNewBigRockName(e.target.value)}
+                placeholder="Ex: Saúde & Bem-estar"
                 className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Prioridade</label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={newTaskPriority === 1 ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setNewTaskPriority(1)}
-                  className="flex-1"
-                >
-                  Alta
-                </Button>
-                <Button
-                  type="button"
-                  variant={newTaskPriority === 2 ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setNewTaskPriority(2)}
-                  className="flex-1"
-                >
-                  Média
-                </Button>
-                <Button
-                  type="button"
-                  variant={newTaskPriority === 3 ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setNewTaskPriority(3)}
-                  className="flex-1"
-                >
-                  Baixa
-                </Button>
+              <label className="text-sm font-medium">Cor</label>
+              <div className="grid grid-cols-4 gap-2">
+                {availableColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setNewBigRockColor(color.value)}
+                    className={`h-12 rounded-md ${color.value} transition-all ${
+                      newBigRockColor === color.value
+                        ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                        : 'opacity-70 hover:opacity-100'
+                    }`}
+                    title={color.name}
+                  />
+                ))}
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Horas por semana</label>
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={newBigRockHoursPerWeek}
+                onChange={(e) => setNewBigRockHoursPerWeek(parseInt(e.target.value) || 1)}
+                placeholder="Ex: 20"
+                className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <p className="text-xs text-muted-foreground">
+                Quantas horas por semana você dedica a este Big Rock? (1-168)
+              </p>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewTaskDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setNewBigRockDialogOpen(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleCreateTask}>Criar Tarefa</Button>
+            <Button onClick={handleCreateBigRock} className="w-full sm:w-auto">Criar Big Rock</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Big Rock Dialog */}
+      <Dialog open={editBigRockDialogOpen} onOpenChange={setEditBigRockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Big Rock</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do seu Big Rock.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome</label>
+              <input
+                type="text"
+                value={editBigRockName}
+                onChange={(e) => setEditBigRockName(e.target.value)}
+                placeholder="Ex: Saúde & Bem-estar"
+                className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cor</label>
+              <div className="grid grid-cols-4 gap-2">
+                {availableColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setEditBigRockColor(color.value)}
+                    className={`h-12 rounded-md ${color.value} transition-all ${
+                      editBigRockColor === color.value
+                        ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                        : 'opacity-70 hover:opacity-100'
+                    }`}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Horas por semana</label>
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={editBigRockHoursPerWeek}
+                onChange={(e) => setEditBigRockHoursPerWeek(parseInt(e.target.value) || 1)}
+                placeholder="Ex: 20"
+                className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <p className="text-xs text-muted-foreground">
+                Quantas horas por semana você dedica a este Big Rock? (1-168)
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleDeleteBigRock}
+              className="w-full sm:w-auto sm:mr-auto"
+            >
+              Excluir Big Rock
+            </Button>
+            <Button variant="outline" onClick={() => setEditBigRockDialogOpen(false)} className="w-full sm:w-auto">
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateBigRock} className="w-full sm:w-auto">Salvar Alterações</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

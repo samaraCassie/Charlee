@@ -76,7 +76,7 @@ export const bigRockService = {
     };
   },
 
-  // Delete big rock
+  // Soft delete big rock (o backend marca como inativo automaticamente)
   async deleteBigRock(id: string): Promise<void> {
     await api.delete(`/v1/big-rocks/${id}`);
   },

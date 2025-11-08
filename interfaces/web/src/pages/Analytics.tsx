@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, CheckCircle2, Clock, TrendingUp, Calendar } from 'lucide-react';
 import {
@@ -15,41 +16,114 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { analyticsService } from '@/services/analyticsService';
+import { useCycleStore } from '@/stores/cycleStore';
+import type {
+  WeeklyStats,
+  MonthlyStats,
+  BigRockDistribution,
+  ProductivityStats,
+  CycleProductivity,
+} from '@/services/analyticsService';
 
 export default function Analytics() {
-  // Dados de exemplo para os gráficos
-  const weeklyData = [
-    { day: 'Seg', completed: 4, pending: 2 },
-    { day: 'Ter', completed: 6, pending: 3 },
-    { day: 'Qua', completed: 5, pending: 1 },
-    { day: 'Qui', completed: 8, pending: 4 },
-    { day: 'Sex', completed: 7, pending: 2 },
-    { day: 'Sab', completed: 3, pending: 1 },
-    { day: 'Dom', completed: 2, pending: 0 },
-  ];
+  const [weeklyData, setWeeklyData] = useState<WeeklyStats[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyStats[]>([]);
+  const [bigRocksData, setBigRocksData] = useState<BigRockDistribution[]>([]);
+  const [productivityStats, setProductivityStats] = useState<ProductivityStats | null>(null);
+  const [cycleProductivity, setCycleProductivity] = useState<CycleProductivity | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const monthlyData = [
-    { month: 'Jan', tasks: 45 },
-    { month: 'Fev', tasks: 52 },
-    { month: 'Mar', tasks: 48 },
-    { month: 'Abr', tasks: 61 },
-    { month: 'Mai', tasks: 55 },
-    { month: 'Jun', tasks: 67 },
-  ];
+  const { currentPhase, getCurrentPhase } = useCycleStore();
 
-  const bigRocksData = [
-    { name: 'Syssa - Estágio', value: 45, color: '#3b82f6' },
-    { name: 'Estudos', value: 30, color: '#a855f7' },
-    { name: 'Saúde', value: 15, color: '#22c55e' },
-    { name: 'Outros', value: 10, color: '#94a3b8' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [weekly, monthly, bigRocks, productivity, cycle] = await Promise.all([
+          analyticsService.getWeeklyStats(),
+          analyticsService.getMonthlyStats(),
+          analyticsService.getBigRocksDistribution(),
+          analyticsService.getProductivityStats(),
+          analyticsService.getCycleProductivity(),
+        ]);
 
-  const stats = [
-    { label: 'Taxa de Conclusão', value: '87%', icon: CheckCircle2, color: 'text-green-500' },
-    { label: 'Tempo Médio/Tarefa', value: '2.3h', icon: Clock, color: 'text-blue-500' },
-    { label: 'Produtividade', value: '+12%', icon: TrendingUp, color: 'text-teal-500' },
-    { label: 'Tarefas Atrasadas', value: '3', icon: Activity, color: 'text-orange-500' },
-  ];
+        setWeeklyData(weekly);
+        setMonthlyData(monthly);
+        setBigRocksData(bigRocks);
+        setProductivityStats(productivity);
+        setCycleProductivity(cycle);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    getCurrentPhase();
+  }, [getCurrentPhase]);
+
+  const stats = productivityStats
+    ? [
+        {
+          label: 'Taxa de Conclusão',
+          value: `${productivityStats.completion_rate.toFixed(0)}%`,
+          icon: CheckCircle2,
+          color: 'text-green-500',
+        },
+        {
+          label: 'Tempo Médio/Tarefa',
+          value: `${productivityStats.avg_time_per_task.toFixed(1)}h`,
+          icon: Clock,
+          color: 'text-blue-500',
+        },
+        {
+          label: 'Produtividade',
+          value: `${productivityStats.productivity_trend > 0 ? '+' : ''}${productivityStats.productivity_trend.toFixed(0)}%`,
+          icon: TrendingUp,
+          color: 'text-teal-500',
+        },
+        {
+          label: 'Tarefas Atrasadas',
+          value: productivityStats.overdue_tasks.toString(),
+          icon: Activity,
+          color: 'text-orange-500',
+        },
+      ]
+    : [];
+
+  const phaseLabels: { [key: string]: string } = {
+    menstrual: 'Menstruação',
+    follicular: 'Fase Folicular',
+    ovulation: 'Ovulação',
+    luteal: 'Fase Lútea',
+  };
+
+  const phaseRecommendations: { [key: string]: string } = {
+    menstrual: 'Energia reduzida. Foque em descanso e tarefas leves.',
+    follicular: 'Energia alta e foco aumentado. Ótimo momento para tarefas complexas!',
+    ovulation: 'Pico de energia e clareza mental. Aproveite para projetos importantes!',
+    luteal: 'Energia em declínio. Priorize finalização de tarefas existentes.',
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 md:space-y-8">
+        <div>
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
+            Visualize seu desempenho e produtividade ao longo do tempo.
+          </p>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">Carregando analytics...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -159,7 +233,7 @@ export default function Analytics() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={bigRocksData}
+                  data={bigRocksData.map(item => ({ ...item }))}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -193,71 +267,87 @@ export default function Analytics() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Fase Folicular</span>
-                  <span className="text-sm text-muted-foreground">92% produtividade</span>
+            {cycleProductivity ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Fase Folicular</span>
+                    <span className="text-sm text-muted-foreground">
+                      {cycleProductivity.follicular.toFixed(0)}% produtividade
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-pink-500 transition-all"
+                      style={{ width: `${cycleProductivity.follicular}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <div
-                    className="absolute top-0 left-0 h-full bg-pink-500 transition-all"
-                    style={{ width: '92%' }}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Ovulação</span>
-                  <span className="text-sm text-muted-foreground">95% produtividade</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Ovulação</span>
+                    <span className="text-sm text-muted-foreground">
+                      {cycleProductivity.ovulation.toFixed(0)}% produtividade
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-pink-600 transition-all"
+                      style={{ width: `${cycleProductivity.ovulation}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <div
-                    className="absolute top-0 left-0 h-full bg-pink-600 transition-all"
-                    style={{ width: '95%' }}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Fase Lútea</span>
-                  <span className="text-sm text-muted-foreground">78% produtividade</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Fase Lútea</span>
+                    <span className="text-sm text-muted-foreground">
+                      {cycleProductivity.luteal.toFixed(0)}% produtividade
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-pink-400 transition-all"
+                      style={{ width: `${cycleProductivity.luteal}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <div
-                    className="absolute top-0 left-0 h-full bg-pink-400 transition-all"
-                    style={{ width: '78%' }}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Menstruação</span>
-                  <span className="text-sm text-muted-foreground">65% produtividade</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Menstruação</span>
+                    <span className="text-sm text-muted-foreground">
+                      {cycleProductivity.menstrual.toFixed(0)}% produtividade
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-pink-300 transition-all"
+                      style={{ width: `${cycleProductivity.menstrual}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="relative h-2 bg-secondary/20 rounded-full overflow-hidden">
-                  <div
-                    className="absolute top-0 left-0 h-full bg-pink-300 transition-all"
-                    style={{ width: '65%' }}
-                  />
-                </div>
-              </div>
 
-              <div className="mt-6 p-4 rounded-lg bg-pink-500/10 border border-pink-500/20">
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-pink-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Fase Atual: Folicular</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Energia alta e foco aumentado. Ótimo momento para tarefas complexas!
-                    </p>
+                <div className="mt-6 p-4 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-pink-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        Fase Atual: {phaseLabels[currentPhase] || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {phaseRecommendations[currentPhase] || 'Acompanhe seu ciclo para insights personalizados.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Dados de ciclo não disponíveis</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

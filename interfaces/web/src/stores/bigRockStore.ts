@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { bigRockService } from '../services/bigRockService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -22,9 +23,9 @@ interface BigRockState {
   // Actions
   fetchBigRocks: () => Promise<void>;
   setBigRocks: (bigRocks: BigRock[]) => void;
-  addBigRock: (bigRock: Omit<BigRock, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateBigRock: (id: string, updates: Partial<BigRock>) => void;
-  deleteBigRock: (id: string) => void;
+  addBigRock: (bigRock: Omit<BigRock, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateBigRock: (id: string, updates: Partial<BigRock>) => Promise<void>;
+  deleteBigRock: (id: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -69,30 +70,51 @@ export const useBigRockStore = create<BigRockState>((set, get) => ({
 
   setBigRocks: (bigRocks) => set({ bigRocks }),
 
-  addBigRock: (bigRockData) => {
-    const newBigRock: BigRock = {
-      ...bigRockData,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    set((state) => ({ bigRocks: [...state.bigRocks, newBigRock] }));
+  addBigRock: async (bigRockData) => {
+    set({ loading: true, error: null });
+    try {
+      const newBigRock = await bigRockService.createBigRock(bigRockData);
+      set((state) => ({
+        bigRocks: [...state.bigRocks, newBigRock],
+        loading: false
+      }));
+    } catch (error) {
+      console.error('Error creating big rock:', error);
+      set({ error: 'Failed to create big rock', loading: false });
+      throw error;
+    }
   },
 
-  updateBigRock: (id, updates) => {
-    set((state) => ({
-      bigRocks: state.bigRocks.map((rock) =>
-        rock.id === id
-          ? { ...rock, ...updates, updatedAt: new Date().toISOString() }
-          : rock
-      ),
-    }));
+  updateBigRock: async (id, updates) => {
+    set({ loading: true, error: null });
+    try {
+      const updatedBigRock = await bigRockService.updateBigRock(id, updates);
+      set((state) => ({
+        bigRocks: state.bigRocks.map((rock) =>
+          rock.id === id ? updatedBigRock : rock
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      console.error('Error updating big rock:', error);
+      set({ error: 'Failed to update big rock', loading: false });
+      throw error;
+    }
   },
 
-  deleteBigRock: (id) => {
-    set((state) => ({
-      bigRocks: state.bigRocks.filter((rock) => rock.id !== id),
-    }));
+  deleteBigRock: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      await bigRockService.deleteBigRock(id);
+      set((state) => ({
+        bigRocks: state.bigRocks.filter((rock) => rock.id !== id),
+        loading: false,
+      }));
+    } catch (error) {
+      console.error('Error deleting big rock:', error);
+      set({ error: 'Failed to delete big rock', loading: false });
+      throw error;
+    }
   },
 
   setLoading: (loading) => set({ loading }),
