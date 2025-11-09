@@ -68,7 +68,11 @@ dmypy.json
 test_output/
 *.pyc
 
+docs/
 node_modules
 package-lock.json
 package.json
 test_data.sql
+tests/test_prompts_orchestrator.md
+backend/api/routes/agent.py
+backend/agent/ORCHESTRATOR_README.md
