@@ -68,7 +68,6 @@ dmypy.json
 test_output/
 *.pyc
 
-docs/
 node_modules
 package-lock.json
 package.json

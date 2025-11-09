@@ -3,8 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Dict, Any
 from database.config import get_db
 from agent.core_agent import create_charlee_agent
+from agent.orchestrator import create_orchestrator
 
 router = APIRouter()
 
@@ -28,35 +30,100 @@ async def chat_with_charlee(
     db: Session = Depends(get_db)
 ):
     """
-    Chat with Charlee agent.
+    Chat with Charlee agent usando orquestração inteligente.
 
-    Send a message to Charlee and get a response.
-    The agent has access to all Big Rocks and Tarefas tools.
-    The agent maintains conversation history and memory across sessions.
+    Envia uma mensagem para Charlee e recebe uma resposta.
+    O orquestrador analisa a mensagem e roteia para o agente especializado apropriado:
+    - CycleAwareAgent: questões sobre ciclo menstrual, energia, bem-estar
+    - CapacityGuardAgent: questões sobre carga de trabalho, capacidade, sobrecarga
+    - CharleeAgent: tarefas gerais, Big Rocks, planejamento
+
+    O agente mantém histórico de conversação e memória entre sessões.
     """
     try:
-        # Create Charlee agent with session support
-        charlee = create_charlee_agent(
+        # Create orchestrator (manages all specialized agents)
+        orchestrator = create_orchestrator(
             db=db,
             user_id=request.user_id,
             session_id=request.session_id
         )
 
-        # Get response from agent (with history and memory)
-        response = charlee.run(request.message)
+        # Route message to appropriate agent
+        response = orchestrator.route_message(request.message)
 
         return ChatResponse(
-            response=response.content,
-            session_id=charlee.session_id or "default"
+            response=response,
+            session_id=orchestrator.session_id or "default"
         )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error communicating with agent: {str(e)}")
 
 
+@router.get("/status")
+async def get_orchestrator_status(
+    user_id: str = "samara",
+    session_id: str | None = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtém o status atual do orquestrador de agentes.
+
+    Retorna informações sobre:
+    - Sessão atual
+    - Último agente utilizado
+    - Tópico da conversa
+    - Agentes disponíveis
+    - Features de orquestração ativas
+    """
+    try:
+        orchestrator = create_orchestrator(
+            db=db,
+            user_id=user_id,
+            session_id=session_id
+        )
+
+        return orchestrator.get_status()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting orchestrator status: {str(e)}")
+
+
+@router.post("/analyze-routing")
+async def analyze_routing(
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Analisa como uma mensagem seria roteada pelo orquestrador SEM executá-la.
+
+    Útil para debugging e entender o comportamento do sistema de orquestração.
+
+    Retorna:
+    - Intent detectado
+    - Agente que seria usado
+    - Razão da decisão
+    - Palavras-chave que acionaram o intent
+    - Se haverá consulta entre agentes
+    """
+    try:
+        orchestrator = create_orchestrator(
+            db=db,
+            user_id=request.user_id,
+            session_id=request.session_id
+        )
+
+        routing_decision = orchestrator.get_routing_decision(request.message)
+
+        return routing_decision
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analyzing routing: {str(e)}")
+
+
 @router.get("/tools")
 async def list_agent_tools():
-    """List all available tools for the Charlee agent."""
+    """Lista todas as ferramentas disponíveis para os agentes Charlee."""
     return {
         "tools": [
             {
@@ -82,6 +149,23 @@ async def list_agent_tools():
             {
                 "name": "atualizar_tarefa",
                 "description": "Atualiza uma tarefa existente"
+            }
+        ],
+        "specialized_agents": [
+            {
+                "name": "CycleAwareAgent",
+                "description": "Agente especializado em ciclo menstrual e bem-estar",
+                "triggers": ["ciclo", "menstruação", "energia", "TPM", "ovulação", "fase"]
+            },
+            {
+                "name": "CapacityGuardAgent",
+                "description": "Agente especializado em gestão de capacidade e carga de trabalho",
+                "triggers": ["sobrecarga", "capacidade", "novo projeto", "muito trabalho", "trade-off"]
+            },
+            {
+                "name": "CharleeAgent",
+                "description": "Agente principal para tarefas gerais, Big Rocks e planejamento",
+                "triggers": ["default", "tarefas", "planejamento", "organização"]
             }
         ]
     }
