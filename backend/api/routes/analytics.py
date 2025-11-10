@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List
 from datetime import date, timedelta
 from database.config import get_db
-from database.models import Tarefa, BigRock
+from database.models import Task, BigRock
 
 router = APIRouter()
 
@@ -57,15 +57,15 @@ async def weekly_stats(db: Session = Depends(get_db)):
 
         # Contar tarefas concluídas neste dia
         completed = (
-            db.query(Tarefa)
-            .filter(Tarefa.status == "Concluída", func.date(Tarefa.concluido_em) == day_date)
+            db.query(Task)
+            .filter(Task.status == "Concluída", func.date(Task.concluido_em) == day_date)
             .count()
         )
 
         # Contar tarefas pendentes neste dia
         pending = (
-            db.query(Tarefa)
-            .filter(Tarefa.status == "Pendente", func.date(Tarefa.deadline) == day_date)
+            db.query(Task)
+            .filter(Task.status == "Pendente", func.date(Task.deadline) == day_date)
             .count()
         )
 
@@ -94,11 +94,11 @@ async def monthly_stats(db: Session = Depends(get_db)):
 
         # Contar tarefas concluídas no mês
         tasks = (
-            db.query(Tarefa)
+            db.query(Task)
             .filter(
-                Tarefa.status == "Concluída",
-                Tarefa.concluido_em >= month_start,
-                Tarefa.concluido_em < month_end,
+                Task.status == "Concluída",
+                Task.concluido_em >= month_start,
+                Task.concluido_em < month_end,
             )
             .count()
         )
@@ -121,11 +121,11 @@ async def big_rocks_distribution(db: Session = Depends(get_db)):
         thirty_days_ago = date.today() - timedelta(days=30)
 
         count = (
-            db.query(Tarefa)
+            db.query(Task)
             .filter(
-                Tarefa.big_rock_id == br.id,
-                Tarefa.status == "Concluída",
-                Tarefa.concluido_em >= thirty_days_ago,
+                Task.big_rock_id == br.id,
+                Task.status == "Concluída",
+                Task.concluido_em >= thirty_days_ago,
             )
             .count()
         )
@@ -143,17 +143,17 @@ async def productivity_stats(db: Session = Depends(get_db)):
     """Estatísticas gerais de produtividade."""
 
     # Total de tarefas
-    total_tasks = db.query(Tarefa).count()
+    total_tasks = db.query(Task).count()
 
     # Tarefas concluídas
-    completed_tasks = db.query(Tarefa).filter(Tarefa.status == "Concluída").count()
+    completed_tasks = db.query(Task).filter(Task.status == "Concluída").count()
 
     # Taxa de conclusão
     completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
 
     # Tarefas atrasadas
     overdue_tasks = (
-        db.query(Tarefa).filter(Tarefa.status == "Pendente", Tarefa.deadline < date.today()).count()
+        db.query(Task).filter(Task.status == "Pendente", Task.deadline < date.today()).count()
     )
 
     # Tempo médio por tarefa (estimativa)

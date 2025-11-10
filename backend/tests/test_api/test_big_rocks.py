@@ -10,21 +10,21 @@ class TestBigRocksAPI:
         """Should create Big Rock with valid data."""
         response = client.post(
             "/api/v1/big-rocks",
-            json={"nome": "Carreira", "cor": "#3b82f6", "ativo": True},
+            json={"name": "Career", "color": "#3b82f6", "active": True},
         )
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
 
-        assert data["nome"] == "Carreira"
-        assert data["cor"] == "#3b82f6"
-        assert data["ativo"] is True
+        assert data["name"] == "Career"
+        assert data["color"] == "#3b82f6"
+        assert data["active"] is True
         assert "id" in data
-        assert "criado_em" in data
+        assert "created_at" in data
 
     def test_create_big_rock_missing_name(self, client):
         """Should return 422 for missing required field."""
-        response = client.post("/api/v1/big-rocks", json={"cor": "#ff0000"})
+        response = client.post("/api/v1/big-rocks", json={"color": "#ff0000"})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -38,7 +38,7 @@ class TestBigRocksAPI:
         assert "total" in data
         assert "big_rocks" in data
         assert len(data["big_rocks"]) >= 1
-        assert data["big_rocks"][0]["nome"] == sample_big_rock.nome
+        assert data["big_rocks"][0]["name"] == sample_big_rock.name
 
     def test_get_big_rock(self, client, sample_big_rock):
         """Should get Big Rock by ID."""
@@ -48,7 +48,7 @@ class TestBigRocksAPI:
         data = response.json()
 
         assert data["id"] == sample_big_rock.id
-        assert data["nome"] == sample_big_rock.nome
+        assert data["name"] == sample_big_rock.name
 
     def test_get_big_rock_not_found(self, client):
         """Should return 404 for non-existent ID."""
@@ -58,20 +58,20 @@ class TestBigRocksAPI:
 
     def test_update_big_rock(self, client, sample_big_rock):
         """Should update Big Rock."""
-        response = client.patch(f"/api/v1/big-rocks/{sample_big_rock.id}", json={"nome": "Saúde"})
+        response = client.patch(f"/api/v1/big-rocks/{sample_big_rock.id}", json={"name": "Health"})
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["nome"] == "Saúde"
+        assert data["name"] == "Health"
 
     def test_delete_big_rock(self, client, sample_big_rock):
-        """Should soft delete Big Rock (set ativo=False)."""
+        """Should soft delete Big Rock (set active=False)."""
         response = client.delete(f"/api/v1/big-rocks/{sample_big_rock.id}")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-        # Verify soft deletion - should still exist but with ativo=False
+        # Verify soft deletion - should still exist but with active=False
         get_response = client.get(f"/api/v1/big-rocks/{sample_big_rock.id}")
         assert get_response.status_code == status.HTTP_200_OK
         data = get_response.json()
-        assert data["ativo"] is False
+        assert data["active"] is False

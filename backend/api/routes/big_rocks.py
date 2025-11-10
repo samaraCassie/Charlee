@@ -10,10 +10,10 @@ router = APIRouter()
 
 @router.get("/", response_model=schemas.BigRockListResponse)
 def get_big_rocks(
-    ativo_apenas: bool = True, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    active_only: bool = True, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 ):
     """Get list of Big Rocks."""
-    big_rocks = crud.get_big_rocks(db, skip=skip, limit=limit, ativo_apenas=ativo_apenas)
+    big_rocks = crud.get_big_rocks(db, skip=skip, limit=limit, active_only=active_only)
     return {"total": len(big_rocks), "big_rocks": big_rocks}
 
 
@@ -45,7 +45,7 @@ def update_big_rock(
 
 @router.delete("/{big_rock_id}", status_code=204)
 def delete_big_rock(big_rock_id: int, db: Session = Depends(get_db)):
-    """Soft delete a Big Rock (sets ativo=False)."""
+    """Soft delete a Big Rock (sets active=False)."""
     success = crud.delete_big_rock(db, big_rock_id)
     if not success:
         raise HTTPException(status_code=404, detail="Big Rock not found")

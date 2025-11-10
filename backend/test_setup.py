@@ -2,7 +2,7 @@
 
 import sys
 from database.config import engine, Base, settings
-from database.models import BigRock, Tarefa
+from database.models import BigRock, Task
 from sqlalchemy import text
 
 
@@ -49,15 +49,15 @@ def test_models():
 
             print(f"✅ Created Big Rock: {big_rock}")
 
-            # Create a Tarefa
+            # Create a Task
             from datetime import date
 
-            tarefa = Tarefa(descricao="Test Task", big_rock_id=big_rock.id, deadline=date.today())
+            tarefa = Task(descricao="Test Task", big_rock_id=big_rock.id, deadline=date.today())
             session.add(tarefa)
             session.commit()
             session.refresh(tarefa)
 
-            print(f"✅ Created Tarefa: {tarefa}")
+            print(f"✅ Created Task: {tarefa}")
 
             # Clean up test data
             session.delete(tarefa)

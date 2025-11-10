@@ -8,16 +8,148 @@
 
 ## 📋 Índice
 
-1. [Estrutura de Código](#estrutura-de-código)
-2. [Type Hints e Validação](#type-hints-e-validação)
-3. [Padrões de API](#padrões-de-api-fastapi)
-4. [Database e ORM](#database-e-orm)
-5. [Tratamento de Erros](#tratamento-de-erros)
-6. [Logging](#logging)
-7. [Formatação e Linting](#formatação-e-linting)
-8. [Dependencies](#dependencies)
-9. [Performance](#performance)
-10. [Exemplos](#exemplos)
+1. [Convenções de Nomenclatura e Idioma](#convenções-de-nomenclatura-e-idioma)
+2. [Estrutura de Código](#estrutura-de-código)
+3. [Type Hints e Validação](#type-hints-e-validação)
+4. [Padrões de API](#padrões-de-api-fastapi)
+5. [Database e ORM](#database-e-orm)
+6. [Tratamento de Erros](#tratamento-de-erros)
+7. [Logging](#logging)
+8. [Formatação e Linting](#formatação-e-linting)
+9. [Dependencies](#dependencies)
+10. [Performance](#performance)
+11. [Exemplos](#exemplos)
+
+---
+
+## 🌍 Convenções de Nomenclatura e Idioma
+
+### Regra Fundamental: Inglês no Código
+
+**TODO código deve ser escrito em INGLÊS** - variáveis, funções, classes, comentários de código, docstrings, nomes de tabelas e colunas no banco de dados.
+
+#### ✅ CORRETO - Inglês no código
+
+```python
+# Models
+class Task(Base):
+    """Task model - represents a user task."""
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True)
+    description = Column(Text, nullable=False)
+    type = Column(String(20), default="task")
+    status = Column(String(20), default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def mark_as_completed(self):
+        """Mark task as completed."""
+        self.status = "completed"
+        self.completed_at = datetime.utcnow()
+
+
+# Schemas
+class TaskCreate(BaseModel):
+    """Schema for creating a task."""
+    description: str = Field(..., min_length=1)
+    type: Literal["fixed_appointment", "task", "continuous"] = "task"
+    deadline: Optional[date] = None
+
+
+# CRUD
+def get_tasks(
+    db: Session,
+    status: Optional[str] = None,
+    big_rock_id: Optional[int] = None,
+    task_type: Optional[str] = None,
+) -> list[Task]:
+    """Get list of tasks with optional filters."""
+    query = db.query(Task)
+    if status:
+        query = query.filter(Task.status == status)
+    return query.all()
+
+
+# Routes
+@router.get("/", response_model=TaskListResponse)
+def get_tasks(
+    status: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    """Get list of tasks with optional filters."""
+    tasks = crud.get_tasks(db, skip=skip, limit=limit, status=status)
+    return {"total": len(tasks), "tasks": tasks}
+```
+
+#### ❌ ERRADO - Português no código
+
+```python
+# ❌ NUNCA FAÇA ISSO
+class Tarefa(Base):
+    """Modelo de tarefa."""
+    __tablename__ = "tarefas"
+
+    id = Column(Integer, primary_key=True)
+    descricao = Column(Text, nullable=False)
+    tipo = Column(String(20), default="Tarefa")
+    status = Column(String(20), default="Pendente")
+    criado_em = Column(DateTime, default=datetime.utcnow)
+
+    def marcar_concluida(self):
+        """Marca tarefa como concluída."""
+        self.status = "Concluída"
+```
+
+### Tradução para o Usuário
+
+**Português é usado APENAS**:
+- Na interface do usuário (frontend)
+- Em mensagens de erro para o usuário final
+- Em documentação voltada para usuários finais (READMEs em português)
+- Em logs de sistema quando necessário
+
+```python
+# ✅ CORRETO - Tradução no frontend/UI
+{
+    "task": "Clean the kitchen",
+    "translation": {
+        "pt-BR": "Limpar a cozinha"
+    }
+}
+
+# ✅ CORRETO - Mensagens de erro
+raise HTTPException(
+    status_code=404,
+    detail="Task not found"  # Frontend traduz para "Tarefa não encontrada"
+)
+```
+
+### Convenções de Nomenclatura
+
+| Tipo | Convenção | Exemplo |
+|------|-----------|---------|
+| **Classes** | PascalCase | `Task`, `BigRock`, `MenstrualCycle` |
+| **Funções/Métodos** | snake_case | `get_tasks()`, `mark_as_completed()` |
+| **Variáveis** | snake_case | `task_id`, `big_rock_name` |
+| **Constantes** | UPPER_SNAKE_CASE | `MAX_RETRIES`, `DEFAULT_STATUS` |
+| **Schemas** | PascalCase + Suffix | `TaskCreate`, `TaskResponse` |
+| **Rotas** | kebab-case | `/big-rocks`, `/tasks` |
+| **Tabelas DB** | snake_case plural | `tasks`, `big_rocks`, `menstrual_cycles` |
+| **Colunas DB** | snake_case | `created_at`, `big_rock_id` |
+
+### Status e Tipos em Inglês
+
+```python
+# ✅ CORRETO - Valores em inglês
+status = Literal["pending", "in_progress", "completed", "cancelled"]
+task_type = Literal["fixed_appointment", "task", "continuous"]
+phase = Literal["menstrual", "follicular", "ovulation", "luteal"]
+
+# ❌ ERRADO - Valores em português
+status = Literal["Pendente", "Em Progresso", "Concluída", "Cancelada"]
+```
 
 ---
 

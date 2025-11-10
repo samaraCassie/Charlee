@@ -68,7 +68,7 @@ def sample_big_rock(db):
     """Create a sample Big Rock for testing."""
     from database.models import BigRock
 
-    big_rock = BigRock(nome="Saúde e Bem-estar", cor="#22c55e", ativo=True)
+    big_rock = BigRock(name="Health & Wellness", color="#22c55e", active=True)
     db.add(big_rock)
     db.commit()
     db.refresh(big_rock)
@@ -78,14 +78,14 @@ def sample_big_rock(db):
 @pytest.fixture
 def sample_task(db, sample_big_rock):
     """Create a sample Task for testing."""
-    from database.models import Tarefa
+    from database.models import Task
     from datetime import date, timedelta
 
-    task = Tarefa(
-        descricao="Caminhar 30 minutos",
-        tipo="Tarefa",
+    task = Task(
+        description="Walk for 30 minutes",
+        type="task",
         big_rock_id=sample_big_rock.id,
-        status="Pendente",
+        status="pending",
         deadline=date.today() + timedelta(days=7),
     )
     db.add(task)

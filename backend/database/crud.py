@@ -1,9 +1,9 @@
 """CRUD operations for database models."""
 
-from typing import Optional
+from typing import Optional, cast
 from sqlalchemy.orm import Session
-from database.models import BigRock, Tarefa
-from database.schemas import BigRockCreate, BigRockUpdate, TarefaCreate, TarefaUpdate
+from database.models import BigRock, Task
+from database.schemas import BigRockCreate, BigRockUpdate, TaskCreate, TaskUpdate
 
 
 # ==================== Big Rock CRUD ====================
@@ -11,19 +11,19 @@ from database.schemas import BigRockCreate, BigRockUpdate, TarefaCreate, TarefaU
 
 def get_big_rock(db: Session, big_rock_id: int) -> Optional[BigRock]:
     """Get a single BigRock by ID."""
-    return db.query(BigRock).filter(BigRock.id == big_rock_id).first()
+    return cast(Optional[BigRock], db.query(BigRock).filter(BigRock.id == big_rock_id).first())
 
 
 def get_big_rocks(
-    db: Session, skip: int = 0, limit: int = 100, ativo_apenas: bool = False
+    db: Session, skip: int = 0, limit: int = 100, active_only: bool = False
 ) -> list[BigRock]:
     """Get list of BigRocks."""
     query = db.query(BigRock)
 
-    if ativo_apenas:
-        query = query.filter(BigRock.ativo)
+    if active_only:
+        query = query.filter(BigRock.active)
 
-    return query.offset(skip).limit(limit).all()
+    return cast(list[BigRock], query.offset(skip).limit(limit).all())
 
 
 def create_big_rock(db: Session, big_rock: BigRockCreate) -> BigRock:
@@ -53,101 +53,120 @@ def update_big_rock(
 
 
 def delete_big_rock(db: Session, big_rock_id: int) -> bool:
-    """Delete a BigRock (soft delete by setting ativo=False)."""
+    """Delete a BigRock (soft delete by setting active=False)."""
     db_big_rock = get_big_rock(db, big_rock_id)
     if not db_big_rock:
         return False
 
-    db_big_rock.ativo = False
+    db_big_rock.active = False
     db.commit()
     return True
 
 
-# ==================== Tarefa CRUD ====================
+# ==================== Task CRUD ====================
 
 
-def get_tarefa(db: Session, tarefa_id: int) -> Optional[Tarefa]:
-    """Get a single Tarefa by ID."""
-    return db.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
+def get_task(db: Session, task_id: int) -> Optional[Task]:
+    """Get a single Task by ID."""
+    return cast(Optional[Task], db.query(Task).filter(Task.id == task_id).first())
 
 
-def get_tarefas(
+def get_tasks(
     db: Session,
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
     big_rock_id: Optional[int] = None,
-    tipo: Optional[str] = None,
-) -> list[Tarefa]:
-    """Get list of Tarefas with optional filters."""
-    query = db.query(Tarefa)
+    task_type: Optional[str] = None,
+) -> list[Task]:
+    """Get list of Tasks with optional filters."""
+    query = db.query(Task)
 
     if status:
-        query = query.filter(Tarefa.status == status)
+        query = query.filter(Task.status == status)
 
     if big_rock_id:
-        query = query.filter(Tarefa.big_rock_id == big_rock_id)
+        query = query.filter(Task.big_rock_id == big_rock_id)
 
-    if tipo:
-        query = query.filter(Tarefa.tipo == tipo)
+    if task_type:
+        query = query.filter(Task.type == task_type)
 
-    return query.order_by(Tarefa.deadline.asc().nullslast()).offset(skip).limit(limit).all()
+    return cast(
+        list[Task], query.order_by(Task.deadline.asc().nullslast()).offset(skip).limit(limit).all()
+    )
 
 
-def create_tarefa(db: Session, tarefa: TarefaCreate) -> Tarefa:
-    """Create a new Tarefa."""
-    db_tarefa = Tarefa(**tarefa.model_dump())
-    db.add(db_tarefa)
+def create_task(db: Session, task: TaskCreate) -> Task:
+    """Create a new Task.
+
+    Args:
+        db: Database session
+        task: Task data
+
+    Returns:
+        Created task
+
+    Raises:
+        ValueError: If big_rock_id is provided but doesn't exist
+    """
+    # Validate big_rock_id if provided
+    if task.big_rock_id is not None:
+        big_rock = get_big_rock(db, task.big_rock_id)
+        if not big_rock:
+            raise ValueError(f"BigRock with id {task.big_rock_id} not found")
+
+    db_task = Task(**task.model_dump())
+    db.add(db_task)
     db.commit()
-    db.refresh(db_tarefa)
-    return db_tarefa
+    db.refresh(db_task)
+    return db_task
 
 
-def update_tarefa(db: Session, tarefa_id: int, tarefa_update: TarefaUpdate) -> Optional[Tarefa]:
-    """Update a Tarefa."""
-    db_tarefa = get_tarefa(db, tarefa_id)
-    if not db_tarefa:
+def update_task(db: Session, task_id: int, task_update: TaskUpdate) -> Optional[Task]:
+    """Update a Task."""
+    db_task = get_task(db, task_id)
+    if not db_task:
         return None
 
-    update_data = tarefa_update.model_dump(exclude_unset=True)
+    update_data = task_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(db_tarefa, field, value)
+        setattr(db_task, field, value)
 
     db.commit()
-    db.refresh(db_tarefa)
-    return db_tarefa
+    db.refresh(db_task)
+    return db_task
 
 
-def marcar_tarefa_concluida(db: Session, tarefa_id: int) -> Optional[Tarefa]:
-    """Mark a Tarefa as completed."""
-    db_tarefa = get_tarefa(db, tarefa_id)
-    if not db_tarefa:
+def mark_task_completed(db: Session, task_id: int) -> Optional[Task]:
+    """Mark a Task as completed."""
+    db_task = get_task(db, task_id)
+    if not db_task:
         return None
 
-    db_tarefa.marcar_concluida()
+    db_task.mark_as_completed()
     db.commit()
-    db.refresh(db_tarefa)
-    return db_tarefa
+    db.refresh(db_task)
+    return db_task
 
 
-def reabrir_tarefa(db: Session, tarefa_id: int) -> Optional[Tarefa]:
-    """Reopen a completed Tarefa."""
-    db_tarefa = get_tarefa(db, tarefa_id)
-    if not db_tarefa:
+def reopen_task(db: Session, task_id: int) -> Optional[Task]:
+    """Reopen a completed Task."""
+    db_task = get_task(db, task_id)
+    if not db_task:
         return None
 
-    db_tarefa.reabrir()
+    db_task.reopen()
     db.commit()
-    db.refresh(db_tarefa)
-    return db_tarefa
+    db.refresh(db_task)
+    return db_task
 
 
-def delete_tarefa(db: Session, tarefa_id: int) -> bool:
-    """Delete a Tarefa permanently."""
-    db_tarefa = get_tarefa(db, tarefa_id)
-    if not db_tarefa:
+def delete_task(db: Session, task_id: int) -> bool:
+    """Delete a Task permanently."""
+    db_task = get_task(db, task_id)
+    if not db_task:
         return False
 
-    db.delete(db_tarefa)
+    db.delete(db_task)
     db.commit()
     return True

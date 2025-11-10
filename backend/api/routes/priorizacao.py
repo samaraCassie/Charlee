@@ -47,7 +47,7 @@ async def recalcular_prioridades(big_rock_id: int | None = None, db: Session = D
     return {"message": "Prioridades recalculadas", "tarefas_processadas": len(tarefas_priorizadas)}
 
 
-@router.get("/tarefas-priorizadas", response_model=schemas.TarefaListResponse)
+@router.get("/tarefas-priorizadas", response_model=schemas.TaskListResponse)
 async def listar_tarefas_priorizadas(
     big_rock_id: int | None = None, limite: int = 20, db: Session = Depends(get_db)
 ):

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from database.config import engine, Base
 from api.routes import (
     big_rocks,
-    tarefas,
+    tasks,
     agent as agent_routes,
     wellness,
     capacity,
@@ -54,7 +54,7 @@ app.add_middleware(
 # ROUTERS V1
 # ========================================
 app.include_router(big_rocks.router, prefix="/api/v1/big-rocks", tags=["Big Rocks"])
-app.include_router(tarefas.router, prefix="/api/v1/tarefas", tags=["Tarefas"])
+app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Tasks"])
 app.include_router(agent_routes.router, prefix="/api/v1/agent", tags=["Agent"])
 
 # ========================================

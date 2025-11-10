@@ -72,14 +72,14 @@ class CharleeAgent(Agent):
 
     # ==================== Big Rocks Tools ====================
 
-    def listar_big_rocks(self, ativo_apenas: bool = True) -> str:
+    def listar_big_rocks(self, active_only: bool = True) -> str:
         """
         Lista todos os Big Rocks (pilares de vida) cadastrados.
 
         Args:
-            ativo_apenas: Se True, lista apenas Big Rocks ativos
+            active_only: Se True, lista apenas Big Rocks ativos
         """
-        big_rocks = crud.get_big_rocks(self.database, ativo_apenas=ativo_apenas)
+        big_rocks = crud.get_big_rocks(self.database, active_only=active_only)
 
         if not big_rocks:
             return "Nenhum Big Rock cadastrado ainda."
@@ -122,7 +122,7 @@ class CharleeAgent(Agent):
             big_rock_id: Filtrar por ID do Big Rock
             limite: Número máximo de tarefas a retornar
         """
-        tarefas = crud.get_tarefas(
+        tarefas = crud.get_tasks(
             self.database, status=status, big_rock_id=big_rock_id, limit=limite
         )
 
@@ -158,7 +158,7 @@ class CharleeAgent(Agent):
         self,
         descricao: str,
         big_rock_id: Optional[int] = None,
-        tipo: str = "Tarefa",
+        tipo: str = "Task",
         deadline: Optional[str] = None,
     ) -> str:
         """
@@ -167,7 +167,7 @@ class CharleeAgent(Agent):
         Args:
             descricao: Descrição da tarefa
             big_rock_id: ID do Big Rock associado (opcional)
-            tipo: Tipo da tarefa ("Tarefa", "Compromisso Fixo", "Contínuo")
+            tipo: Tipo da tarefa ("Task", "Compromisso Fixo", "Contínuo")
             deadline: Data limite no formato YYYY-MM-DD (opcional)
         """
         try:
@@ -180,17 +180,17 @@ class CharleeAgent(Agent):
                 except ValueError:
                     return "❌ Formato de data inválido. Use YYYY-MM-DD (ex: 2025-01-15)"
 
-            tarefa_data = schemas.TarefaCreate(
+            tarefa_data = schemas.TaskCreate(
                 descricao=descricao, big_rock_id=big_rock_id, tipo=tipo, deadline=deadline_date
             )
 
-            new_tarefa = crud.create_tarefa(self.database, tarefa_data)
+            new_tarefa = crud.create_task(self.database, tarefa_data)
 
             big_rock_info = ""
             if new_tarefa.big_rock:
                 big_rock_info = f" no Big Rock **{new_tarefa.big_rock.nome}**"
 
-            return f"✅ Tarefa criada com sucesso{big_rock_info}! (ID: {new_tarefa.id})"
+            return f"✅ Task criada com sucesso{big_rock_info}! (ID: {new_tarefa.id})"
 
         except Exception as e:
             return f"❌ Erro ao criar tarefa: {str(e)}"
@@ -203,12 +203,12 @@ class CharleeAgent(Agent):
             tarefa_id: ID da tarefa
         """
         try:
-            tarefa = crud.marcar_tarefa_concluida(self.database, tarefa_id)
+            tarefa = crud.mark_task_completed(self.database, tarefa_id)
 
             if not tarefa:
-                return f"❌ Tarefa com ID {tarefa_id} não encontrada."
+                return f"❌ Task com ID {tarefa_id} não encontrada."
 
-            return f"✅ Tarefa **'{tarefa.descricao}'** marcada como concluída! 🎉"
+            return f"✅ Task **'{tarefa.descricao}'** marcada como concluída! 🎉"
 
         except Exception as e:
             return f"❌ Erro ao marcar tarefa como concluída: {str(e)}"
@@ -241,16 +241,16 @@ class CharleeAgent(Agent):
                 except ValueError:
                     return "❌ Formato de data inválido. Use YYYY-MM-DD"
 
-            update_data = schemas.TarefaUpdate(
+            update_data = schemas.TaskUpdate(
                 descricao=descricao, status=status, big_rock_id=big_rock_id, deadline=deadline_date
             )
 
-            tarefa = crud.update_tarefa(self.database, tarefa_id, update_data)
+            tarefa = crud.update_task(self.database, tarefa_id, update_data)
 
             if not tarefa:
-                return f"❌ Tarefa com ID {tarefa_id} não encontrada."
+                return f"❌ Task com ID {tarefa_id} não encontrada."
 
-            return f"✅ Tarefa **'{tarefa.descricao}'** atualizada com sucesso!"
+            return f"✅ Task **'{tarefa.descricao}'** atualizada com sucesso!"
 
         except Exception as e:
             return f"❌ Erro ao atualizar tarefa: {str(e)}"

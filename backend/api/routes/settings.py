@@ -71,9 +71,9 @@ async def update_user_settings(settings: UserSettings, db: Session = Depends(get
 @router.get("/system", response_model=SystemStats)
 async def get_system_stats(db: Session = Depends(get_db)):
     """Obter estatísticas do sistema."""
-    from database.models import Tarefa, BigRock
+    from database.models import Task, BigRock
 
-    total_tasks = db.query(Tarefa).count()
+    total_tasks = db.query(Task).count()
     total_big_rocks = db.query(BigRock).count()
 
     return {
@@ -102,11 +102,11 @@ async def reset_user_data(confirm: bool = False, db: Session = Depends(get_db)):
 @router.post("/export")
 async def export_user_data(db: Session = Depends(get_db)):
     """Exportar todos os dados do usuário."""
-    from database.models import Tarefa, BigRock
+    from database.models import Task, BigRock
 
     # Buscar todos os dados
     big_rocks = db.query(BigRock).all()
-    tarefas = db.query(Tarefa).all()
+    tarefas = db.query(Task).all()
 
     export_data = {
         "version": "2.0.0",

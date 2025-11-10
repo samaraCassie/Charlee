@@ -15,7 +15,7 @@ class InboxResponse(BaseModel):
     """Response do inbox rápido."""
 
     inbox_text: str
-    tarefas: List[schemas.TarefaResponse]
+    tarefas: List[schemas.TaskResponse]
     total: int
 
 
@@ -45,14 +45,14 @@ async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/hoje", response_model=schemas.TarefaListResponse)
+@router.get("/hoje", response_model=schemas.TaskListResponse)
 async def tarefas_hoje(db: Session = Depends(get_db)):
     """Tarefas com deadline para hoje."""
     from datetime import date
     from database import crud
 
     today = date.today()
-    tarefas = crud.get_tarefas(db, status="Pendente", limit=50)
+    tarefas = crud.get_tasks(db, status="Pendente", limit=50)
 
     # Filtrar por deadline hoje
     tarefas_hoje = [t for t in tarefas if t.deadline and t.deadline.date() == today]
@@ -60,14 +60,14 @@ async def tarefas_hoje(db: Session = Depends(get_db)):
     return {"total": len(tarefas_hoje), "tarefas": tarefas_hoje}
 
 
-@router.get("/atrasadas", response_model=schemas.TarefaListResponse)
+@router.get("/atrasadas", response_model=schemas.TaskListResponse)
 async def tarefas_atrasadas(db: Session = Depends(get_db)):
     """Tarefas com deadline já passado."""
     from datetime import date
     from database import crud
 
     today = date.today()
-    tarefas = crud.get_tarefas(db, status="Pendente", limit=100)
+    tarefas = crud.get_tasks(db, status="Pendente", limit=100)
 
     # Filtrar por deadline atrasada
     tarefas_atrasadas = [t for t in tarefas if t.deadline and t.deadline.date() < today]
@@ -78,7 +78,7 @@ async def tarefas_atrasadas(db: Session = Depends(get_db)):
     return {"total": len(tarefas_atrasadas), "tarefas": tarefas_atrasadas}
 
 
-@router.get("/proxima-semana", response_model=schemas.TarefaListResponse)
+@router.get("/proxima-semana", response_model=schemas.TaskListResponse)
 async def tarefas_proxima_semana(db: Session = Depends(get_db)):
     """Tarefas com deadline nos próximos 7 dias."""
     from datetime import date, timedelta
@@ -87,7 +87,7 @@ async def tarefas_proxima_semana(db: Session = Depends(get_db)):
     today = date.today()
     next_week = today + timedelta(days=7)
 
-    tarefas = crud.get_tarefas(db, status="Pendente", limit=100)
+    tarefas = crud.get_tasks(db, status="Pendente", limit=100)
 
     # Filtrar por deadline próxima semana
     tarefas_semana = [t for t in tarefas if t.deadline and today <= t.deadline.date() <= next_week]

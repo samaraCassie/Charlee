@@ -5,7 +5,7 @@ from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
 from typing import Optional
-from database.models import BigRock, Tarefa
+from database.models import BigRock, Task
 
 
 class CapacityGuardAgent(Agent):
@@ -62,10 +62,10 @@ class CapacityGuardAgent(Agent):
             for br in big_rocks:
                 # Contar tarefas pendentes deste Big Rock
                 tarefas = (
-                    self.database.query(Tarefa)
-                    .filter(Tarefa.big_rock_id == br.id)
-                    .filter(Tarefa.status == "Pendente")
-                    .filter(Tarefa.deadline <= data_limite)
+                    self.database.query(Task)
+                    .filter(Task.big_rock_id == br.id)
+                    .filter(Task.status == "Pendente")
+                    .filter(Task.deadline <= data_limite)
                     .all()
                 )
 
@@ -123,9 +123,9 @@ class CapacityGuardAgent(Agent):
             data_limite = date.today() + timedelta(weeks=3)
 
             tarefas_atuais = (
-                self.database.query(Tarefa)
-                .filter(Tarefa.status == "Pendente")
-                .filter(Tarefa.deadline <= data_limite)
+                self.database.query(Task)
+                .filter(Task.status == "Pendente")
+                .filter(Task.deadline <= data_limite)
                 .count()
             )
 
@@ -183,10 +183,10 @@ class CapacityGuardAgent(Agent):
             data_limite_total = date.today() + timedelta(weeks=3)
 
             tarefas_adiaveis = (
-                self.database.query(Tarefa)
-                .filter(Tarefa.status == "Pendente")
-                .filter(Tarefa.deadline > data_limite_urgente)
-                .filter(Tarefa.deadline <= data_limite_total)
+                self.database.query(Task)
+                .filter(Task.status == "Pendente")
+                .filter(Task.deadline > data_limite_urgente)
+                .filter(Task.deadline <= data_limite_total)
                 .limit(5)
                 .all()
             )
@@ -239,10 +239,10 @@ class CapacityGuardAgent(Agent):
 
             for br in big_rocks:
                 num_tarefas = (
-                    self.database.query(Tarefa)
-                    .filter(Tarefa.big_rock_id == br.id)
-                    .filter(Tarefa.status == "Pendente")
-                    .filter(Tarefa.deadline <= data_limite)
+                    self.database.query(Task)
+                    .filter(Task.big_rock_id == br.id)
+                    .filter(Task.status == "Pendente")
+                    .filter(Task.deadline <= data_limite)
                     .count()
                 )
 

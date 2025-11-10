@@ -5,7 +5,7 @@ from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
 from typing import Optional
-from database.models import CicloMenstrual, PadroesCiclo, Tarefa
+from database.models import MenstrualCycle, CyclePatterns, Task
 
 
 class CycleAwareAgent(Agent):
@@ -68,7 +68,7 @@ class CycleAwareAgent(Agent):
 
             data = datetime.strptime(data_inicio, "%Y-%m-%d").date()
 
-            ciclo = CicloMenstrual(
+            ciclo = MenstrualCycle(
                 data_inicio=data,
                 fase=fase,
                 nivel_energia=nivel_energia,
@@ -93,9 +93,9 @@ class CycleAwareAgent(Agent):
         """
         try:
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -119,9 +119,9 @@ class CycleAwareAgent(Agent):
 
             # Buscar padrões conhecidos para essa fase
             padroes = (
-                self.database.query(PadroesCiclo)
-                .filter(PadroesCiclo.fase == ultimo_registro.fase)
-                .filter(PadroesCiclo.confianca_score > 0.5)
+                self.database.query(CyclePatterns)
+                .filter(CyclePatterns.fase == ultimo_registro.fase)
+                .filter(CyclePatterns.confianca_score > 0.5)
                 .first()
             )
 
@@ -202,9 +202,9 @@ class CycleAwareAgent(Agent):
         # Se não passou fase, usa a atual
         if not fase:
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -243,9 +243,9 @@ class CycleAwareAgent(Agent):
         try:
             # Obter fase atual
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -258,10 +258,10 @@ class CycleAwareAgent(Agent):
             data_limite = date.today() + timedelta(days=dias_futuro)
 
             tarefas_proximas = (
-                self.database.query(Tarefa)
-                .filter(Tarefa.status == "Pendente")
-                .filter(Tarefa.deadline.isnot(None))
-                .filter(Tarefa.deadline <= data_limite)
+                self.database.query(Task)
+                .filter(Task.status == "Pendente")
+                .filter(Task.deadline.isnot(None))
+                .filter(Task.deadline <= data_limite)
                 .all()
             )
 

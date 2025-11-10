@@ -11,9 +11,9 @@ from pydantic import BaseModel, Field, ConfigDict
 class BigRockBase(BaseModel):
     """Base schema for BigRock."""
 
-    nome: str = Field(..., min_length=1, max_length=100)
-    cor: Optional[str] = Field(None, max_length=20)
-    ativo: bool = True
+    name: str = Field(..., min_length=1, max_length=100)
+    color: Optional[str] = Field(None, max_length=20)
+    active: bool = True
 
 
 class BigRockCreate(BigRockBase):
@@ -25,56 +25,56 @@ class BigRockCreate(BigRockBase):
 class BigRockUpdate(BaseModel):
     """Schema for updating a BigRock."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=100)
-    cor: Optional[str] = Field(None, max_length=20)
-    ativo: Optional[bool] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    color: Optional[str] = Field(None, max_length=20)
+    active: Optional[bool] = None
 
 
 class BigRockResponse(BigRockBase):
     """Schema for BigRock response."""
 
     id: int
-    criado_em: datetime
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-# ==================== Tarefa Schemas ====================
+# ==================== Task Schemas ====================
 
 
-class TarefaBase(BaseModel):
-    """Base schema for Tarefa."""
+class TaskBase(BaseModel):
+    """Base schema for Task."""
 
-    descricao: str = Field(..., min_length=1)
-    tipo: Literal["Compromisso Fixo", "Tarefa", "Contínuo"] = "Tarefa"
+    description: str = Field(..., min_length=1)
+    type: Literal["fixed_appointment", "task", "continuous"] = "task"
     deadline: Optional[date] = None
     big_rock_id: Optional[int] = None
 
 
-class TarefaCreate(TarefaBase):
-    """Schema for creating a Tarefa."""
+class TaskCreate(TaskBase):
+    """Schema for creating a Task."""
 
     pass
 
 
-class TarefaUpdate(BaseModel):
-    """Schema for updating a Tarefa."""
+class TaskUpdate(BaseModel):
+    """Schema for updating a Task."""
 
-    descricao: Optional[str] = Field(None, min_length=1)
-    tipo: Optional[Literal["Compromisso Fixo", "Tarefa", "Contínuo"]] = None
+    description: Optional[str] = Field(None, min_length=1)
+    type: Optional[Literal["fixed_appointment", "task", "continuous"]] = None
     deadline: Optional[date] = None
     big_rock_id: Optional[int] = None
-    status: Optional[Literal["Pendente", "Em Progresso", "Concluída", "Cancelada"]] = None
+    status: Optional[Literal["pending", "in_progress", "completed", "cancelled"]] = None
 
 
-class TarefaResponse(TarefaBase):
-    """Schema for Tarefa response."""
+class TaskResponse(TaskBase):
+    """Schema for Task response."""
 
     id: int
     status: str
-    criado_em: datetime
-    atualizado_em: datetime
-    concluido_em: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: Optional[datetime] = None
     big_rock: Optional[BigRockResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -83,11 +83,11 @@ class TarefaResponse(TarefaBase):
 # ==================== List Responses ====================
 
 
-class TarefaListResponse(BaseModel):
+class TaskListResponse(BaseModel):
     """Schema for list of tasks."""
 
     total: int
-    tarefas: list[TarefaResponse]
+    tasks: list[TaskResponse]
 
 
 class BigRockListResponse(BaseModel):
