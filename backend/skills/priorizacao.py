@@ -2,8 +2,8 @@
 
 from datetime import date, datetime
 from sqlalchemy.orm import Session
-from database.models import Tarefa, BigRock
-from typing import List, Dict
+from database.models import Tarefa
+from typing import List, Optional
 
 
 class SistemaPriorizacao:
@@ -131,19 +131,12 @@ class SistemaPriorizacao:
 
         Compromisso Fixo > Tarefa > Contínuo
         """
-        tipo_scores = {
-            "Compromisso Fixo": 1.0,
-            "Tarefa": 0.7,
-            "Contínuo": 0.4
-        }
+        tipo_scores = {"Compromisso Fixo": 1.0, "Tarefa": 0.7, "Contínuo": 0.4}
 
         return tipo_scores.get(tarefa.tipo, 0.5)
 
     def priorizar_tarefas(
-        self,
-        status: str = "Pendente",
-        big_rock_id: int = None,
-        limite: int = 20
+        self, status: str = "Pendente", big_rock_id: Optional[int] = None, limite: int = 20
     ) -> List[Tarefa]:
         """
         Retorna lista de tarefas priorizadas.
@@ -174,11 +167,7 @@ class SistemaPriorizacao:
         self.db.commit()
 
         # Ordenar por score (maior = mais prioritário)
-        tarefas_priorizadas = sorted(
-            tarefas,
-            key=lambda t: t.pontuacao_prioridade,
-            reverse=True
-        )
+        tarefas_priorizadas = sorted(tarefas, key=lambda t: t.pontuacao_prioridade, reverse=True)
 
         return tarefas_priorizadas[:limite]
 

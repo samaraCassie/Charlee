@@ -16,21 +16,13 @@ def get_tarefas(
     tipo: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get list of Tarefas with optional filters."""
     tarefas = crud.get_tarefas(
-        db,
-        skip=skip,
-        limit=limit,
-        status=status,
-        big_rock_id=big_rock_id,
-        tipo=tipo
+        db, skip=skip, limit=limit, status=status, big_rock_id=big_rock_id, tipo=tipo
     )
-    return {
-        "total": len(tarefas),
-        "tarefas": tarefas
-    }
+    return {"total": len(tarefas), "tarefas": tarefas}
 
 
 @router.get("/{tarefa_id}", response_model=schemas.TarefaResponse)
@@ -43,19 +35,14 @@ def get_tarefa(tarefa_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.TarefaResponse, status_code=201)
-def create_tarefa(
-    tarefa: schemas.TarefaCreate,
-    db: Session = Depends(get_db)
-):
+def create_tarefa(tarefa: schemas.TarefaCreate, db: Session = Depends(get_db)):
     """Create a new Tarefa."""
     return crud.create_tarefa(db, tarefa)
 
 
 @router.patch("/{tarefa_id}", response_model=schemas.TarefaResponse)
 def update_tarefa(
-    tarefa_id: int,
-    tarefa_update: schemas.TarefaUpdate,
-    db: Session = Depends(get_db)
+    tarefa_id: int, tarefa_update: schemas.TarefaUpdate, db: Session = Depends(get_db)
 ):
     """Update a Tarefa."""
     tarefa = crud.update_tarefa(db, tarefa_id, tarefa_update)
@@ -65,10 +52,7 @@ def update_tarefa(
 
 
 @router.post("/{tarefa_id}/concluir", response_model=schemas.TarefaResponse)
-def marcar_tarefa_concluida(
-    tarefa_id: int,
-    db: Session = Depends(get_db)
-):
+def marcar_tarefa_concluida(tarefa_id: int, db: Session = Depends(get_db)):
     """Mark a Tarefa as completed."""
     tarefa = crud.marcar_tarefa_concluida(db, tarefa_id)
     if not tarefa:
@@ -77,10 +61,7 @@ def marcar_tarefa_concluida(
 
 
 @router.post("/{tarefa_id}/reabrir", response_model=schemas.TarefaResponse)
-def reabrir_tarefa(
-    tarefa_id: int,
-    db: Session = Depends(get_db)
-):
+def reabrir_tarefa(tarefa_id: int, db: Session = Depends(get_db)):
     """Reopen a completed Tarefa."""
     tarefa = crud.reabrir_tarefa(db, tarefa_id)
     if not tarefa:

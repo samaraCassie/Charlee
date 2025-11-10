@@ -3,10 +3,9 @@
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import date, timedelta
-from typing import Dict, List, Optional
-from database.models import BigRock, Tarefa, CargaTrabalho
+from typing import Optional
+from database.models import BigRock, Tarefa
 
 
 class CapacityGuardAgent(Agent):
@@ -38,8 +37,8 @@ class CapacityGuardAgent(Agent):
                 self.calcular_carga_atual,
                 self.avaliar_novo_compromisso,
                 self.sugerir_tradeoffs,
-                self.analisar_big_rocks
-            ]
+                self.analisar_big_rocks,
+            ],
         )
 
     def calcular_carga_atual(self, proximas_semanas: int = 3) -> str:
@@ -53,7 +52,7 @@ class CapacityGuardAgent(Agent):
             data_limite = date.today() + timedelta(weeks=proximas_semanas)
 
             # Buscar todos os Big Rocks ativos
-            big_rocks = self.database.query(BigRock).filter(BigRock.ativo == True).all()
+            big_rocks = self.database.query(BigRock).filter(BigRock.ativo).all()
 
             result = f"📊 **Análise de Carga - Próximas {proximas_semanas} semanas**\n\n"
 
@@ -109,10 +108,7 @@ class CapacityGuardAgent(Agent):
             return f"❌ Erro: {str(e)}"
 
     def avaliar_novo_compromisso(
-        self,
-        nome_compromisso: str,
-        tarefas_estimadas: int,
-        big_rock_nome: Optional[str] = None
+        self, nome_compromisso: str, tarefas_estimadas: int, big_rock_nome: Optional[str] = None
     ) -> str:
         """
         Avalia se há capacidade para um novo compromisso.
@@ -135,7 +131,7 @@ class CapacityGuardAgent(Agent):
 
             # Capacidade máxima (considerando 5 tarefas/semana como saudável)
             capacidade_saudavel = 15  # 3 semanas * 5 tarefas
-            capacidade_maxima = 25    # Limite absoluto
+            capacidade_maxima = 25  # Limite absoluto
 
             carga_atual = tarefas_atuais
             carga_projetada = carga_atual + tarefas_estimadas
@@ -143,9 +139,11 @@ class CapacityGuardAgent(Agent):
             percentual_projetado = (carga_projetada / capacidade_maxima) * 100
 
             result = f"🔍 **Avaliação: '{nome_compromisso}'**\n\n"
-            result += f"📊 **Análise de Capacidade (3 semanas):**\n"
+            result += "📊 **Análise de Capacidade (3 semanas):**\n"
             result += f"• Carga atual: {carga_atual} tarefas ({percentual_atual:.0f}%)\n"
-            result += f"• Com novo compromisso: {carga_projetada} tarefas ({percentual_projetado:.0f}%)\n"
+            result += (
+                f"• Com novo compromisso: {carga_projetada} tarefas ({percentual_projetado:.0f}%)\n"
+            )
             result += f"• Capacidade saudável: {capacidade_saudavel} tarefas\n"
             result += f"• Limite máximo: {capacidade_maxima} tarefas\n\n"
 
@@ -165,9 +163,9 @@ class CapacityGuardAgent(Agent):
 
             else:
                 result += "🚨 **DECISÃO: NÃO ACEITAR (sem trade-offs)**\n\n"
-                result += f"⚠️ **SOBRECARGA DETECTADA!**\n\n"
+                result += "⚠️ **SOBRECARGA DETECTADA!**\n\n"
                 result += f"Para adicionar '{nome_compromisso}' ({tarefas_estimadas} tarefas), "
-                result += f"você **PRECISA** fazer trade-offs:\n\n"
+                result += "você **PRECISA** fazer trade-offs:\n\n"
 
                 # Buscar opções de trade-off
                 result += self._gerar_opcoes_tradeoff(tarefas_estimadas)
@@ -230,7 +228,7 @@ class CapacityGuardAgent(Agent):
         Identifica se algum pilar está sendo negligenciado.
         """
         try:
-            big_rocks = self.database.query(BigRock).filter(BigRock.ativo == True).all()
+            big_rocks = self.database.query(BigRock).filter(BigRock.ativo).all()
 
             # Contar tarefas por Big Rock (próximas 4 semanas)
             data_limite = date.today() + timedelta(weeks=4)

@@ -13,7 +13,7 @@ from api.routes import (
     priorizacao,
     inbox,
     analytics,
-    settings
+    settings,
 )
 
 
@@ -30,7 +30,7 @@ app = FastAPI(
     title="Charlee API",
     description="API do sistema de inteligência pessoal Charlee",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # ========================================
@@ -80,15 +80,11 @@ async def root():
         "status": "online",
         "cors": "enabled",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "charlee-backend",
-        "version": "2.0.0"
-    }
+    return {"status": "healthy", "service": "charlee-backend", "version": "2.0.0"}

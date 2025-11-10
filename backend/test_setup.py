@@ -12,7 +12,7 @@ def test_database_connection():
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
+            _ = conn.execute(text("SELECT 1"))
             print("✅ Database connection successful!")
             return True
     except Exception as e:
@@ -51,11 +51,8 @@ def test_models():
 
             # Create a Tarefa
             from datetime import date
-            tarefa = Tarefa(
-                descricao="Test Task",
-                big_rock_id=big_rock.id,
-                deadline=date.today()
-            )
+
+            tarefa = Tarefa(descricao="Test Task", big_rock_id=big_rock.id, deadline=date.today())
             session.add(tarefa)
             session.commit()
             session.refresh(tarefa)
@@ -80,17 +77,13 @@ def main():
     print("🌸 Charlee Backend Setup Test\n")
     print(f"Database URL: {settings.database_url}\n")
 
-    tests = [
-        test_database_connection,
-        test_create_tables,
-        test_models
-    ]
+    tests = [test_database_connection, test_create_tables, test_models]
 
     results = []
     for test in tests:
         results.append(test())
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     if all(results):
         print("✅ All tests passed! Backend is ready to use.")
         return 0

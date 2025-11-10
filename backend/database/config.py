@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
 
 
 class Settings(BaseSettings):
@@ -21,9 +20,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False
     )
 
 
@@ -32,11 +29,7 @@ settings = Settings()
 
 # Create SQLAlchemy engine
 engine = create_engine(
-    settings.database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
+    settings.database_url, echo=settings.debug, pool_pre_ping=True, pool_size=5, max_overflow=10
 )
 
 # Create SessionLocal class

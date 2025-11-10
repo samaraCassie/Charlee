@@ -7,8 +7,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 # ==================== Big Rock Schemas ====================
 
+
 class BigRockBase(BaseModel):
     """Base schema for BigRock."""
+
     nome: str = Field(..., min_length=1, max_length=100)
     cor: Optional[str] = Field(None, max_length=20)
     ativo: bool = True
@@ -16,11 +18,13 @@ class BigRockBase(BaseModel):
 
 class BigRockCreate(BigRockBase):
     """Schema for creating a BigRock."""
+
     pass
 
 
 class BigRockUpdate(BaseModel):
     """Schema for updating a BigRock."""
+
     nome: Optional[str] = Field(None, min_length=1, max_length=100)
     cor: Optional[str] = Field(None, max_length=20)
     ativo: Optional[bool] = None
@@ -28,6 +32,7 @@ class BigRockUpdate(BaseModel):
 
 class BigRockResponse(BigRockBase):
     """Schema for BigRock response."""
+
     id: int
     criado_em: datetime
 
@@ -36,8 +41,10 @@ class BigRockResponse(BigRockBase):
 
 # ==================== Tarefa Schemas ====================
 
+
 class TarefaBase(BaseModel):
     """Base schema for Tarefa."""
+
     descricao: str = Field(..., min_length=1)
     tipo: Literal["Compromisso Fixo", "Tarefa", "Contínuo"] = "Tarefa"
     deadline: Optional[date] = None
@@ -46,11 +53,13 @@ class TarefaBase(BaseModel):
 
 class TarefaCreate(TarefaBase):
     """Schema for creating a Tarefa."""
+
     pass
 
 
 class TarefaUpdate(BaseModel):
     """Schema for updating a Tarefa."""
+
     descricao: Optional[str] = Field(None, min_length=1)
     tipo: Optional[Literal["Compromisso Fixo", "Tarefa", "Contínuo"]] = None
     deadline: Optional[date] = None
@@ -60,6 +69,7 @@ class TarefaUpdate(BaseModel):
 
 class TarefaResponse(TarefaBase):
     """Schema for Tarefa response."""
+
     id: int
     status: str
     criado_em: datetime
@@ -72,13 +82,16 @@ class TarefaResponse(TarefaBase):
 
 # ==================== List Responses ====================
 
+
 class TarefaListResponse(BaseModel):
     """Schema for list of tasks."""
+
     total: int
     tarefas: list[TarefaResponse]
 
 
 class BigRockListResponse(BaseModel):
     """Schema for list of big rocks."""
+
     total: int
     big_rocks: list[BigRockResponse]

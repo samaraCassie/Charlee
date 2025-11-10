@@ -1,19 +1,13 @@
 """CRUD operations for database models."""
 
-from datetime import date
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
 from database.models import BigRock, Tarefa
-from database.schemas import (
-    BigRockCreate,
-    BigRockUpdate,
-    TarefaCreate,
-    TarefaUpdate
-)
+from database.schemas import BigRockCreate, BigRockUpdate, TarefaCreate, TarefaUpdate
 
 
 # ==================== Big Rock CRUD ====================
+
 
 def get_big_rock(db: Session, big_rock_id: int) -> Optional[BigRock]:
     """Get a single BigRock by ID."""
@@ -21,16 +15,13 @@ def get_big_rock(db: Session, big_rock_id: int) -> Optional[BigRock]:
 
 
 def get_big_rocks(
-    db: Session,
-    skip: int = 0,
-    limit: int = 100,
-    ativo_apenas: bool = False
+    db: Session, skip: int = 0, limit: int = 100, ativo_apenas: bool = False
 ) -> list[BigRock]:
     """Get list of BigRocks."""
     query = db.query(BigRock)
 
     if ativo_apenas:
-        query = query.filter(BigRock.ativo == True)
+        query = query.filter(BigRock.ativo)
 
     return query.offset(skip).limit(limit).all()
 
@@ -45,9 +36,7 @@ def create_big_rock(db: Session, big_rock: BigRockCreate) -> BigRock:
 
 
 def update_big_rock(
-    db: Session,
-    big_rock_id: int,
-    big_rock_update: BigRockUpdate
+    db: Session, big_rock_id: int, big_rock_update: BigRockUpdate
 ) -> Optional[BigRock]:
     """Update a BigRock."""
     db_big_rock = get_big_rock(db, big_rock_id)
@@ -76,6 +65,7 @@ def delete_big_rock(db: Session, big_rock_id: int) -> bool:
 
 # ==================== Tarefa CRUD ====================
 
+
 def get_tarefa(db: Session, tarefa_id: int) -> Optional[Tarefa]:
     """Get a single Tarefa by ID."""
     return db.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
@@ -87,7 +77,7 @@ def get_tarefas(
     limit: int = 100,
     status: Optional[str] = None,
     big_rock_id: Optional[int] = None,
-    tipo: Optional[str] = None
+    tipo: Optional[str] = None,
 ) -> list[Tarefa]:
     """Get list of Tarefas with optional filters."""
     query = db.query(Tarefa)
@@ -113,11 +103,7 @@ def create_tarefa(db: Session, tarefa: TarefaCreate) -> Tarefa:
     return db_tarefa
 
 
-def update_tarefa(
-    db: Session,
-    tarefa_id: int,
-    tarefa_update: TarefaUpdate
-) -> Optional[Tarefa]:
+def update_tarefa(db: Session, tarefa_id: int, tarefa_update: TarefaUpdate) -> Optional[Tarefa]:
     """Update a Tarefa."""
     db_tarefa = get_tarefa(db, tarefa_id)
     if not db_tarefa:

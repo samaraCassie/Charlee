@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List
 from database.config import get_db
 from database import schemas
 from skills.priorizacao import create_sistema_priorizacao
@@ -13,14 +12,12 @@ router = APIRouter()
 
 class InboxResponse(BaseModel):
     """Response do inbox rápido."""
+
     inbox: str
 
 
 @router.get("/inbox", response_model=InboxResponse)
-async def inbox_rapido(
-    limite: int = 10,
-    db: Session = Depends(get_db)
-):
+async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
     """
     Inbox Rápido - Top tarefas priorizadas.
 
@@ -37,10 +34,7 @@ async def inbox_rapido(
 
 
 @router.post("/recalcular")
-async def recalcular_prioridades(
-    big_rock_id: int | None = None,
-    db: Session = Depends(get_db)
-):
+async def recalcular_prioridades(big_rock_id: int | None = None, db: Session = Depends(get_db)):
     """
     Recalcula prioridades de todas as tarefas pendentes.
 
@@ -48,35 +42,20 @@ async def recalcular_prioridades(
     """
     sistema = create_sistema_priorizacao(db)
 
-    tarefas_priorizadas = sistema.priorizar_tarefas(
-        status="Pendente",
-        big_rock_id=big_rock_id
-    )
+    tarefas_priorizadas = sistema.priorizar_tarefas(status="Pendente", big_rock_id=big_rock_id)
 
-    return {
-        "message": "Prioridades recalculadas",
-        "tarefas_processadas": len(tarefas_priorizadas)
-    }
+    return {"message": "Prioridades recalculadas", "tarefas_processadas": len(tarefas_priorizadas)}
 
 
 @router.get("/tarefas-priorizadas", response_model=schemas.TarefaListResponse)
 async def listar_tarefas_priorizadas(
-    big_rock_id: int | None = None,
-    limite: int = 20,
-    db: Session = Depends(get_db)
+    big_rock_id: int | None = None, limite: int = 20, db: Session = Depends(get_db)
 ):
     """
     Lista tarefas ordenadas por prioridade calculada.
     """
     sistema = create_sistema_priorizacao(db)
 
-    tarefas = sistema.priorizar_tarefas(
-        status="Pendente",
-        big_rock_id=big_rock_id,
-        limite=limite
-    )
+    tarefas = sistema.priorizar_tarefas(status="Pendente", big_rock_id=big_rock_id, limite=limite)
 
-    return {
-        "total": len(tarefas),
-        "tarefas": tarefas
-    }
+    return {"total": len(tarefas), "tarefas": tarefas}
