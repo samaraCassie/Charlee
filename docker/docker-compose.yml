@@ -3,9 +3,9 @@ services:
     image: ankane/pgvector:latest
     container_name: charlee_db
     environment:
-      POSTGRES_USER: charlee
-      POSTGRES_PASSWORD: charlee123
-      POSTGRES_DB: charlee_db
+      POSTGRES_USER: ${POSTGRES_USER:-charlee}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-charlee_db}
     ports:
       - "5432:5432"
     volumes:
