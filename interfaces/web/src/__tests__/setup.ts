@@ -3,9 +3,7 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
 declare global {
-  // eslint-disable-next-line no-var
   var fetch: ReturnType<typeof vi.fn>
-  // eslint-disable-next-line no-var
   var localStorage: Storage
 }
 
