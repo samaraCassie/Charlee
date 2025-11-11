@@ -16,15 +16,27 @@ from api.routes import (
     analytics,
     settings,
 )
+from api.middleware.rate_limit import (
+    limiter,
+    rate_limit_exceeded_handler,
+    SlowAPIMiddleware,
+    RateLimitExceeded,
+)
+from api.middleware.logging_config import get_logger
+from api.middleware.request_logging import RequestLoggingMiddleware
+
+# Initialize logger
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan events for FastAPI app."""
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created/verified")
+    logger.info("Database tables created/verified")
+    logger.info("Charlee backend started successfully")
     yield
-    print("👋 Shutting down Charlee...")
+    logger.info("Shutting down Charlee backend...")
 
 
 app = FastAPI(
@@ -52,6 +64,7 @@ app = FastAPI(
 
 This API implements:
 - Restrictive CORS policies
+- Rate limiting (60 requests/minute, 1000/hour, 10000/day)
 - Input sanitization and validation
 - SQL injection protection via SQLAlchemy ORM
 - XSS prevention through HTML escaping
@@ -146,6 +159,18 @@ app.add_middleware(
     # Cache preflight requests for 1 hour
     max_age=3600,
 )
+
+# ========================================
+# RATE LIMITING
+# ========================================
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# ========================================
+# REQUEST LOGGING
+# ========================================
+app.add_middleware(RequestLoggingMiddleware)
 
 # ========================================
 # ROUTERS V1

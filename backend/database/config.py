@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://charlee:charlee123@localhost:5432/charlee_db"
 
+    # Database connection pool settings
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_pool_timeout: int = 30
+    db_pool_recycle: int = 3600  # Recycle connections after 1 hour
+
     # Anthropic API
     anthropic_api_key: str = ""
 
@@ -27,9 +33,15 @@ class Settings(BaseSettings):
 # Initialize settings
 settings = Settings()
 
-# Create SQLAlchemy engine
+# Create SQLAlchemy engine with connection pooling
 engine = create_engine(
-    settings.database_url, echo=settings.debug, pool_pre_ping=True, pool_size=5, max_overflow=10
+    settings.database_url,
+    echo=settings.debug,
+    pool_pre_ping=True,  # Verify connections before using them
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_timeout=settings.db_pool_timeout,
+    pool_recycle=settings.db_pool_recycle,  # Prevent stale connections
 )
 
 # Create SessionLocal class
