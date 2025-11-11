@@ -51,6 +51,7 @@ export OPENAI_API_KEY="sk-test-key"
 export SECRET_KEY="test-secret"
 export RATE_LIMIT_ENABLED=false
 export LOG_LEVEL=ERROR
+export PYTHONPATH="$(pwd)"
 
 if python -m pytest tests/ -q --tb=line 2>&1 | tee /tmp/pytest_output.txt | grep -q "passed"; then
   TESTS=$(tail -1 /tmp/pytest_output.txt)
