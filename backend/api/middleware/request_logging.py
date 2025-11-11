@@ -63,8 +63,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-            # Add request ID to response headers
+            # Add tracing headers to response
             response.headers["X-Request-ID"] = request_id
+            response.headers["X-Response-Time"] = f"{round(duration * 1000, 2)}ms"
 
             return response
 

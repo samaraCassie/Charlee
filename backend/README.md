@@ -2,6 +2,11 @@
 
 FastAPI backend for the Charlee personal intelligence system.
 
+![Tests](https://img.shields.io/badge/tests-90%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-62%25-yellow)
+![Python](https://img.shields.io/badge/python-3.12+-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0+-00C7B7)
+
 ## 🛠️ Tech Stack
 
 - **Python** 3.12+

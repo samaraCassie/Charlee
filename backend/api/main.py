@@ -24,6 +24,8 @@ from api.middleware.rate_limit import (
 )
 from api.middleware.logging_config import get_logger
 from api.middleware.request_logging import RequestLoggingMiddleware
+from api.middleware.error_handler import GlobalErrorHandlerMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -168,6 +170,11 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # ========================================
+# ERROR HANDLING
+# ========================================
+app.add_middleware(GlobalErrorHandlerMiddleware)
+
+# ========================================
 # REQUEST LOGGING
 # ========================================
 app.add_middleware(RequestLoggingMiddleware)
@@ -188,6 +195,12 @@ app.include_router(priorizacao.router, prefix="/api/v2/priorizacao", tags=["Prio
 app.include_router(inbox.router, prefix="/api/v2/inbox", tags=["Inbox (V2)"])
 app.include_router(analytics.router, prefix="/api/v2/analytics", tags=["Analytics (V2)"])
 app.include_router(settings.router, prefix="/api/v2/settings", tags=["Settings (V2)"])
+
+# ========================================
+# PROMETHEUS METRICS
+# ========================================
+# Instrument the app with Prometheus metrics
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
 
 
 # ========================================
