@@ -58,7 +58,7 @@ def delete_big_rock(db: Session, big_rock_id: int) -> bool:
     if not db_big_rock:
         return False
 
-    db_big_rock.active = False
+    db_big_rock.active = False  # type: ignore[assignment]
     db.commit()
     return True
 

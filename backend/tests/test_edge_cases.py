@@ -1,6 +1,5 @@
 """Edge case tests for API robustness."""
 
-import pytest
 from fastapi import status
 from datetime import date, timedelta
 

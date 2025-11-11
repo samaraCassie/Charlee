@@ -2,7 +2,7 @@
 
 from datetime import datetime, date
 from typing import Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationError
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from api.security import sanitize_string, validate_color_hex
 
 

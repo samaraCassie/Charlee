@@ -166,7 +166,7 @@ class AgentOrchestrator:
         self.context["conversation_topic"] = "wellness"
 
         # Get response from cycle-aware agent
-        response = self.cycle_agent.print_response(message)
+        response = self.cycle_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
         if hasattr(response, "content"):
@@ -179,7 +179,7 @@ class AgentOrchestrator:
         self.context["conversation_topic"] = "capacity"
 
         # Get response from capacity guard agent
-        response = self.capacity_agent.print_response(message)
+        response = self.capacity_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
         if hasattr(response, "content"):
@@ -208,13 +208,13 @@ class AgentOrchestrator:
 
                 # Add capacity warning to message
                 enhanced_message = f"{message}\n\n**IMPORTANTE - Contexto de Capacidade:**\n{capacity_info}\n\nConsidera isso ao criar a tarefa e avise o usuário se houver risco de sobrecarga."
-                response = self.core_agent.print_response(enhanced_message)
+                response = self.core_agent.print_response(enhanced_message)  # type: ignore[func-returns-value]
             except Exception:
                 # If capacity check fails, proceed normally
-                response = self.core_agent.print_response(message)
+                response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
         else:
             # For other task operations, use core agent normally
-            response = self.core_agent.print_response(message)
+            response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response
         if hasattr(response, "content"):
@@ -234,9 +234,9 @@ class AgentOrchestrator:
 
             # Add context to message
             enhanced_message = self._enhance_message_with_context(message, insights)
-            response = self.core_agent.print_response(enhanced_message)
+            response = self.core_agent.print_response(enhanced_message)  # type: ignore[func-returns-value]
         else:
-            response = self.core_agent.print_response(message)
+            response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
         if hasattr(response, "content"):

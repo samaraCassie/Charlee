@@ -166,7 +166,7 @@ app.add_middleware(
 # RATE LIMITING
 # ========================================
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
 # ========================================
@@ -232,7 +232,7 @@ async def health_check():
         "version": "2.0.0",
         "timestamp": datetime.utcnow().isoformat(),
         "status": "healthy",
-        "checks": {}
+        "checks": {},
     }
 
     # Check database connection
@@ -242,13 +242,13 @@ async def health_check():
         db.close()
         health_status["checks"]["database"] = {
             "status": "healthy",
-            "message": "Database connection successful"
+            "message": "Database connection successful",
         }
     except Exception as e:
         health_status["status"] = "unhealthy"
         health_status["checks"]["database"] = {
             "status": "unhealthy",
-            "message": f"Database connection failed: {str(e)}"
+            "message": f"Database connection failed: {str(e)}",
         }
 
     # Check if critical tables exist
@@ -259,27 +259,27 @@ async def health_check():
         db.close()
         health_status["checks"]["tables"] = {
             "status": "healthy",
-            "message": "Critical tables exist"
+            "message": "Critical tables exist",
         }
     except Exception as e:
         health_status["status"] = "degraded"
         health_status["checks"]["tables"] = {
             "status": "unhealthy",
-            "message": f"Tables check failed: {str(e)}"
+            "message": f"Tables check failed: {str(e)}",
         }
 
     # Environment info
     health_status["environment"] = {
         "python_version": os.sys.version.split()[0],
-        "debug_mode": os.getenv("DEBUG", "false").lower() == "true"
+        "debug_mode": os.getenv("DEBUG", "false").lower() == "true",
     }
 
     # Return appropriate HTTP status code
     if health_status["status"] == "unhealthy":
         from fastapi.responses import JSONResponse
+
         return JSONResponse(
-            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
-            content=health_status
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE, content=health_status
         )
 
     return health_status

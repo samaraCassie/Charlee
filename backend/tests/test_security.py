@@ -1,6 +1,5 @@
 """Security tests for input sanitization and validation."""
 
-import pytest
 from api.security import (
     sanitize_html,
     sanitize_string,

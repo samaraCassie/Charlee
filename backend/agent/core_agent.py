@@ -100,7 +100,7 @@ class CharleeAgent(Agent):
             cor: Cor para UI futura (opcional, ex: "#FF5733")
         """
         try:
-            big_rock_data = schemas.BigRockCreate(nome=nome, cor=cor)
+            big_rock_data = schemas.BigRockCreate(name=nome, color=cor)
             new_big_rock = crud.create_big_rock(self.database, big_rock_data)
 
             return (
@@ -181,7 +181,7 @@ class CharleeAgent(Agent):
                     return "❌ Formato de data inválido. Use YYYY-MM-DD (ex: 2025-01-15)"
 
             tarefa_data = schemas.TaskCreate(
-                descricao=descricao, big_rock_id=big_rock_id, tipo=tipo, deadline=deadline_date
+                description=descricao, big_rock_id=big_rock_id, type=tipo, deadline=deadline_date
             )
 
             new_tarefa = crud.create_task(self.database, tarefa_data)
@@ -242,7 +242,7 @@ class CharleeAgent(Agent):
                     return "❌ Formato de data inválido. Use YYYY-MM-DD"
 
             update_data = schemas.TaskUpdate(
-                descricao=descricao, status=status, big_rock_id=big_rock_id, deadline=deadline_date
+                description=descricao, status=status, big_rock_id=big_rock_id, deadline=deadline_date  # type: ignore[arg-type]
             )
 
             tarefa = crud.update_task(self.database, tarefa_id, update_data)

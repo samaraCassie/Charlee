@@ -1,6 +1,5 @@
 """Integration tests for complete workflows."""
 
-import pytest
 from fastapi import status
 from datetime import date, timedelta
 
