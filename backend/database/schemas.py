@@ -2,7 +2,8 @@
 
 from datetime import datetime, date
 from typing import Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator, ValidationError
+from api.security import sanitize_string, validate_color_hex
 
 
 # ==================== Big Rock Schemas ====================
@@ -14,6 +15,27 @@ class BigRockBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     color: Optional[str] = Field(None, max_length=20)
     active: bool = True
+
+    @field_validator("name")
+    @classmethod
+    def sanitize_name(cls, v: str) -> str:
+        """Sanitize name to prevent XSS."""
+        if not v:
+            raise ValueError("Name cannot be empty")
+        sanitized = sanitize_string(v, max_length=100, allow_newlines=False)
+        if not sanitized.strip():
+            raise ValueError("Name cannot be empty after sanitization")
+        return sanitized
+
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, v: Optional[str]) -> Optional[str]:
+        """Validate color is a valid hex code."""
+        if v is None:
+            return v
+        if not validate_color_hex(v):
+            raise ValueError(f"Invalid hex color format: {v}. Expected format: #RRGGBB")
+        return v
 
 
 class BigRockCreate(BigRockBase):
@@ -49,6 +71,25 @@ class TaskBase(BaseModel):
     type: Literal["fixed_appointment", "task", "continuous"] = "task"
     deadline: Optional[date] = None
     big_rock_id: Optional[int] = None
+
+    @field_validator("description")
+    @classmethod
+    def sanitize_description(cls, v: str) -> str:
+        """Sanitize description to prevent XSS."""
+        if not v:
+            raise ValueError("Description cannot be empty")
+        sanitized = sanitize_string(v, max_length=5000, allow_newlines=True)
+        if not sanitized.strip():
+            raise ValueError("Description cannot be empty after sanitization")
+        return sanitized
+
+    @field_validator("big_rock_id")
+    @classmethod
+    def validate_big_rock_id(cls, v: Optional[int]) -> Optional[int]:
+        """Validate big_rock_id is positive if provided."""
+        if v is not None and v <= 0:
+            raise ValueError("big_rock_id must be a positive integer")
+        return v
 
 
 class TaskCreate(TaskBase):
