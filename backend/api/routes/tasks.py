@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from database.config import get_db
 from database import crud, schemas
+from api.cache import invalidate_pattern
 
 router = APIRouter()
 
@@ -84,9 +85,14 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     },
 )
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
-    """Create a new Task."""
+    """Create a new Task and invalidate cache."""
     try:
-        return crud.create_task(db, task)
+        result = crud.create_task(db, task)
+
+        # Invalidate all task caches
+        invalidate_pattern("tasks:*")
+
+        return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -103,10 +109,14 @@ def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
     },
 )
 def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(get_db)):
-    """Update a Task."""
+    """Update a Task and invalidate cache."""
     task = crud.update_task(db, task_id, task_update)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Invalidate all task caches
+    invalidate_pattern("tasks:*")
+
     return task
 
 
@@ -121,10 +131,14 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Dep
     },
 )
 def mark_task_completed(task_id: int, db: Session = Depends(get_db)):
-    """Mark a Task as completed."""
+    """Mark a Task as completed and invalidate cache."""
     task = crud.mark_task_completed(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Invalidate all task caches
+    invalidate_pattern("tasks:*")
+
     return task
 
 
@@ -139,10 +153,14 @@ def mark_task_completed(task_id: int, db: Session = Depends(get_db)):
     },
 )
 def reopen_task(task_id: int, db: Session = Depends(get_db)):
-    """Reopen a completed Task."""
+    """Reopen a completed Task and invalidate cache."""
     task = crud.reopen_task(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Invalidate all task caches
+    invalidate_pattern("tasks:*")
+
     return task
 
 
@@ -157,8 +175,12 @@ def reopen_task(task_id: int, db: Session = Depends(get_db)):
     },
 )
 def delete_task(task_id: int, db: Session = Depends(get_db)):
-    """Delete a Task permanently."""
+    """Delete a Task permanently and invalidate cache."""
     success = crud.delete_task(db, task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # Invalidate all task caches
+    invalidate_pattern("tasks:*")
+
     return None
