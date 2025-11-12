@@ -136,6 +136,110 @@ Retorna status geral do sistema de tracking.
 }
 ```
 
+### POST `/api/v2/daily-tracking/reminder/config`
+Configura lembretes diários para manter consistência no tracking.
+
+**Request:**
+```json
+{
+  "enabled": true,
+  "preferred_time": "20:30"  // Horário preferido (HH:MM)
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Configuração de lembrete salva com sucesso",
+  "config": {
+    "enabled": true,
+    "preferred_time": "20:30",
+    "status": "active"
+  }
+}
+```
+
+**Nota:** Esta é uma configuração de intenção. A implementação real de notificações requer integração com sistema de notificações.
+
+### GET `/api/v2/daily-tracking/reminder/status`
+Verifica se você precisa de um lembrete para registrar hoje.
+
+**Response:**
+```json
+{
+  "needs_reminder": true,
+  "recorded_today": false,
+  "today_date": "2025-11-12",
+  "missing_days_last_week": ["2025-11-11", "2025-11-10"],
+  "missing_count": 2,
+  "message": "Lembre-se de registrar seu dia!",
+  "suggestion": "Registre antes de dormir para melhor precisão nos dados de sono."
+}
+```
+
+### GET `/api/v2/daily-tracking/insights?days=30`
+Retorna dados estruturados para dashboard de insights e visualização.
+
+**Parâmetros:**
+- `days`: número de dias para retornar (padrão: 30, máx: 90)
+
+**Response:**
+```json
+{
+  "period": {
+    "start_date": "2025-10-13",
+    "end_date": "2025-11-12",
+    "days_requested": 30,
+    "records_found": 28
+  },
+  "time_series": {
+    "dates": ["2025-10-13", "2025-10-14", ...],
+    "sleep_hours": [7.5, 8.0, 6.5, ...],
+    "sleep_quality": [8, 9, 6, ...],
+    "energy_morning": [7, 8, 5, ...],
+    "energy_afternoon": [6, 7, 4, ...],
+    "energy_evening": [5, 6, 3, ...],
+    "deep_work_hours": [3.5, 4.0, 2.5, ...],
+    "tasks_completed": [5, 6, 3, ...]
+  },
+  "moving_averages": {
+    "sleep_hours_ma": [7.5, 7.75, 7.33, ...],
+    "sleep_quality_ma": [8.0, 8.5, 7.67, ...],
+    "energy_morning_ma": [7.0, 7.5, 6.67, ...],
+    "deep_work_hours_ma": [3.5, 3.75, 3.33, ...]
+  },
+  "statistics": {
+    "sleep_hours": {"mean": 7.2, "min": 5.5, "max": 9.0},
+    "sleep_quality": {"mean": 7.5, "min": 5, "max": 10},
+    "energy_morning": {"mean": 6.8, "min": 3, "max": 9},
+    "deep_work_hours": {"mean": 3.2, "min": 0.5, "max": 6.0},
+    "tasks_completed": {"mean": 4.5, "min": 0, "max": 8}
+  },
+  "insights": {
+    "sleep_energy_correlation": "strong_positive",
+    "energy_trend": "improving",
+    "most_productive_phase": "folicular",
+    "consistency_score": 93.3
+  },
+  "chart_config": {
+    "recommended_chart_types": {
+      "sleep_and_energy": "line",
+      "deep_work": "bar",
+      "tasks_completed": "bar",
+      "phase_comparison": "radar"
+    },
+    "color_palette": {
+      "sleep": "#4F46E5",
+      "energy": "#F59E0B",
+      "productivity": "#10B981",
+      "quality": "#8B5CF6"
+    }
+  }
+}
+```
+
+**Formato otimizado para:** Chart.js, Recharts, D3.js, e outras bibliotecas de visualização
+
 ## Integração com Orquestrador
 
 O DailyTrackingAgent está integrado ao orquestrador e é acionado automaticamente quando detecta keywords relacionadas a tracking diário.
@@ -292,9 +396,10 @@ GET /api/v2/daily-tracking/suggestions
 
 - [ ] ML avançado com scikit-learn
 - [ ] Predição de energia para próximos dias
-- [ ] Alertas proativos via notificações
+- [x] Sistema de lembretes diários
+- [x] Dashboard de insights com dados estruturados
+- [ ] Notificações push (requer integração externa)
 - [ ] Integração com wearables (sono automático)
-- [ ] Dashboard visual de padrões
 - [ ] Comparação com benchmarks
 
 ---

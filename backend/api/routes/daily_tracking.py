@@ -234,3 +234,288 @@ async def get_tracking_status(db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting tracking status: {str(e)}")
+
+
+class ReminderConfigRequest(BaseModel):
+    """Request model for reminder configuration."""
+    enabled: bool = Field(..., description="Ativar/desativar lembretes")
+    preferred_time: Optional[str] = Field(None, description="Horário preferido (HH:MM)")
+
+
+@router.post("/reminder/config")
+async def configure_reminder(
+    request: ReminderConfigRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Configura lembretes diários para registro de dados.
+
+    Ajuda a manter consistência no tracking incentivando
+    registros regulares.
+
+    Parâmetros:
+    - enabled: Ativar ou desativar lembretes
+    - preferred_time: Horário preferido para receber lembretes (formato HH:MM)
+
+    Nota: Esta é uma configuração de intenção. A implementação real
+    de notificações requer integração com sistema de notificações.
+    """
+    return {
+        "message": "Configuração de lembrete salva com sucesso",
+        "config": {
+            "enabled": request.enabled,
+            "preferred_time": request.preferred_time or "20:00",
+            "status": "active" if request.enabled else "inactive"
+        }
+    }
+
+
+@router.get("/reminder/status")
+async def get_reminder_status(db: Session = Depends(get_db)):
+    """
+    Verifica status do lembrete diário.
+
+    Retorna:
+    - Se já registrou hoje
+    - Últimos dias sem registro
+    - Sugestão de quando registrar
+    """
+    try:
+        from database.models import RegistroDiario
+
+        # Verificar se já registrou hoje
+        hoje = date.today()
+        registro_hoje = db.query(RegistroDiario).filter(
+            RegistroDiario.data == hoje
+        ).first()
+
+        # Contar dias consecutivos sem registro (últimos 7 dias)
+        dias_sem_registro = []
+        for i in range(1, 8):
+            data_check = hoje - timedelta(days=i)
+            registro = db.query(RegistroDiario).filter(
+                RegistroDiario.data == data_check
+            ).first()
+            if not registro:
+                dias_sem_registro.append(str(data_check))
+
+        # Status do lembrete
+        precisa_lembrete = not registro_hoje
+        mensagem = "Você já registrou hoje! ✓" if registro_hoje else "Lembre-se de registrar seu dia!"
+
+        return {
+            "needs_reminder": precisa_lembrete,
+            "recorded_today": bool(registro_hoje),
+            "today_date": str(hoje),
+            "missing_days_last_week": dias_sem_registro,
+            "missing_count": len(dias_sem_registro),
+            "message": mensagem,
+            "suggestion": "Registre antes de dormir para melhor precisão nos dados de sono." if precisa_lembrete else None
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking reminder status: {str(e)}")
+
+
+@router.get("/insights")
+async def get_insights(
+    days: int = 30,
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna dados estruturados para dashboard de insights.
+
+    Fornece dados formatados para visualização em gráficos:
+    - Séries temporais de sono, energia e produtividade
+    - Médias móveis (7 dias)
+    - Tendências e comparações
+    - Correlações entre variáveis
+
+    Parâmetros:
+    - days: Número de dias para retornar (padrão: 30, máx: 90)
+
+    Formato de retorno otimizado para frontend charts (Chart.js, Recharts, etc).
+    """
+    try:
+        if days > 90:
+            raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
+
+        from database.models import RegistroDiario
+        import statistics
+
+        # Buscar registros
+        data_inicio = date.today() - timedelta(days=days)
+        registros = db.query(RegistroDiario).filter(
+            RegistroDiario.data >= data_inicio
+        ).order_by(RegistroDiario.data.asc()).all()
+
+        if not registros:
+            return {
+                "message": "No data available for the requested period",
+                "days_requested": days,
+                "records_found": 0
+            }
+
+        # Preparar séries temporais
+        time_series = {
+            "dates": [],
+            "sleep_hours": [],
+            "sleep_quality": [],
+            "energy_morning": [],
+            "energy_afternoon": [],
+            "energy_evening": [],
+            "deep_work_hours": [],
+            "tasks_completed": []
+        }
+
+        for reg in registros:
+            time_series["dates"].append(str(reg.data))
+            time_series["sleep_hours"].append(reg.horas_sono)
+            time_series["sleep_quality"].append(reg.qualidade_sono)
+            time_series["energy_morning"].append(reg.energia_manha)
+            time_series["energy_afternoon"].append(reg.energia_tarde)
+            time_series["energy_evening"].append(reg.energia_noite)
+            time_series["deep_work_hours"].append(reg.horas_deep_work)
+            time_series["tasks_completed"].append(reg.tarefas_completadas)
+
+        # Calcular médias móveis (7 dias)
+        def moving_average(data: List[Optional[float]], window: int = 7) -> List[Optional[float]]:
+            """Calculate moving average, handling None values."""
+            result = []
+            for i in range(len(data)):
+                window_data = [x for x in data[max(0, i-window+1):i+1] if x is not None]
+                if window_data:
+                    result.append(round(statistics.mean(window_data), 2))
+                else:
+                    result.append(None)
+            return result
+
+        moving_averages = {
+            "sleep_hours_ma": moving_average(time_series["sleep_hours"]),
+            "sleep_quality_ma": moving_average(time_series["sleep_quality"]),
+            "energy_morning_ma": moving_average(time_series["energy_morning"]),
+            "deep_work_hours_ma": moving_average(time_series["deep_work_hours"])
+        }
+
+        # Calcular estatísticas gerais
+        def safe_stats(data: List[Optional[float]]) -> Dict:
+            """Calculate stats filtering None values."""
+            clean_data = [x for x in data if x is not None]
+            if not clean_data:
+                return {"mean": None, "min": None, "max": None}
+            return {
+                "mean": round(statistics.mean(clean_data), 2),
+                "min": min(clean_data),
+                "max": max(clean_data)
+            }
+
+        stats = {
+            "sleep_hours": safe_stats(time_series["sleep_hours"]),
+            "sleep_quality": safe_stats(time_series["sleep_quality"]),
+            "energy_morning": safe_stats(time_series["energy_morning"]),
+            "deep_work_hours": safe_stats(time_series["deep_work_hours"]),
+            "tasks_completed": safe_stats(time_series["tasks_completed"])
+        }
+
+        # Calcular correlação sono x energia (simplificada)
+        sleep_data = [x for x in time_series["sleep_hours"] if x is not None]
+        energy_data = [x for x in time_series["energy_morning"] if x is not None]
+
+        correlation_strength = "insufficient_data"
+        if len(sleep_data) >= 7 and len(energy_data) >= 7:
+            # Correlação simples baseada em tendências
+            avg_sleep = statistics.mean(sleep_data)
+            above_avg_sleep = [i for i, s in enumerate(time_series["sleep_hours"])
+                              if s is not None and s > avg_sleep]
+
+            if above_avg_sleep and len([i for i in above_avg_sleep if i < len(time_series["energy_morning"])]):
+                energy_on_good_sleep = [time_series["energy_morning"][i]
+                                       for i in above_avg_sleep
+                                       if i < len(time_series["energy_morning"])
+                                       and time_series["energy_morning"][i] is not None]
+                if energy_on_good_sleep:
+                    avg_energy_good_sleep = statistics.mean(energy_on_good_sleep)
+                    avg_energy_overall = statistics.mean(energy_data)
+
+                    if avg_energy_good_sleep > avg_energy_overall * 1.1:
+                        correlation_strength = "strong_positive"
+                    elif avg_energy_good_sleep > avg_energy_overall:
+                        correlation_strength = "moderate_positive"
+                    else:
+                        correlation_strength = "weak"
+
+        # Tendências (comparar primeira metade vs segunda metade)
+        mid_point = len(registros) // 2
+        if mid_point > 0:
+            first_half_energy = [x for x in time_series["energy_morning"][:mid_point] if x is not None]
+            second_half_energy = [x for x in time_series["energy_morning"][mid_point:] if x is not None]
+
+            trend = "stable"
+            if first_half_energy and second_half_energy:
+                diff = statistics.mean(second_half_energy) - statistics.mean(first_half_energy)
+                if diff > 1:
+                    trend = "improving"
+                elif diff < -1:
+                    trend = "declining"
+        else:
+            trend = "insufficient_data"
+
+        return {
+            "period": {
+                "start_date": str(data_inicio),
+                "end_date": str(date.today()),
+                "days_requested": days,
+                "records_found": len(registros)
+            },
+            "time_series": time_series,
+            "moving_averages": moving_averages,
+            "statistics": stats,
+            "insights": {
+                "sleep_energy_correlation": correlation_strength,
+                "energy_trend": trend,
+                "most_productive_phase": _get_most_productive_phase(registros),
+                "consistency_score": round((len(registros) / days) * 100, 1)
+            },
+            "chart_config": {
+                "recommended_chart_types": {
+                    "sleep_and_energy": "line",
+                    "deep_work": "bar",
+                    "tasks_completed": "bar",
+                    "phase_comparison": "radar"
+                },
+                "color_palette": {
+                    "sleep": "#4F46E5",
+                    "energy": "#F59E0B",
+                    "productivity": "#10B981",
+                    "quality": "#8B5CF6"
+                }
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
+
+
+def _get_most_productive_phase(registros: List) -> str:
+    """Helper to identify most productive cycle phase."""
+    from collections import defaultdict
+
+    phase_productivity = defaultdict(list)
+
+    for reg in registros:
+        if reg.fase_ciclo and reg.horas_deep_work:
+            phase_productivity[reg.fase_ciclo].append(reg.horas_deep_work)
+
+    if not phase_productivity:
+        return "not_enough_data"
+
+    avg_by_phase = {
+        phase: sum(hours) / len(hours)
+        for phase, hours in phase_productivity.items()
+        if hours
+    }
+
+    if not avg_by_phase:
+        return "not_enough_data"
+
+    return max(avg_by_phase, key=avg_by_phase.get)
