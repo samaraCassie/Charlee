@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database.config import get_db
+from database.models import User
+from api.auth.dependencies import get_current_user
 from agent.specialized_agents.capacity_guard_agent import create_capacity_guard_agent
 
 router = APIRouter()
@@ -24,7 +26,11 @@ class AvaliacaoCompromissoRequest(BaseModel):
 
 
 @router.get("/carga/atual", response_model=AgentResponse)
-async def calcular_carga_atual(proximas_semanas: int = 3, db: Session = Depends(get_db)):
+async def calcular_carga_atual(
+    proximas_semanas: int = 3,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Calcula a carga de trabalho atual por Big Rock."""
     agent = create_capacity_guard_agent(db)
     response = agent.calcular_carga_atual(proximas_semanas)
@@ -32,7 +38,11 @@ async def calcular_carga_atual(proximas_semanas: int = 3, db: Session = Depends(
 
 
 @router.post("/avaliar-compromisso", response_model=AgentResponse)
-async def avaliar_compromisso(request: AvaliacaoCompromissoRequest, db: Session = Depends(get_db)):
+async def avaliar_compromisso(
+    request: AvaliacaoCompromissoRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Avalia se há capacidade para um novo compromisso."""
     agent = create_capacity_guard_agent(db)
 
@@ -46,7 +56,11 @@ async def avaliar_compromisso(request: AvaliacaoCompromissoRequest, db: Session 
 
 
 @router.get("/tradeoffs", response_model=AgentResponse)
-async def sugerir_tradeoffs(num_tarefas_liberar: int = 5, db: Session = Depends(get_db)):
+async def sugerir_tradeoffs(
+    num_tarefas_liberar: int = 5,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Sugere tarefas que podem ser adiadas para liberar capacidade."""
     agent = create_capacity_guard_agent(db)
     response = agent.sugerir_tradeoffs(num_tarefas_liberar)
@@ -54,7 +68,10 @@ async def sugerir_tradeoffs(num_tarefas_liberar: int = 5, db: Session = Depends(
 
 
 @router.get("/big-rocks/analise", response_model=AgentResponse)
-async def analisar_big_rocks(db: Session = Depends(get_db)):
+async def analisar_big_rocks(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Analisa a distribuição de tarefas entre Big Rocks."""
     agent = create_capacity_guard_agent(db)
     response = agent.analisar_big_rocks()
