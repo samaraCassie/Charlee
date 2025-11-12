@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import date
+from typing import Optional, List, Dict
+from datetime import date, timedelta
 from database.config import get_db
 from agent.specialized_agents.daily_tracking_agent import create_daily_tracking_agent
 

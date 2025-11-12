@@ -1,0 +1,4061 @@
+﻿# 📘 Documentação Completa: Projeto Charlee
+
+
+## Sistema de Inteligência Pessoal com IA
+
+
+**Versão:** 1.0  
+**Data:** Novembro 2025  
+**Autora:** Samara  
+**Status:** Em Desenvolvimento
+
+
+---
+
+
+## 📑 Índice
+
+
+1. [Visão Geral](#1-visão-geral)
+2. [Arquitetura do Sistema](#2-arquitetura-do-sistema)
+3. [Modelo de Dados](#3-modelo-de-dados)
+4. [Agentes Especializados](#4-agentes-especializados)
+5. [Fluxos de Trabalho](#5-fluxos-de-trabalho)
+6. [Stack Tecnológica](#6-stack-tecnológica)
+7. [Roadmap de Desenvolvimento](#7-roadmap-de-desenvolvimento)
+8. [Guia de Instalação](#8-guia-de-instalação)
+9. [API Reference](#9-api-reference)
+10. [Casos de Uso](#10-casos-de-uso)
+11. [Segurança e Privacidade](#11-segurança-e-privacidade)
+12. [Troubleshooting](#12-troubleshooting)
+
+
+---
+
+
+## 1. Visão Geral
+
+
+### 1.1 O Problema
+
+
+Profissionais de alto desempenho enfrentam desafios significativos:
+
+
+- **Sobrecarga Cognitiva**: Múltiplos projetos competindo pela mesma atenção
+- **Perda de Contexto**: Tarefas pessoais esquecidas em meio a "incêndios" profissionais
+- **Falta de Clareza**: Dificuldade em distinguir urgente vs. importante
+- **Desequilíbrio**: Ignorar necessidades biológicas (ciclo menstrual) e bem-estar
+- **Sobrecarga de Comunicação**: Inbox descontrolado roubando foco
+- **Conhecimento Disperso**: Informação relevante perdida no ruído da internet
+
+
+### 1.2 A Solução: Charlee
+
+
+**Charlee** é um sistema de inteligência pessoal baseado em IA que funciona como um "segundo cérebro", capturando, organizando e priorizando 100% das tarefas, compromissos e prazos, enquanto monitora padrões comportamentais, ciclo menstrual e bem-estar.
+
+
+#### Diferencial Único
+
+
+Charlee não é apenas um gerenciador de tarefas. É um **sistema consciente** que:
+
+
+- 🌸 **Entende ciclo menstrual** e adapta recomendações
+- 🧠 **Aprende padrões comportamentais** e alerta sobre sobrecargas
+- 🛡️ **Protege capacidade** através do "não estratégico"
+- 📊 **Monitora OKRs** como um dashboard de CEO
+- 📚 **Cura conhecimento** relevante para desafios atuais
+- 💬 **Gerencia comunicações** e protege deep work
+- 🎯 **Aconselha estrategicamente** baseado em dados históricos
+
+
+### 1.3 Persona do Usuário
+
+
+**Nome:** Samara  
+**Perfil:** Desenvolvedora, PO, Líder de Robótica  
+**Contexto:**
+- Múltiplos projetos simultâneos (Estágio Syssa, WickedBotz Summit, TalentFlow)
+- Alta ambição (objetivo de US$ 1 bilhão)
+- Necessidade de equilibrar performance com bem-estar
+- Ciclo menstrual impacta significativamente energia e produtividade
+
+
+---
+
+
+## 2. Arquitetura do Sistema
+
+
+### 2.1 Visão de Alto Nível
+
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INTERFACES (Camada 4)                    │
+├─────────────┬──────────────┬──────────────┬─────────────────┤
+│     CLI     │   Voice UI   │   Web App    │   Mobile App    │
+└─────────────┴──────────────┴──────────────┴─────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 ORQUESTRADOR CHARLEE (Camada 3)             │
+│                    (Agente Líder Agno)                      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
+│   Wellness   │    │     Capacity     │    │     OKR      │
+│    Coach     │    │     Guardian     │    │   Dashboard  │
+└──────────────┘    └──────────────────┘    └──────────────┘
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
+│  Knowledge   │    │    Strategic     │    │ Comm Manager │
+│   Curator    │    │     Advisor      │    │              │
+└──────────────┘    └──────────────────┘    └──────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              CAMADA DE DADOS (Camada 2)                     │
+├──────────────────┬──────────────────┬───────────────────────┤
+│   PostgreSQL     │    PgVector      │   Filesystem/S3       │
+│  (Relacional)    │  (Embeddings)    │   (Arquivos)          │
+└──────────────────┴──────────────────┴───────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│           INTEGRAÇÕES EXTERNAS (Camada 1)                   │
+├───────────┬──────────┬─────────┬──────────┬─────────────────┤
+│  Google   │  Notion  │ Trello  │  GitHub  │     Canva       │
+│ Calendar  │          │         │          │                 │
+└───────────┴──────────┴─────────┴──────────┴─────────────────┘
+```
+
+
+### 2.2 Camadas Detalhadas
+
+
+#### Camada 1: Integrações Externas
+- **Propósito**: Capturar dados de ferramentas que Samara já usa
+- **Fluxo**: APIs → Webhooks → Eventos Externos → Processamento
+- **Tecnologias**: REST APIs, OAuth 2.0, Webhooks
+
+
+#### Camada 2: Persistência
+- **PostgreSQL**: Dados estruturados (tarefas, OKRs, hábitos)
+- **PgVector**: Embeddings para busca semântica e memória de longo prazo
+- **Storage**: Arquivos multimodais (áudio, imagem, documentos)
+
+
+#### Camada 3: Inteligência (Agentes Agno)
+- **Orquestrador**: Agente líder que coordena especialistas
+- **Agentes Especializados**: Cada um com domínio específico
+- **Memória Compartilhada**: Vector DB conecta todos os agentes
+
+
+#### Camada 4: Interfaces
+- **V1**: CLI (Command Line Interface)
+- **V2+**: Voice, Web, Mobile
+
+
+---
+
+
+## 3. Modelo de Dados
+
+
+### 3.1 Diagrama Entidade-Relacionamento
+
+
+```
+┌─────────────────┐
+│   big_rocks     │──┐
+│─────────────────│  │
+│ id (PK)         │  │
+│ nome            │  │
+│ cor             │  │
+│ ativo           │  │
+│ metadata (JSON) │  │
+└─────────────────┘  │
+                     │
+        ┌────────────┘
+        │
+        │    ┌─────────────────────┐
+        └───▶│      tarefas        │
+             │─────────────────────│
+             │ id (PK)             │
+             │ descricao           │
+             │ tipo                │
+             │ deadline            │
+             │ big_rock_id (FK)    │◀───┐
+             │ status              │    │
+             │ fonte               │    │
+             │ prioridade_calc     │    │
+             │ tags[]              │    │
+             │ criado_em           │    │
+             └─────────────────────┘    │
+                                        │
+┌─────────────────────┐                │
+│  ciclo_menstrual    │                │
+│─────────────────────│                │
+│ id (PK)             │                │
+│ data_inicio         │                │
+│ fase                │                │
+│ sintomas[]          │                │
+│ humor (JSON)        │                │
+└─────────────────────┘                │
+        │                              │
+        │                              │
+        ▼                              │
+┌─────────────────────┐                │
+│  padroes_ciclo      │                │
+│─────────────────────│                │
+│ id (PK)             │                │
+│ fase                │                │
+│ padrao_identificado │                │
+│ metricas (JSON)     │                │
+│ sugestoes[]         │                │
+└─────────────────────┘                │
+                                       │
+┌─────────────────────┐                │
+│   registro_diario   │                │
+│─────────────────────│                │
+│ id (PK)             │                │
+│ data (UNIQUE)       │                │
+│ horas_sono          │                │
+│ energia_manha       │                │
+│ horas_deep_work     │                │
+│ fase_ciclo          │                │
+└─────────────────────┘                │
+                                       │
+┌─────────────────────┐                │
+│    carga_trabalho   │                │
+│─────────────────────│                │
+│ id (PK)             │                │
+│ big_rock_id (FK)    │────────────────┘
+│ periodo_inicio      │
+│ horas_estimadas     │
+│ percentual_carga    │
+│ em_risco            │
+└─────────────────────┘
+
+
+┌─────────────────────┐
+│        okrs         │
+│─────────────────────│
+│ id (PK)             │
+│ titulo              │
+│ objetivo            │
+│ key_results (JSON[])│
+│ progresso_geral     │
+│ big_rock_id (FK)    │
+└─────────────────────┘
+
+
+┌─────────────────────┐
+│ memoria_agente      │
+│─────────────────────│
+│ id (PK)             │
+│ tipo                │
+│ conteudo            │
+│ embedding (VECTOR)  │◀── PgVector para busca semântica
+│ relevancia_score    │
+└─────────────────────┘
+
+
+┌─────────────────────┐
+│   comunicacoes      │
+│─────────────────────│
+│ id (PK)             │
+│ fonte               │
+│ tipo                │
+│ prioridade          │
+│ requer_acao         │
+│ rascunho_resposta   │
+└─────────────────────┘
+```
+
+
+### 3.2 Tabelas Principais
+
+
+#### 3.2.1 big_rocks
+**Propósito**: Define os "pilares de prioridade" (projetos estratégicos)
+
+
+```sql
+CREATE TABLE big_rocks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    cor TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
+    capacidade_semanal FLOAT,  -- Horas disponíveis por semana
+    metadata JSONB
+);
+```
+
+
+**Exemplo de Dados:**
+```json
+[
+  {
+    "nome": "Estágio Syssa",
+    "cor": "#FF6B6B",
+    "capacidade_semanal": 20,
+    "metadata": {
+      "importancia": "critica",
+      "prazo_final": "2025-03-31"
+    }
+  },
+  {
+    "nome": "WickedBotz Summit",
+    "cor": "#4ECDC4",
+    "capacidade_semanal": 15
+  }
+]
+```
+
+
+#### 3.2.2 tarefas
+**Propósito**: Armazena todas as tarefas, independente da origem
+
+
+```sql
+CREATE TABLE tarefas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    descricao TEXT NOT NULL,
+    tipo TEXT CHECK(tipo IN ('Compromisso Fixo', 'Tarefa', 'Contínuo')),
+    deadline TIMESTAMP,
+    big_rock_id UUID REFERENCES big_rocks(id),
+    status TEXT DEFAULT 'Pendente' CHECK(status IN ('Pendente', 'Concluída', 'Cancelada')),
+    
+    -- Origem e integração
+    fonte TEXT,  -- 'manual', 'google_calendar', 'trello', 'github'
+    id_externo TEXT,
+    url_externa TEXT,
+    
+    -- Estimativas
+    estimativa_horas FLOAT,
+    horas_reais FLOAT,
+    
+    -- Contexto
+    projeto_id UUID,
+    tags TEXT[],
+    prioridade_calculada INTEGER,  -- Calculada por trigger (1-5)
+    
+    -- Multimodal
+    criado_via TEXT,  -- 'texto', 'voz', 'imagem'
+    anexos UUID[],
+    
+    -- Timestamps
+    criado_em TIMESTAMP DEFAULT NOW(),
+    atualizado_em TIMESTAMP DEFAULT NOW(),
+    concluido_em TIMESTAMP
+);
+
+
+-- Índices para performance
+CREATE INDEX idx_tarefas_status ON tarefas(status);
+CREATE INDEX idx_tarefas_deadline ON tarefas(deadline);
+CREATE INDEX idx_tarefas_prioridade ON tarefas(prioridade_calculada);
+CREATE INDEX idx_tarefas_busca ON tarefas USING GIN(to_tsvector('portuguese', descricao));
+```
+
+
+**Exemplo de Dados:**
+```json
+{
+  "descricao": "Apresentação Janeiro - Slides Syssa",
+  "tipo": "Tarefa",
+  "deadline": "2025-01-15T09:00:00Z",
+  "big_rock_id": "uuid-syssa",
+  "status": "Pendente",
+  "fonte": "manual",
+  "estimativa_horas": 8,
+  "tags": ["apresentacao", "slides", "urgente"],
+  "prioridade_calculada": 1
+}
+```
+
+
+#### 3.2.3 ciclo_menstrual
+**Propósito**: Rastreia ciclo menstrual para adaptação de planejamento
+
+
+```sql
+CREATE TABLE ciclo_menstrual (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data_inicio DATE NOT NULL,
+    fase TEXT CHECK(fase IN ('menstrual', 'folicular', 'ovulacao', 'lutea')),
+    duracao_dias INTEGER,
+    sintomas TEXT[],
+    humor JSONB,  -- {energia: 7, foco: 5, criatividade: 9}
+    notas TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+
+CREATE INDEX idx_ciclo_data ON ciclo_menstrual(data_inicio DESC);
+```
+
+
+**Fases e Características:**
+
+
+| Fase | Duração | Energia | Melhor Para | Evitar |
+|------|---------|---------|-------------|--------|
+| **Menstrual** | 3-7 dias | Baixa (60%) | Planejamento, Reflexão, Admin | Reuniões longas, Decisões grandes |
+| **Folicular** | 7-10 dias | Alta (120%) | Criatividade, Estratégia, Networking | - |
+| **Ovulação** | 3-5 dias | Muito Alta (140%) | Apresentações, Negociações, Reuniões críticas | - |
+| **Lútea** | 10-14 dias | Média (80%) | Execução, Finalização, Organização | Iniciar projetos grandes |
+
+
+#### 3.2.4 padroes_ciclo
+**Propósito**: Armazena padrões aprendidos pela IA ao longo do tempo
+
+
+```sql
+CREATE TABLE padroes_ciclo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fase TEXT,
+    padrao_identificado TEXT,
+    metricas JSONB,
+    confianca_score FLOAT,  -- 0.0 a 1.0
+    sugestoes TEXT[],
+    amostras_usadas INTEGER,
+    atualizado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+
+**Exemplo de Padrão Aprendido:**
+```json
+{
+  "fase": "folicular",
+  "padrao_identificado": "Na fase folicular, Samara tem 40% mais produtividade em tarefas criativas e estratégicas",
+  "metricas": {
+    "produtividade_criativa": 1.4,
+    "foco_estrategico": 1.2,
+    "energia_geral": 1.3,
+    "qualidade_codigo": 1.15
+  },
+  "confianca_score": 0.87,
+  "sugestoes": [
+    "Agende brainstorms e sessões de design",
+    "Reserve tempo para OKRs e planejamento estratégico",
+    "Apresente ideias novas ao time"
+  ],
+  "amostras_usadas": 6
+}
+```
+
+
+#### 3.2.5 registro_diario
+**Propósito**: Captura dados diários para análise de padrões
+
+
+```sql
+CREATE TABLE registro_diario (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data DATE NOT NULL UNIQUE,
+    
+    -- Sono
+    hora_acordar TIME,
+    hora_dormir TIME,
+    horas_sono FLOAT,
+    qualidade_sono INTEGER CHECK(qualidade_sono BETWEEN 1 AND 10),
+    
+    -- Energia ao longo do dia
+    energia_manha INTEGER CHECK(energia_manha BETWEEN 1 AND 10),
+    energia_tarde INTEGER CHECK(energia_tarde BETWEEN 1 AND 10),
+    energia_noite INTEGER CHECK(energia_noite BETWEEN 1 AND 10),
+    
+    -- Produtividade
+    horas_deep_work FLOAT,
+    tarefas_completadas INTEGER,
+    tarefas_planejadas INTEGER,
+    
+    -- Contexto
+    fase_ciclo TEXT,
+    eventos_especiais TEXT[],
+    humor_geral INTEGER CHECK(humor_geral BETWEEN 1 AND 10),
+    notas_livre TEXT,
+    
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+
+#### 3.2.6 carga_trabalho
+**Propósito**: Calcula capacidade vs. demanda para alertas de sobrecarga
+
+
+```sql
+CREATE TABLE carga_trabalho (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    periodo_inicio DATE,
+    periodo_fim DATE,
+    big_rock_id UUID REFERENCES big_rocks(id),
+    
+    horas_estimadas FLOAT,
+    horas_disponiveis FLOAT,
+    percentual_carga FLOAT,  -- (estimadas/disponiveis) * 100
+    
+    em_risco BOOLEAN DEFAULT FALSE,
+    motivo_risco TEXT,
+    
+    calculado_em TIMESTAMP DEFAULT NOW()
+);
+
+
+-- Trigger automático para recalcular quando tarefas mudam
+CREATE OR REPLACE FUNCTION recalcular_carga() RETURNS TRIGGER AS $$
+BEGIN
+    -- Lógica de recálculo aqui
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+
+#### 3.2.7 okrs
+**Propósito**: Objectives and Key Results para acompanhamento estratégico
+
+
+```sql
+CREATE TABLE okrs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    titulo TEXT NOT NULL,
+    tipo TEXT CHECK(tipo IN ('anual', 'trimestral', 'mensal')),
+    big_rock_id UUID REFERENCES big_rocks(id),
+    objetivo TEXT,
+    
+    key_results JSONB[],
+    -- Exemplo: [{descricao: "Apresentação Janeiro", meta: 100, atual: 40, unidade: "%"}]
+    
+    status TEXT DEFAULT 'em_andamento',
+    progresso_geral FLOAT,  -- Média ponderada dos KRs
+    
+    data_inicio DATE,
+    data_fim DATE,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+
+**Exemplo de OKR:**
+```json
+{
+  "titulo": "Q1 2025 - Estágio Syssa",
+  "tipo": "trimestral",
+  "objetivo": "Concluir estágio com excelência e impacto mensurável",
+  "key_results": [
+    {
+      "descricao": "Apresentação Janeiro aprovada",
+      "meta": 100,
+      "atual": 40,
+      "unidade": "%"
+    },
+    {
+      "descricao": "Estabilidade Projeto Lunelli",
+      "meta": 95,
+      "atual": 90,
+      "unidade": "%"
+    },
+    {
+      "descricao": "NPS da equipe >= 9",
+      "meta": 9,
+      "atual": 8.5,
+      "unidade": "pontos"
+    }
+  ],
+  "progresso_geral": 68.3
+}
+```
+
+
+#### 3.2.8 memoria_agente
+**Propósito**: Memória de longo prazo com embeddings para busca semântica
+
+
+```sql
+-- Requer extensão pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+
+
+CREATE TABLE memoria_agente (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT CHECK(tipo IN ('fato', 'preferencia', 'contexto', 'aprendizado', 'decisao')),
+    conteudo TEXT NOT NULL,
+    embedding VECTOR(1536),  -- OpenAI embeddings
+    relevancia_score FLOAT DEFAULT 1.0,
+    tags TEXT[],
+    usado_em TIMESTAMP[],  -- Quando esta memória foi acessada
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+
+-- Índice para busca vetorial rápida
+CREATE INDEX idx_memoria_embedding ON memoria_agente 
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+```
+
+
+**Exemplo de Memórias:**
+```json
+[
+  {
+    "tipo": "preferencia",
+    "conteudo": "Samara prefere trabalhar em tarefas criativas durante a fase folicular",
+    "tags": ["ciclo", "produtividade", "criatividade"]
+  },
+  {
+    "tipo": "contexto",
+    "conteudo": "Reunião com Breno sobre ritmo Lunelli em 2024-12. Contexto: preocupação com qualidade do código e risco para investidores",
+    "tags": ["syssa", "lunelli", "breno"]
+  },
+  {
+    "tipo": "aprendizado",
+    "conteudo": "Quando Samara tem menos de 6h de sono, produtividade cai 35% no dia seguinte",
+    "tags": ["sono", "produtividade", "padrão"]
+  }
+]
+```
+
+
+#### 3.2.9 comunicacoes
+**Propósito**: Gerenciamento inteligente de emails e mensagens
+
+
+```sql
+CREATE TABLE comunicacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fonte TEXT CHECK(fonte IN ('email', 'slack', 'whatsapp')),
+    tipo TEXT CHECK(tipo IN ('urgente', 'informativo', 'spam', 'aguardando')),
+    
+    remetente TEXT,
+    assunto TEXT,
+    corpo TEXT,
+    anexos TEXT[],
+    
+    -- Classificação automática por IA
+    prioridade INTEGER CHECK(prioridade BETWEEN 1 AND 5),
+    requer_acao BOOLEAN,
+    acao_sugerida TEXT,
+    rascunho_resposta TEXT,
+    
+    -- Estados
+    lido BOOLEAN DEFAULT FALSE,
+    respondido BOOLEAN DEFAULT FALSE,
+    arquivado BOOLEAN DEFAULT FALSE,
+    tarefa_criada_id UUID REFERENCES tarefas(id),
+    
+    recebido_em TIMESTAMP,
+    processado_em TIMESTAMP
+);
+
+
+CREATE INDEX idx_comunicacoes_tipo ON comunicacoes(tipo, lido);
+```
+
+
+---
+
+
+## 4. Agentes Especializados
+
+
+### 4.1 Arquitetura de Agentes
+
+
+Charlee usa a arquitetura **multi-agente** do Agno, onde cada agente é especialista em um domínio específico, coordenados por um agente líder.
+
+
+```python
+# Estrutura base de um agente
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+
+
+agent = Agent(
+    name="Nome do Agente",
+    model=OpenAIChat(id="gpt-4o-mini"),
+    role="Papel específico",
+    instructions=[
+        "Instruções específicas",
+        "Regras de negócio"
+    ],
+    tools=[],  # Ferramentas específicas
+    storage=vector_db,  # Memória compartilhada
+    show_tool_calls=True
+)
+```
+
+
+### 4.2 Wellness Coach (Agente de Bem-Estar)
+
+
+**Responsabilidade**: Entender ciclo menstrual e adaptar recomendações
+
+
+**Capabilities:**
+- Rastrear fase atual do ciclo
+- Identificar padrões de energia/produtividade por fase
+- Ajustar planejamento de tarefas baseado na fase
+- Alertar sobre necessidades de descanso
+
+
+**Instruções Principais:**
+```python
+instructions=[
+    "Você é especialista em produtividade consciente do ciclo menstrual",
+    "Adapte recomendações baseado na fase atual e padrões históricos",
+    "Priorize bem-estar sobre produtividade quando necessário",
+    "Seja empática e compreensiva",
+    "Eduque Samara sobre como seu ciclo afeta performance"
+]
+```
+
+
+**Tools:**
+- `get_current_phase()`: Retorna fase atual
+- `get_phase_patterns(fase)`: Padrões aprendidos
+- `adjust_task_planning(tasks, phase)`: Ajusta estimativas
+- `suggest_self_care()`: Recomendações de auto-cuidado
+
+
+**Exemplo de Interação:**
+```
+User: "Planeje minha semana"
+
+
+Wellness Coach: 
+🌸 Você está na FASE MENSTRUAL (Dia 2/5)
+
+
+⚡ Energia Esperada: 60% (baseado em 6 ciclos analisados)
+
+
+📋 Recomendações:
+• Evite agendar reuniões longas (>1h)
+• Foque em tarefas administrativas e planejamento
+• Reserve 30min de descanso à tarde
+• Adie decisões estratégicas para próxima semana (fase folicular)
+
+
+✅ Tasks Ideais para Hoje:
+1. Organizar backlog do Lunelli (2h)
+2. Responder emails informativos (1h)
+3. Revisar documentação existente (1.5h)
+
+
+❌ Evite:
+- Apresentação para o Sênior (reagende para dia 10)
+- Brainstorm novo projeto (aguarde fase folicular)
+```
+
+
+### 4.3 Capacity Guardian (Guardião de Capacidade)
+
+
+**Responsabilidade**: Proteger Samara de sobrecarga através do "não estratégico"
+
+
+**Capabilities:**
+- Calcular carga de trabalho atual
+- Avaliar viabilidade de novos compromissos
+- Forçar decisões sobre trade-offs
+- Alertar sobre riscos de burnout
+
+
+**Instruções Principais:**
+```python
+instructions=[
+    "Você é o guardião da capacidade de Samara",
+    "Calcule carga de trabalho considerando capacidade real",
+    "Force decisões conscientes sobre trade-offs",
+    "Seja firme mas empática ao alertar sobre limites",
+    "Use dados, não emoções, para justificar alertas"
+]
+```
+
+
+**Lógica de Cálculo:**
+```python
+def calculate_workload(next_weeks=3):
+    """
+    Calcula: (Horas Estimadas / Horas Disponíveis) * 100
+    
+    Thresholds:
+    - < 70%: Capacidade OK
+    - 70-85%: Atenção
+    - 85-95%: Em risco
+    - > 95%: SOBRECARGA
+    """
+    pass
+```
+
+
+**Exemplo de Interação:**
+```
+User: "Quero adicionar o Projeto Y (5h/semana)"
+
+
+Capacity Guardian:
+🚨 ALERTA DE CAPACIDADE
+
+
+📊 Análise de Carga (próximas 3 semanas):
+• Carga atual: 92%
+• Com Projeto Y: 107%
+• Status: ⚠️ SOBRECARGA CRÍTICA
+
+
+📍 Detalhamento:
+┌─────────────────┬──────────┬────────────┬─────────┐
+│ Big Rock        │ Horas    │ Capacidade │ % Carga │
+├─────────────────┼──────────┼────────────┼─────────┤
+│ Estágio Syssa   │ 58h      │ 60h        │ 97%     │
+│ Summit Wicked   │ 42h      │ 45h        │ 93%     │
+│ TalentFlow      │ 28h      │ 30h        │ 93%     │
+│ Projeto Y (novo)│ 15h      │ -          │ -       │
+└─────────────────┴──────────┴────────────┴─────────┘
+
+
+⚖️ Para adicionar Projeto Y, você DEVE fazer trade-offs:
+
+
+Opção 1: Adiar "Força-Tarefa Summit" (-6h)
+Opção 2: Reduzir escopo "Apresentação Syssa" (-4h)
+Opção 3: Não adicionar agora, reavaliar em 15/01
+
+
+💡 Contexto: Você está na fase menstrual (energia 60%).
+   Esta não é a melhor semana para adicionar carga.
+
+
+❓ O que você decide? [1/2/3]
+```
+
+
+### 4.4 OKR Dashboard Agent
+
+
+**Responsabilidade**: Visualizar progresso de objetivos estratégicos
+
+
+**Capabilities:**
+- Gerar relatório visual de OKRs
+- Calcular progresso automático
+- Identificar OKRs em risco
+- Sugerir ações corretivas
+
+
+**Exemplo de Output:**
+```
+📈 DASHBOARD DE OKRs - CEO SAMARA
+
+
+🔴 Big Rock: Estágio Syssa (68% EM RISCO)
+   Objetivo: Concluir estágio com excelência e impacto mensurável
+   
+   • Apresentação Janeiro: [████████░░░░░░░░░░░░] 40/100%
+     ⚠️ Atraso de 2 semanas - Deadline: 15/01
+   
+   • Estabilidade Lunelli: [██████████████████░░] 90/95%
+     ✅ No caminho - Restam apenas ajustes finais
+   
+   • NPS da equipe >= 9: [█████████████████░░░] 8.5/9 pontos
+     ⚠️ Faltam 0.5 pontos - Considere 1:1 com Breno
+
+
+🟡 Big Rock: Summit WickedBotz (35% ATRASADO)
+   Objetivo: Entregar força-tarefa com qualidade
+   
+   • Força-Tarefa Emergência: [██░░░░░░░░░░░░░░░░░░] 10/100%
+     🔥 CRÍTICO - Não iniciada, deadline em 3 semanas
+
+
+🟢 Big Rock: TalentFlow Nascer (82% OK)
+   Objetivo: Pitch final aprovado pelos investidores
+   
+   • Pitch Final: [███████████████████░] 95/100%
+     ✅ Quase pronto - Apenas revisões finais
+
+
+💡 Ação Recomendada:
+   1. URGENTE: Iniciar Força-Tarefa Summit esta semana
+   2. IMPORTANTE: Concluir Apresentação Syssa até sexta
+   3. OPORTUNIDADE: Marcar 1:1 com Breno para melhorar NPS
+```
+
+
+### 4.5 Knowledge Curator (Curador de Conhecimento)
+
+
+**Responsabilidade**: Filtrar e entregar conhecimento relevante
+
+
+**Capabilities:**
+- Monitorar fontes externas (GitHub, RSS, Twitter)
+- Classificar relevância baseado em objetivos atuais
+- Conectar conhecimento com desafios do momento
+- Gerar digest diário personalizado
+
+
+**Fontes Monitoradas:**
+- GitHub Issues/PRs de repositórios seguidos (ex: Agno)
+- RSS feeds de blogs técnicos
+- Twitter de thought leaders
+- Papers em arXiv sobre IA
+- Newsletters técnicas
+
+
+**Exemplo de Output:**
+```
+📚 DIGEST DE CONHECIMENTO - 01/11/2025
+
+
+🎯 Curado para: "Dominar Agno" + "Resolver crise Lunelli (QA)"
+
+
+1. Issue #847: Best practices for error handling in Agno graphs
+   Relevância: 95%
+   Contexto: Crise Lunelli - bugs em produção
+   Link: github.com/agno-agi/agno/issues/847
+   💡 Por que agora: Esta issue discute exatamente o tipo de erro
+      que você enfrentou no deploy da Lunelli ontem.
+
+
+2. Article: "Testing Strategies for Multi-Agent Systems"
+   Relevância: 88%
+   Contexto: Estágio Syssa - apresentação Janeiro
+   Link: blog.agno.com/testing-strategies
+   💡 Por que agora: Você mencionou "QA" 3x nas últimas notas.
+      Este artigo pode ser citado na apresentação.
+
+
+3. Paper: "Agentic RAG: Retrieval Patterns for Production"
+   Relevância: 82%
+   Link: arxiv.org/abs/2025.xxxxx
+   💡 Por que agora: Você está estudando RAG para o TalentFlow.
+
+
+🚫 Filtrados (não relevantes agora):
+   • 12 artigos sobre LangChain (você usa Agno)
+   • 5 posts sobre web scraping (não é prioridade)
+   • 8 tutoriais básicos de Python (você já domina)
+
+
+⏰ Tempo estimado de leitura: 45 minutos
+📌 Sugestão: Ler item #1 HOJE (urgente), demais no fim de semana
+```
+
+
+### 4.6 Strategic Advisor (Conselheiro Estratégico)
+
+
+**Responsabilidade**: Funcionar como sparring partner para decisões
+
+
+**Capabilities:**
+- Busca semântica em toda base de conhecimento
+- Análise de decisões similares passadas
+- Recomendações baseadas em dados históricos
+- Preparação para conversas difíceis
+
+
+**Exemplo de Interação:**
+```
+User: "Preciso conversar com o Breno sobre o ritmo dele no Lunelli. 
+       Como devo abordar?"
+
+
+Strategic Advisor:
+🧠 ANÁLISE ESTRATÉGICA
+
+
+📊 Contexto Extraído (baseado nas suas notas):
+• Breno é o desenvolvedor sênior do projeto Lunelli
+• Histórico: Você já expressou preocupação 2x nos últimos 3 meses
+• Situação atual: Deploy com bugs críticos, apresentação em risco
+• Stakeholders: Sênior + Investidores (alto impacto)
+• Sua relação: Você o considera talentoso, mas tem receios
+
+
+💡 Decisões Similares no Passado:
+1. Set/2024: Conversa com Maria sobre prazos → Abordagem direta funcionou
+2. Jul/2024: Feedback para João sobre qualidade → Tom suave foi mal interpretado
+
+
+🎯 Recomendação Principal:
+ABORDAGEM: "Amiga preocupada + Foco em impacto de negócio"
+
+
+📝 Script Sugerido:
+"Breno, preciso falar contigo sobre algo que me preocupa. 
+O teu ritmo atual está criando riscos diretos para o sucesso 
+da nossa apresentação em Janeiro, e isso pode impactar a 
+confiança dos investidores. Eu sei que tu és capaz de muito 
+mais, e quero te ajudar a voltar ao teu melhor desempenho. 
+Vamos conversar sobre o que está acontecendo?"
+
+
+✅ O que fazer:
+• Começar reconhecendo o talento dele
+• Usar dados concretos (bugs, prazos)
+• Oferecer ajuda, não apenas criticar
+• Definir expectativas claras e próximos passos
+
+
+❌ O que evitar:
+• Tom confrontacional
+• Comparações com outros devs
+• Mencionar preocupações passadas não resolvidas
+• Ameaças veladas
+
+
+🕐 Melhor Momento:
+• Não fazer na segunda-feira (fim de semana pode ter sido ruim)
+• Ideal: Terça ou Quarta, meio da manhã
+• Ambiente: 1:1 privado, não em reunião de equipe
+
+
+📊 Taxa de Sucesso Estimada:
+70% (baseado em situações similares e seu histórico)
+```
+
+
+### 4.7 Communication Manager (Gerente de Comunicação)
+
+
+**Responsabilidade**: Triar e gerenciar comunicações para proteger foco
+
+
+**Capabilities:**
+- Processar inbox (email/Slack)
+- Classificar por urgência e tipo
+- Gerar rascunhos de resposta
+- Proteger blocos de deep work
+
+
+**Exemplo de Output:**
+```
+📬 RESUMO DO SEU INBOX (últimas 2 horas)
+
+
+🔴 URGENTE - Requer Ação Imediata:
+
+
+1. Email de Sênior (09:15)
+   Assunto: "Deploy Lunelli - Status?"
+   Classificação: CRÍTICO
+   Ação: Responder até 12h
+   
+   💬 Rascunho Preparado:
+   "Bom dia! O deploy teve algumas intercorrências, mas já 
+   identificamos a causa raiz. Estamos aplicando o hotfix 
+   agora e deve estar estabilizado até às 14h. Posso te 
+   atualizar pessoalmente às 15h?"
+   
+   ✅ Aprovar rascunho? [S/N]
+
+
+2. Slack de Cliente FAPESC (09:40)
+   Assunto: Mudança no escopo TalentFlow
+   Ação: Agendar reunião
+
+
+🔵 INFORMATIVO - Pode ler depois (3 emails):
+
+
+• FAPESC: Relatório mensal aprovado ✅
+• Marketing: Newsletter WickedBotz
+• RH: Pesquisa de clima organizacional
+
+
+🗑️ SPAM/BAIXA PRIORIDADE (2 emails):
+• LinkedIn: Convites de conexão
+• Newsletter: Promoções Black Friday
+
+
+📊 Estatísticas:
+• Tempo economizado: ~35 minutos
+• Deep work protegido: ✅ Nenhuma interrupção crítica
+• Próxima verificação sugerida: 11:30
+
+
+💡 Dica: Você tem 3h de deep work agendadas agora. 
+   Posso segurar todas as notificações até 12h30?
+```
+
+
+### 4.8 Charlee (Agente Orquestrador)
+
+
+**Responsabilidade**: Coordenar todos os agentes e manter visão holística
+
+
+```python
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+
+
+charlee = Agent(
+    name="Charlee",
+    model=OpenAIChat(id="gpt-4o-mini"),
+    team=[
+        wellness_coach,
+        capacity_guardian,
+        okr_dashboard,
+        knowledge_curator,
+        strategic_advisor,
+        comm_manager
+    ],
+    storage=vector_db,
+    instructions=[
+        "Você é Charlee, o segundo cérebro de Samara",
+        "Você conhece profundamente seus padrões, ciclo, objetivos e limites",
+        "Delegue tarefas para agentes especializados",
+        "Seja proativa em alertar sobre sobrecargas e desequilíbrios",
+        "Adapte recomendações ao estado físico e mental atual",
+        "Proteja-a de si mesma quando necessário",
+        "Mantenha memória de longo prazo e aprenda continuamente",
+        "Comunique-se de forma natural, empática mas objetiva"
+    ],
+    show_tool_calls=True,
+    markdown=True
+)
+```
+
+
+**Exemplo de Interação Completa:**
+```
+User: "Bom dia! Como está minha semana?"
+
+
+Charlee:
+☀️ BOM DIA, SAMARA! 
+
+
+🌸 Status de Bem-Estar:
+Você está na FASE MENSTRUAL (Dia 2/5). Energia esperada: 60%.
+Seus registros mostram que você dormiu 6.5h (ideal: 7-8h).
+Recomendação: Ritmo mais leve hoje, foco em tasks administrativas.
+
+
+⚡ PRIORIDADE MÁXIMA HOJE:
+🔥 "Deploy Lunelli - Hotfix" (URGENTE)
+   • Deadline: Hoje às 14h
+   • Estimativa: 3h
+   • Status da Carga: Você está em 92% de capacidade esta semana
+
+
+📊 OKRs em Destaque:
+• 🔴 Apresentação Syssa: 40% (ATRASADO - requer ação)
+• 🔥 Força-Tarefa Summit: 10% (CRÍTICO - não iniciada)
+
+
+📬 Comunicações:
+• 1 email URGENTE do Sênior (rascunho de resposta preparado)
+• 3 informativos (podem aguardar)
+
+
+📚 Conhecimento Curado:
+• 1 GitHub Issue MUITO relevante para o bug do Lunelli
+  → Recomendo ler antes de começar o hotfix (5 min)
+
+
+🎯 Plano Sugerido para Hoje:
+08:30-09:00 | Ler Issue #847 + preparar ambiente
+09:00-12:00 | Deep Work: Hotfix Lunelli
+12:00-12:30 | Almoço + descanso
+12:30-14:00 | Continuar hotfix + deploy
+14:00-14:30 | Responder email Sênior
+14:30-15:00 | Pausa (sua energia estará baixa)
+15:00-16:30 | Trabalhar em Apresentação Syssa (40min)
+16:30-17:00 | Processar emails informativos
+
+
+⚠️ ALERTA: Você tem 1 pedido pendente de "adicionar Projeto Y".
+   Minha recomendação permanece: NÃO adicionar esta semana.
+   Reavaliamos na próxima segunda (fase folicular, mais energia).
+
+
+💭 Reflexão:
+Você trabalhou até 22h ontem. Isso é sustentável?
+Lembre-se: seu objetivo é US$ 1 bilhão, não burnout. 😉
+
+
+❓ O que você acha deste plano? Quer ajustar algo?
+```
+
+
+---
+
+
+## 5. Fluxos de Trabalho
+
+
+### 5.1 Fluxo: Captura Rápida de Tarefa
+
+
+```
+┌─────────────┐
+│   USUÁRIO   │
+│ "Adicionar  │
+│  nova task" │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  INTERFACE (CLI/Voice)  │
+│ Captura input simples   │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│   CHARLEE (Orquestrador)│
+│ "Vou processar isso"    │
+└──────┬──────────────────┘
+       │
+       ├─────────────────────────────┐
+       │                             │
+       ▼                             ▼
+┌──────────────┐            ┌────────────────┐
+│ WELLNESS     │            │ NLP Processing │
+│ COACH        │            │ Extrai:        │
+│ "Qual fase?" │            │ - Descrição    │
+└──────┬───────┘            │ - Deadline     │
+       │                    │ - Big Rock     │
+       │                    │ - Tipo         │
+       │                    └────────┬───────┘
+       │                             │
+       ▼                             ▼
+┌──────────────────────────────────────┐
+│         DATABASE (PostgreSQL)         │
+│  INSERT INTO tarefas (...) VALUES (...) │
+└──────────────────┬───────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────┐
+│     CAPACITY GUARDIAN (Trigger)      │
+│  "Isso afeta a carga de trabalho?"   │
+└──────────────────┬───────────────────┘
+                   │
+                   ├─── SE carga > 90% ───┐
+                   │                       │
+                   ▼                       ▼
+            ┌─────────────┐       ┌──────────────┐
+            │ Carga OK    │       │ ALERTA       │
+            │ "Task       │       │ "Você está   │
+            │ adicionada!"│       │ em sobrecarga│
+            └─────────────┘       └──────────────┘
+```
+
+
+**Tempo Total**: < 10 segundos (NFR01)
+
+
+### 5.2 Fluxo: Priorização Diária
+
+
+```
+┌─────────────┐
+│   USUÁRIO   │
+│ "Qual meu   │
+│ foco hoje?" │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────┐
+│   CHARLEE               │
+│ Delega para múltiplos   │
+│ agentes especializados  │
+└──────┬──────────────────┘
+       │
+       ├──────────┬──────────┬──────────┬──────────┐
+       │          │          │          │          │
+       ▼          ▼          ▼          ▼          ▼
+┌──────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│Wellness  │ │Capacity│ │  OKR   │ │Knowledge│ │ Comm   │
+│Coach     │ │Guardian│ │Dashboard│ │Curator │ │Manager │
+└────┬─────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘
+     │           │          │          │          │
+     │ Fase:     │ Carga:   │ OKRs em  │ 1 artigo │ 1 email│
+     │ Menstrual │ 92%      │ risco    │ relevante│ urgente│
+     │           │          │          │          │
+     └───────────┴──────────┴──────────┴──────────┘
+                             │
+                             ▼
+                   ┌──────────────────┐
+                   │    DATABASE      │
+                   │ Query priorizada:│
+                   │ BR03 logic       │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Resultado:       │
+                   │ Lista ordenada   │
+                   │ por nível 1-5    │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │   CHARLEE        │
+                   │ Sintetiza tudo   │
+                   │ em briefing      │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │    USUÁRIO       │
+                   │ Recebe briefing  │
+                   │ completo         │
+                   └──────────────────┘
+```
+
+
+**Tempo Total**: < 3 segundos (NFR02)
+
+
+### 5.3 Fluxo: Entrada por Voz
+
+
+```
+┌─────────────┐
+│   USUÁRIO   │
+│ 🎤 (áudio)  │
+│ "Lembrar..." │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  VOICE INTERFACE        │
+│  Captura áudio (.wav)   │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  Salva em Storage       │
+│  /audio/{uuid}.wav      │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  INSERT INTO            │
+│  interacoes_multimodais │
+│  tipo='voz'             │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  WHISPER API            │
+│  Transcrição: texto     │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  CHARLEE + NER          │
+│  Extrai entidades:      │
+│  - Datas                │
+│  - Pessoas              │
+│  - Tarefas              │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  Confirma com usuário:  │
+│  "Entendi corretamente?"│
+└──────┬──────────────────┘
+       │
+       ▼ (se sim)
+┌─────────────────────────┐
+│  Cria tarefa(s)         │
+│  + atualiza transcrição │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  USUÁRIO                │
+│  "Task adicionada!"     │
+└─────────────────────────┘
+```
+
+
+### 5.4 Fluxo: Análise de Screenshot
+
+
+```
+┌─────────────┐
+│   USUÁRIO   │
+│ Upload de   │
+│ screenshot  │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  WEB/MOBILE INTERFACE   │
+│  Recebe imagem (.png)   │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  Salva em Storage       │
+│  /images/{uuid}.png     │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  INSERT INTO            │
+│  interacoes_multimodais │
+│  tipo='screenshot'      │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  CLAUDE VISION API      │
+│  Analisa imagem:        │
+│  - OCR (texto)          │
+│  - Objetos detectados   │
+│  - Contexto             │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  CHARLEE                │
+│  Interpreta análise:    │
+│  "Vejo um Trello board  │
+│   com 3 cards urgentes" │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  Propõe ações:          │
+│  "Adicionar essas 3     │
+│   tasks ao Charlee?"    │
+└──────┬──────────────────┘
+       │
+       ▼ (se sim)
+┌─────────────────────────┐
+│  Cria 3 tarefas         │
+│  com link para imagem   │
+└─────────────────────────┘
+```
+
+
+### 5.5 Fluxo: Sincronização Google Calendar
+
+
+```
+┌──────────────────┐
+│  GOOGLE CALENDAR │
+│  Evento criado   │
+└────────┬─────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  WEBHOOK                │
+│  Notifica Charlee       │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  API Endpoint           │
+│  POST /webhooks/gcal    │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  INSERT INTO            │
+│  eventos_externos       │
+│  tipo='calendar_event'  │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  CHARLEE processa       │
+│  Decide se é relevante  │
+└────────┬────────────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌────────┐ ┌──────────┐
+│Reunião │ │Evento    │
+│trabalho│ │pessoal   │
+└───┬────┘ └────┬─────┘
+    │           │
+    ▼           ▼
+┌────────────┐ ┌──────────────┐
+│Cria tarefa │ │Apenas registra│
+│+ preparo   │ │no calendário  │
+│(1h antes)  │ │              │
+└────────────┘ └──────────────┘
+```
+
+
+### 5.6 Fluxo: Morning Briefing Automático
+
+
+```
+             ⏰ 07:00 (Cron Job)
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │  CHARLEE ORCHESTRATOR │
+         │  morning_briefing()   │
+         └───────────┬───────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+┌──────────────┐ ┌─────────┐ ┌─────────┐
+│Wellness Coach│ │Capacity │ │OKR Dash │
+│"Qual fase?"  │ │"Carga?" │ │"Status?"│
+└──────┬───────┘ └────┬────┘ └────┬────┘
+       │              │           │
+       └──────────────┴───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │  Comm Manager         │
+         │  process_inbox()      │
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │  Knowledge Curator    │
+         │  curate_for_today()   │
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │  CHARLEE              │
+         │  Sintetiza tudo       │
+         │  em texto formatado   │
+         └───────────┬───────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+┌─────────────┐ ┌─────────┐ ┌──────────┐
+│ Push Notify │ │  Email  │ │ Slack DM │
+│   Mobile    │ │         │ │          │
+└─────────────┘ └─────────┘ └──────────┘
+```
+
+
+---
+
+
+## 6. Stack Tecnológica
+
+
+### 6.1 Backend
+
+
+| Componente | Tecnologia | Versão | Justificativa |
+|------------|------------|--------|---------------|
+| **Linguagem** | Python | 3.11+ | Ecosistema IA, Agno é Python-only |
+| **Framework Agente** | Agno | 1.1+ | Multi-agente, performance, model-agnostic |
+| **API Framework** | FastAPI | 0.104+ | Async, performance, auto docs |
+| **Database** | PostgreSQL | 16+ | JSONB, full-text search, robustez |
+| **Vector Search** | pgvector | 0.5+ | Embeddings integrados ao Postgres |
+| **ORM** | SQLAlchemy | 2.0+ | Type-safe, migrations, async |
+| **Migrations** | Alembic | 1.12+ | Controle de versão do schema |
+| **Task Queue** | Celery | 5.3+ | Background tasks, scheduling |
+| **Cache** | Redis | 7.2+ | Sessions, rate limiting |
+
+
+### 6.2 IA e ML
+
+
+| Componente | Tecnologia | Propósito |
+|------------|------------|-----------|
+| **LLM Provider** | OpenAI GPT-4o | Agente principal, reasoning |
+| **Embeddings** | OpenAI text-embedding-3-large | Busca semântica (1536 dims) |
+| **Vision** | Claude 3.5 Sonnet | Análise de imagens/screenshots |
+| **Speech-to-Text** | OpenAI Whisper | Transcrição de voz |
+| **Text-to-Speech** | ElevenLabs | Resposta por voz (futuro) |
+
+
+### 6.3 Integrações
+
+
+| Serviço | Biblioteca | Propósito |
+|---------|------------|-----------|
+| **Google Calendar** | `google-api-python-client` | Sync eventos |
+| **Gmail** | `google-api-python-client` | Gerenciamento de emails |
+| **Notion** | `notion-client` | Sync páginas e databases |
+| **Trello** | `py-trello` | Sync boards e cards |
+| **GitHub** | `PyGithub` | Issues, PRs, commits |
+| **Slack** | `slack-sdk` | Mensagens, notificações |
+| **Canva** | REST API | Templates, designs |
+
+
+### 6.4 Storage
+
+
+| Tipo | Tecnologia | Uso |
+|------|------------|-----|
+| **Áudio** | AWS S3 / Local FS | Gravações de voz |
+| **Imagens** | AWS S3 / Local FS | Screenshots, fotos |
+| **Documentos** | AWS S3 / Local FS | PDFs, DOCx gerados |
+| **Backups** | AWS S3 | Backups diários do DB |
+
+
+### 6.5 DevOps
+
+
+| Componente | Tecnologia | Propósito |
+|------------|------------|-----------|
+| **Containerization** | Docker | Ambiente consistente |
+| **Orchestration** | Docker Compose | Local development |
+| **CI/CD** | GitHub Actions | Testes, deploy |
+| **Monitoring** | Sentry | Error tracking |
+| **Logging** | Loguru | Structured logging |
+| **Environment Vars** | python-dotenv | Configurações |
+
+
+### 6.6 Frontend (Futuro)
+
+
+| Camada | Tecnologia | Justificativa |
+|--------|------------|---------------|
+| **Web App** | Next.js 14 (React) | SSR, performance |
+| **Mobile** | Flutter | Cross-platform |
+| **UI Components** | shadcn/ui | Componentes modernos |
+| **State Management** | Zustand | Simplicidade |
+| **Charts** | Recharts | Visualizações |
+| **Real-time** | WebSockets | Live updates |
+
+
+### 6.7 Dependências Python (requirements.txt)
+
+
+```txt
+# Core
+agno==1.1.1
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
+pgvector==0.2.4
+
+
+# AI/ML
+openai==1.3.5
+anthropic==0.7.0
+
+
+# Integrações
+google-api-python-client==2.108.0
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+notion-client==2.2.1
+py-trello==0.19.0
+PyGithub==2.1.1
+slack-sdk==3.23.0
+
+
+# Processamento
+python-multipart==0.0.6
+pillow==10.1.0
+pydub==0.25.1
+
+
+# Utils
+python-dotenv==1.0.0
+loguru==0.7.2
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+
+# Background Tasks
+celery==5.3.4
+redis==5.0.1
+
+
+# Dev/Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+ruff==0.1.6
+```
+
+
+---
+
+
+## 7. Roadmap de Desenvolvimento
+
+
+### 7.1 V1 - MVP (2-3 semanas) ✅ **FOCO INICIAL**
+
+
+**Objetivo**: Sistema funcional que responde "Qual meu foco hoje?"
+
+
+#### Entregas:
+- [x] Setup PostgreSQL com schema completo
+- [x] CRUD de Big Rocks
+- [x] CRUD de Tarefas
+- [x] Tracking manual de ciclo menstrual
+- [x] Lógica de priorização (BR01-BR04)
+- [x] Agente Charlee básico (Agno)
+- [x] Wellness Coach básico
+- [x] CLI para captura rápida
+- [x] Comando "foco do dia"
+
+
+#### Tecnologias:
+- PostgreSQL local
+- Python + Agno
+- CLI simples (argparse)
+- OpenAI GPT-4o
+
+
+#### Critérios de Sucesso:
+- ✅ Adicionar tarefa em < 10s
+- ✅ Resposta de priorização em < 3s
+- ✅ Dados armazenados localmente
+- ✅ Lógica de priorização funcionando corretamente
+
+
+---
+
+
+### 7.2 V2 - Inteligência Inicial (3-4 semanas)
+
+
+**Objetivo**: Sistema começa a "entender" Samara
+
+
+#### Entregas:
+- [ ] Capacity Guardian (cálculo de carga)
+- [ ] Sistema de "não estratégico"
+- [ ] Registro diário automático
+- [ ] Identificação de padrões de ciclo (ML básico)
+- [ ] Google Calendar sync (read-only)
+- [ ] Input de voz (Whisper)
+- [ ] Automação de lembretes
+
+
+#### Novas Tecnologias:
+- Whisper API
+- Google Calendar API
+- Celery para tasks agendadas
+
+
+#### Critérios de Sucesso:
+- ✅ Alertar corretamente sobre sobrecarga
+- ✅ Identificar pelo menos 1 padrão de ciclo
+- ✅ Sincronizar eventos do Google Calendar
+- ✅ Transcrever voz com 95%+ de acurácia
+
+
+---
+
+
+### 7.3 V3 - Multimodal (4-6 semanas)
+
+
+**Objetivo**: Sistema aceita múltiplos tipos de input
+
+
+#### Entregas:
+- [ ] Screenshot → extração de tarefas (Claude Vision)
+- [ ] Análise de imagens (recibos → transações)
+- [ ] Notion sync
+- [ ] Dashboard OKRs (web básico)
+- [ ] Gestão financeira básica
+- [ ] Curador de conhecimento inicial
+
+
+#### Novas Tecnologias:
+- Claude 3.5 Sonnet (Vision)
+- Notion API
+- Next.js (dashboard web)
+- Tesseract OCR
+
+
+#### Critérios de Sucesso:
+- ✅ Extrair tarefas de screenshot com 80%+ acurácia
+- ✅ Dashboard OKRs funcional e atualizado em tempo real
+- ✅ Sincronizar pelo menos 1 workspace Notion
+
+
+---
+
+
+### 7.4 V4 - Automação Avançada (6-8 semanas)
+
+
+**Objetivo**: Sistema executa ações autonomamente
+
+
+#### Entregas:
+- [ ] Gerente de comunicação (inbox automation)
+- [ ] Geração automática de emails
+- [ ] Criação de documentos (relatórios, apresentações)
+- [ ] Gestão financeira com planilhas
+- [ ] Trello/GitHub sync
+- [ ] Análise comportamental (padrões de produtividade)
+
+
+#### Novas Tecnologias:
+- Trello API
+- GitHub API
+- python-docx, python-pptx
+- openpyxl
+
+
+#### Critérios de Sucesso:
+- ✅ Classificar 90%+ dos emails corretamente
+- ✅ Gerar rascunhos de email aproveitáveis
+- ✅ Criar relatórios em DOCX/PPTX de qualidade
+
+
+---
+
+
+### 7.5 V5 - Inteligência Completa (8-12 semanas)
+
+
+**Objetivo**: Sistema proativo e preditivo
+
+
+#### Entregas:
+- [ ] Conselheiro estratégico (sparring partner)
+- [ ] Análise preditiva (ML para prever atrasos)
+- [ ] Recomendações proativas
+- [ ] Memória de longo prazo sofisticada
+- [ ] Canva integration
+- [ ] Multi-agente avançado (team coordination)
+- [ ] App mobile (Flutter)
+- [ ] Voice assistant completo
+
+
+#### Novas Tecnologias:
+- scikit-learn (ML preditivo)
+- Canva API
+- Flutter
+- ElevenLabs (TTS)
+
+
+#### Critérios de Sucesso:
+- ✅ Prever atrasos com 70%+ de acurácia
+- ✅ Fornecer conselhos estratégicos relevantes
+- ✅ App mobile funcional
+- ✅ Samara reporta redução de 50%+ em sobrecarga mental
+
+
+---
+
+
+### 7.6 V6+ - Visão de Longo Prazo (12+ semanas)
+
+
+- [ ] IA Generativa para conteúdo (posts, artigos)
+- [ ] Integração com hardware (smartwatch, sensores)
+- [ ] Análise de humor por voz (tone analysis)
+- [ ] Recomendações de saúde (sono, exercício)
+- [ ] Marketplace de skills customizadas
+- [ ] Multi-user (para times)
+- [ ] API pública para desenvolvedores
+- [ ] Desktop app (Electron)
+
+
+---
+
+
+## 8. Guia de Instalação
+
+
+### 8.1 Requisitos
+
+
+**Hardware:**
+- 8GB+ RAM
+- 10GB+ disco disponível
+- Processador moderno (Intel i5/AMD Ryzen 5 ou superior)
+
+
+**Software:**
+- Python 3.11+
+- PostgreSQL 16+
+- Git
+- Docker (opcional, recomendado)
+
+
+### 8.2 Setup Completo (Docker - Recomendado)
+
+
+#### Passo 1: Clone o repositório
+
+
+```bash
+git clone https://github.com/samara/charlee.git
+cd charlee
+```
+
+
+#### Passo 2: Configure variáveis de ambiente
+
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+
+**.env:**
+```bash
+# Database
+DATABASE_URL=postgresql://charlee:charlee123@localhost:5432/charlee_db
+
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+OPENAI_ORG_ID=org-...
+
+
+# Anthropic (para Vision)
+ANTHROPIC_API_KEY=sk-ant-...
+
+
+# Google (opcional para V2+)
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+
+
+# Ambiente
+ENVIRONMENT=development
+LOG_LEVEL=INFO
+```
+
+
+#### Passo 3: Suba os containers
+
+
+```bash
+docker-compose up -d
+```
+
+
+**docker-compose.yml:**
+```yaml
+version: '3.8'
+
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: charlee_db
+    environment:
+      POSTGRES_USER: charlee
+      POSTGRES_PASSWORD: charlee123
+      POSTGRES_DB: charlee_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U charlee"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: charlee_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+
+  app:
+    build: .
+    container_name: charlee_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+
+#### Passo 4: Rode as migrations
+
+
+```bash
+docker-compose exec app alembic upgrade head
+```
+
+
+#### Passo 5: Popule dados iniciais (opcional)
+
+
+```bash
+docker-compose exec app python scripts/seed_data.py
+```
+
+
+#### Passo 6: Teste a instalação
+
+
+```bash
+# CLI
+docker-compose exec app python cli/main.py add-task "Testar Charlee"
+
+
+# API
+curl http://localhost:8000/health
+```
+
+
+### 8.3 Setup Manual (Sem Docker)
+
+
+#### Passo 1: Instale PostgreSQL
+
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install postgresql-16 postgresql-contrib
+sudo systemctl start postgresql
+```
+
+
+**macOS:**
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
+
+
+#### Passo 2: Configure o banco
+
+
+```bash
+sudo -u postgres psql
+
+
+CREATE DATABASE charlee_db;
+CREATE USER charlee WITH PASSWORD 'charlee123';
+GRANT ALL PRIVILEGES ON DATABASE charlee_db TO charlee;
+
+
+\c charlee_db
+CREATE EXTENSION vector;
+
+
+\q
+```
+
+
+#### Passo 3: Clone e configure o projeto
+
+
+```bash
+git clone https://github.com/samara/charlee.git
+cd charlee
+
+
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+
+pip install -r requirements.txt
+
+
+cp .env.example .env
+# Edite .env com suas credenciais
+```
+
+
+#### Passo 4: Rode migrations
+
+
+```bash
+alembic upgrade head
+```
+
+
+#### Passo 5: Inicie o servidor
+
+
+```bash
+# API
+uvicorn api.main:app --reload
+
+
+# CLI (em outro terminal)
+python cli/main.py
+```
+
+
+### 8.4 Troubleshooting Instalação
+
+
+**Problema**: `ModuleNotFoundError: No module named 'agno'`
+```bash
+# Solução: Reinstale dependências
+pip install --upgrade -r requirements.txt
+```
+
+
+**Problema**: Postgres não conecta
+```bash
+# Verifique se está rodando
+sudo systemctl status postgresql
+
+
+# Verifique a porta
+sudo netstat -tuln | grep 5432
+
+
+# Teste conexão
+psql -h localhost -U charlee -d charlee_db
+```
+
+
+**Problema**: OpenAI API Key inválida
+```bash
+# Verifique no .env
+cat .env | grep OPENAI
+
+
+# Teste a key
+python -c "import openai; openai.api_key='sk-...'; print(openai.Model.list())"
+```
+
+
+---
+
+
+## 9. API Reference
+
+
+### 9.1 Autenticação
+
+
+Todas as requisições requerem Bearer token no header:
+
+
+```http
+Authorization: Bearer <token>
+```
+
+
+### 9.2 Endpoints - Tarefas
+
+
+#### POST /tasks
+Cria nova tarefa
+
+
+**Request:**
+```json
+{
+  "descricao": "Apresentação Janeiro - Slides Syssa",
+  "tipo": "Tarefa",
+  "deadline": "2025-01-15T09:00:00Z",
+  "big_rock_id": "uuid-syssa",
+  "estimativa_horas": 8,
+  "tags": ["apresentacao", "urgente"]
+}
+```
+
+
+**Response:**
+```json
+{
+  "id": "uuid-task-123",
+  "descricao": "Apresentação Janeiro - Slides Syssa",
+  "status": "Pendente",
+  "prioridade_calculada": 1,
+  "criado_em": "2025-11-01T08:30:00Z"
+}
+```
+
+
+#### GET /tasks
+Lista tarefas com filtros
+
+
+**Query Params:**
+- `status`: "Pendente" | "Concluída" | "Cancelada"
+- `big_rock_id`: UUID do big rock
+- `limit`: Integer (default: 50)
+- `offset`: Integer (default: 0)
+
+
+**Response:**
+```json
+{
+  "total": 42,
+  "tasks": [
+    {
+      "id": "uuid",
+      "descricao": "...",
+      "deadline": "...",
+      "prioridade_calculada": 1
+    }
+  ]
+}
+```
+
+
+#### GET /tasks/prioritized
+Retorna tarefas priorizadas (BR03)
+
+
+**Response:**
+```json
+{
+  "nivel_1_incendios": [
+    {
+      "id": "uuid",
+      "descricao": "Deploy Lunelli - Hotfix",
+      "deadline": "2025-11-01T14:00:00Z",
+      "big_rock": "Estágio Syssa"
+    }
+  ],
+  "nivel_2_inadiaveis": [...],
+  "nivel_3_estrategico": [...],
+  "nivel_4_pessoal": [...],
+  "nivel_5_continuo": [...]
+}
+```
+
+
+#### PATCH /tasks/{task_id}
+Atualiza tarefa
+
+
+**Request:**
+```json
+{
+  "status": "Concluída",
+  "horas_reais": 6.5
+}
+```
+
+
+#### DELETE /tasks/{task_id}
+Deleta tarefa
+
+
+---
+
+
+### 9.3 Endpoints - Big Rocks
+
+
+#### GET /big-rocks
+Lista todos os Big Rocks
+
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid-syssa",
+    "nome": "Estágio Syssa",
+    "cor": "#FF6B6B",
+    "capacidade_semanal": 20,
+    "ativo": true
+  }
+]
+```
+
+
+#### POST /big-rocks
+Cria novo Big Rock
+
+
+---
+
+
+### 9.4 Endpoints - Ciclo Menstrual
+
+
+#### POST /cycle/log
+Registra entrada de ciclo
+
+
+**Request:**
+```json
+{
+  "data_inicio": "2025-11-01",
+  "fase": "menstrual",
+  "sintomas": ["fadiga", "dor"],
+  "humor": {
+    "energia": 4,
+    "foco": 5,
+    "criatividade": 6
+  }
+}
+```
+
+
+#### GET /cycle/current
+Retorna fase atual
+
+
+**Response:**
+```json
+{
+  "fase": "menstrual",
+  "dia_do_ciclo": 2,
+  "duracao_prevista": 5,
+  "energia_esperada": 0.6,
+  "recomendacoes": [
+    "Foque em tarefas administrativas",
+    "Evite reuniões longas"
+  ]
+}
+```
+
+
+#### GET /cycle/patterns
+Retorna padrões aprendidos
+
+
+---
+
+
+### 9.5 Endpoints - Agente
+
+
+#### POST /agent/chat
+Conversa com Charlee
+
+
+**Request:**
+```json
+{
+  "message": "Qual meu foco hoje?",
+  "stream": false
+}
+```
+
+
+**Response:**
+```json
+{
+  "response": "☀️ BOM DIA, SAMARA! ...",
+  "agent_used": "charlee",
+  "sub_agents_called": [
+    "wellness_coach",
+    "capacity_guardian"
+  ],
+  "processing_time_ms": 1234
+}
+```
+
+
+#### POST /agent/briefing
+Gera briefing matinal
+
+
+---
+
+
+### 9.6 Endpoints - Voice
+
+
+#### POST /voice/transcribe
+Transcreve áudio
+
+
+**Request (multipart/form-data):**
+```
+audio: file.wav
+```
+
+
+**Response:**
+```json
+{
+  "transcricao": "Lembrar de comprar leite amanhã",
+  "confidence": 0.95,
+  "entidades_extraidas": {
+    "acao": "lembrar",
+    "objeto": "comprar leite",
+    "prazo": "amanhã"
+  }
+}
+```
+
+
+---
+
+
+### 9.7 Endpoints - Integrações
+
+
+#### POST /integrations/google-calendar/sync
+Sincroniza Google Calendar
+
+
+#### POST /integrations/notion/sync
+Sincroniza Notion
+
+
+---
+
+
+### 9.8 WebSocket
+
+
+#### WS /ws/agent
+Stream de resposta do agente em tempo real
+
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/agent');
+
+
+ws.send(JSON.stringify({
+  message: "Qual meu foco hoje?"
+}));
+
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log(data.chunk); // Stream parcial
+};
+```
+
+
+---
+
+
+## 10. Casos de Uso
+
+
+### 10.1 Caso de Uso: Manhã de Segunda-feira
+
+
+**Contexto**: Samara acorda segunda-feira após fim de semana
+
+
+**Fluxo:**
+
+
+1. **07:00** - Charlee envia briefing automático
+   ```
+   ☀️ BOM DIA, SAMARA!
+   
+   🌸 Você está na FASE FOLICULAR (Dia 9/14)
+   ⚡ Energia esperada: Alta (120%)
+   💡 Melhor dia da semana para tasks criativas!
+   
+   🔥 URGENTE HOJE:
+   • Deploy Lunelli - Hotfix (3h)
+   
+   📊 OKRs em Risco:
+   • Apresentação Syssa: 40% (precisa de atenção)
+   
+   📬 Inbox: 1 email urgente do Sênior
+   ```
+
+
+2. **08:00** - Samara abre o CLI
+   ```bash
+   $ charlee focus
+   
+   🎯 SEU FOCO MÁXIMO HOJE:
+   1. Deploy Lunelli - Hotfix (URGENTE)
+   2. Trabalhar em Apresentação Syssa (2h mínimo)
+   
+   ⏰ Plano Sugerido:
+   08:00-09:00 | Responder Sênior + Preparar ambiente
+   09:00-12:00 | Deep Work: Hotfix Lunelli
+   12:00-13:00 | Almoço + descanso
+   13:00-15:00 | Apresentação Syssa
+   15:00-16:00 | Emails e reuniões rápidas
+   ```
+
+
+3. **09:30** - Interrupção: Pedido de reunião urgente
+   ```bash
+   $ charlee evaluate "Reunião urgente Summit agora"
+   
+   ⚠️ ANÁLISE DE CAPACIDADE:
+   
+   Você está em Deep Work (Hotfix Lunelli).
+   Esta reunião custará:
+   • 1h de reunião
+   • 30min de contexto (voltar ao foco)
+   • Total: 1.5h do seu dia mais produtivo
+   
+   🛡️ RECOMENDAÇÃO: DIGA NÃO
+   
+   Resposta sugerida:
+   "Estou no meio de um hotfix crítico para o Lunelli.
+   Posso participar às 15h? Ou podemos resolver por Slack?"
+   ```
+
+
+4. **12:30** - Após terminar hotfix
+   ```bash
+   $ charlee complete "Deploy Lunelli - Hotfix"
+   
+   ✅ Tarefa concluída!
+   ⏱️ Tempo real: 3.2h (estimado: 3h) 
+   
+   📊 Atualização de OKRs:
+   • Estabilidade Lunelli: 90% → 95% ✅
+   
+   💪 Próximo foco: Apresentação Syssa (2h disponíveis)
+   
+   🌸 Dica: Você gastou muita energia. Descanse 15min
+        antes de começar a próxima task.
+   ```
+
+
+### 10.2 Caso de Uso: Pedido de Novo Projeto
+
+
+**Contexto**: Cliente FAPESC solicita novo projeto
+
+
+**Fluxo:**
+
+
+1. Email do cliente chega
+   ```
+   From: cliente@fapesc.gov.br
+   Subject: Novo Projeto - Sistema de Gestão
+
+
+   Olá Samara, gostaríamos de te convidar para liderar
+   um novo projeto de gestão de bolsas. Estimamos 10h/semana
+   pelos próximos 2 meses. Interessada?
+   ```
+
+
+2. Charlee processa o email automaticamente
+   ```bash
+   📬 COMUNICAÇÃO PROCESSADA
+   
+   Tipo: Oportunidade de projeto
+   Prioridade: Média (não urgente, mas importante)
+   Ação requerida: Decisão estratégica
+   
+   🤔 Delegando para Capacity Guardian...
+   ```
+
+
+3. Capacity Guardian analisa
+   ```bash
+   🚨 ALERTA DE CAPACIDADE
+   
+   📊 Análise:
+   • Carga atual (8 semanas): 94%
+   • Com novo projeto: 115% (SOBRECARGA CRÍTICA)
+   
+   ⚖️ Para aceitar, você precisa:
+   
+   Opção A: Reduzir escopo em Big Rocks existentes
+   - Syssa: Difícil (estágio obrigatório)
+   - Summit: Possível (-3h/semana no mês 2)
+   - TalentFlow: Difícil (perto do pitch)
+   
+   Opção B: Adiar início para Fevereiro
+   - Após conclusão do estágio Syssa
+   - Sua carga cairá para 60%
+   
+   Opção C: Negociar escopo reduzido
+   - Propor 5h/semana ao invés de 10h
+   - Ou propor entrega em 4 meses ao invés de 2
+   
+   🎯 RECOMENDAÇÃO: Opção B (Adiar para Fevereiro)
+   
+   💡 Contexto adicional:
+   • Você está na fase menstrual (energia baixa)
+   • Esta não é uma boa semana para decisões grandes
+   • Reavaliar na próxima semana (fase folicular)
+   ```
+
+
+4. Strategic Advisor complementa
+   ```bash
+   🧠 ANÁLISE ESTRATÉGICA
+   
+   📈 Impacto no seu objetivo de US$ 1 bilhão:
+   
+   ✅ Positivo:
+   • FAPESC é cliente estratégico (governo)
+   • Pode gerar networking valioso
+   • Experiência em gestão pública
+   
+   ❌ Negativo:
+   • Risco de prejudicar projetos atuais
+   • Estágio Syssa é mais crítico (impacto no currículo)
+   • Burnout pode comprometer tudo
+   
+   🎲 Alternativa Criativa:
+   "E se você propor mentoria ao invés de liderança?"
+   • 2h/semana ao invés de 10h
+   • Mantém relacionamento com FAPESC
+   • Não compromete capacidade atual
+   
+   📝 Rascunho de resposta preparado. Aprovar?
+   ```
+
+
+5. Samara decide
+   ```bash
+   $ charlee decide "Aceitar opção B - Adiar para Fevereiro"
+   
+   ✅ Decisão registrada!
+   
+   📧 Email de resposta enviado:
+   "Olá! Agradeço muito o convite. Infelizmente, minha
+   capacidade está comprometida até Janeiro devido ao
+   estágio na Syssa e outros projetos. Podemos conversar
+   sobre começar em Fevereiro? Ficarei mais disponível
+   e poderei dedicar a atenção que o projeto merece."
+   
+   📅 Lembrete criado: "Follow-up FAPESC" em 20/01/2026
+   
+   🧠 Aprendizado registrado na memória de longo prazo.
+   ```
+
+
+### 10.3 Caso de Uso: Fase Menstrual Difícil
+
+
+**Contexto**: Samara está no dia 2 da fase menstrual com cólicas fortes
+
+
+**Fluxo:**
+
+
+1. Samara registra pela manhã
+   ```bash
+   $ charlee log-wellness
+   
+   Como você se sente hoje? (1-10): 3
+   Sintomas: cólicas, fadiga, dor de cabeça
+   Horas de sono: 6h
+   
+   ✅ Registrado.
+   ```
+
+
+2. Wellness Coach analisa e alerta
+   ```bash
+   🌸 ALERTA DE BEM-ESTAR
+   
+   Samara, você reportou:
+   • Energia: 3/10 (muito abaixo da média)
+   • Sintomas: cólicas, fadiga, dor de cabeça
+   • Sono: 6h (1h abaixo do ideal)
+   
+   📊 Contexto:
+   • Dia 2 da fase menstrual (tipicamente o mais difícil)
+   • Seu padrão histórico: energia 40% neste dia
+   
+   🛡️ MODO PROTEÇÃO ATIVADO
+   
+   🚫 Cancelando automaticamente:
+   • Reunião com cliente (16h) → Reagendada para próxima semana
+   • Deep work de 3h → Reduzido para 1.5h
+   
+   ✅ Plano Ajustado para Hoje:
+   09:00-10:00 | Trabalho leve (emails, organização)
+   10:00-10:30 | Descanso + chá
+   10:30-12:00 | Foco moderado (documentação)
+   12:00-14:00 | Almoço prolongado + descanso
+   14:00-15:00 | Trabalho leve
+   15:00-17:00 | Encerrar cedo (você precisa!)
+   
+   💊 Lembretes:
+   • Tomar medicação às 10h
+   • Bolsa térmica
+   • Hidratar-se (2L hoje)
+   
+   💡 Nenhuma task urgente depende de você hoje.
+   O mundo não vai acabar se você descansar.
+   ```
+
+
+3. Capacity Guardian atualiza cargas
+   ```bash
+   📊 CARGA DE TRABALHO AJUSTADA
+   
+   Tarefas adiadas automaticamente:
+   • "Apresentação Syssa" → Amanhã (fase folicular)
+   • "Brainstorm Summit" → Próxima semana
+   
+   Tasks mantidas (baixa energia):
+   • Responder emails informativos ✅ Leve
+   • Organizar backlog Lunelli ✅ Leve
+   • Revisar documentação ✅ Leve
+   
+   🎯 Foco: Apenas o essencial. Priorize você.
+   ```
+
+
+4. Fim do dia - Check-in
+   ```bash
+   $ charlee evening-review
+   
+   Como foi seu dia? (1-10): 5
+   
+   🌸 ANÁLISE DO DIA:
+   
+   ✅ Você completou:
+   • 2 tasks leves (organização, emails)
+   • Total: 2h de trabalho produtivo
+   
+   💪 Isso é suficiente? SIM!
+   • Você estava em 3/10 de energia
+   • 2h de trabalho = 200% de produtividade relativa
+   • Você priorizou bem-estar (crucial!)
+   
+   📈 Aprendizado:
+   Padrão confirmado: Dia 2 do ciclo requer ritmo leve.
+   Isto será considerado em planejamentos futuros.
+   
+   💤 Vá dormir cedo hoje (ideal: 22h).
+   Amanhã você estará melhor! 🌸
+   ```
+
+
+### 10.4 Caso de Uso: Conversa Difícil com Breno
+
+
+**Contexto**: Samara precisa dar feedback difícil ao Breno sobre o ritmo no Lunelli
+
+
+**Fluxo:**
+
+
+1. Samara pede ajuda ao Strategic Advisor
+   ```bash
+   $ charlee advise "Preciso conversar com o Breno sobre o 
+     ritmo dele no projeto Lunelli. Ele é talentoso mas está 
+     entregando código com bugs e atrasando deploys. Como abordar?"
+   ```
+
+
+2. Strategic Advisor busca contexto
+   ```bash
+   🧠 BUSCANDO CONTEXTO...
+   
+   📊 Informações relevantes encontradas:
+   
+   Suas notas sobre Breno (últimos 3 meses):
+   • Set/2024: "Breno salvou o projeto com refatoração brilhante"
+   • Out/2024: "Preocupação com ritmo, mas não quis ser chata"
+   • Nov/2024: "Bugs em produção estão virando padrão"
+   
+   Situação atual do Lunelli:
+   • Deploy com bugs críticos (ontem)
+   • Apresentação em risco (15/01)
+   • Sênior já expressou preocupação
+   
+   Decisões similares suas:
+   • Set/2024: Feedback direto para Maria funcionou bem
+   • Jul/2024: Feedback suave para João foi mal interpretado
+   
+   Seu estilo de comunicação:
+   • Prefere ser direta mas empática
+   • Valoriza competência técnica
+   • Evita conflitos mas não foge deles quando necessário
+   ```
+
+
+3. Recomendação gerada
+   ```bash
+   🎯 RECOMENDAÇÃO PRINCIPAL
+   
+   ABORDAGEM: "Amiga preocupada + Impacto de negócio"
+   Taxa de sucesso estimada: 75%
+   
+   📝 ESTRUTURA DA CONVERSA:
+   
+   1. ABRIR COM RECONHECIMENTO (30 segundos)
+
+ 1. ABRIR COM RECONHECIMENTO (30 segundos)
+   "Breno, tu sabes que eu te admiro muito como desenvolvedor.
+   A refatoração que fizeste em setembro salvou o projeto."
+   
+   2. APRESENTAR O PROBLEMA (1 minuto)
+   "Mas preciso ser honesta contigo sobre algo que me preocupa.
+   Nas últimas semanas, temos tido bugs recorrentes em produção,
+   e o deploy de ontem teve problemas sérios. Isto está criando
+   um risco direto para a nossa apresentação de Janeiro, que é
+   crucial para a confiança dos investidores."
+   
+   3. USAR DADOS ESPECÍFICOS (1 minuto)
+   "Números concretos:
+   • 4 bugs críticos nas últimas 3 semanas
+   • 2 rollbacks necessários
+   • Estimamos que precisamos de 2 semanas para estabilizar
+   • Temos apenas 6 semanas até a apresentação"
+   
+   4. PERGUNTAR ANTES DE JULGAR (2 minutos)
+   "O que está acontecendo? Há algo que eu não estou vendo?
+   Alguma pressão que não estou percebendo?"
+   
+   [PAUSA AQUI - ESCUTE ATIVAMENTE]
+   
+   5. OFERECER AJUDA, NÃO SÓ CRÍTICA (2 minutos)
+   "Eu quero te ajudar a voltar ao teu melhor. Vamos pensar juntos:
+   • Precisas de mais tempo para testes?
+   • Code review está sendo efetivo?
+   • Há algo na arquitetura que está complicado?
+   • Posso assumir alguma parte para aliviar tua carga?"
+   
+   6. DEFINIR EXPECTATIVAS CLARAS (1 minuto)
+   "Para os próximos sprints, preciso que:
+   • Todo código passe por code review detalhado
+   • Tenhamos cobertura de testes >= 80%
+   • Deploys só em ambiente de staging primeiro
+   • Alinhamento diário de 15min para riscos"
+   
+   7. REFORÇAR CONFIANÇA (30 segundos)
+   "Eu acredito que consegues. Já provaste isso antes.
+   Vamos fazer este projeto brilhar juntos?"
+   
+   ✅ O QUE FAZER:
+   • Manter tom calmo mas firme
+   • Usar "nós" ao invés de "tu" quando possível
+   • Ter dados concretos à mão
+   • Oferecer soluções práticas
+   • Estabelecer follow-up (reunião em 3 dias)
+   
+   ❌ O QUE EVITAR:
+   • Comparar com outros desenvolvedores
+   • Mencionar conversas passadas não resolvidas
+   • Tom acusatório ou passivo-agressivo
+   • Ameaças veladas sobre consequências
+   • Resolver tudo sozinha depois (não assuma o trabalho dele)
+   
+   ⏰ MELHOR MOMENTO:
+   • NÃO na segunda-feira (fim de semana pode ter sido ruim)
+   • NÃO na sexta (não processar durante o fim de semana)
+   • IDEAL: Terça ou Quarta, 10h-11h (meio da manhã)
+   • Local: Sala privada ou chamada 1:1
+   • Duração prevista: 30 minutos
+   
+   🎭 ROLE-PLAY SIMULADO:
+   
+   Quer praticar comigo antes? Posso simular possíveis
+   reações do Breno:
+   A) Defensivo: "Não foi minha culpa, a arquitetura é ruim"
+   B) Evasivo: "Está tudo sob controle, só foi azar"
+   C) Honesto: "Estou sobrecarregado e não pedi ajuda"
+   D) Emocional: "Vocês não valorizam meu trabalho"
+   
+   Digite A/B/C/D para praticar, ou 'skip' para pular.
+
+
+Samara escolhe praticar (Opção C)
+
+$ charlee practice C
+
+
+🎭 SIMULAÇÃO - Reação Honesta
+
+
+[Você fez a abertura e apresentou o problema]
+
+
+BRENO (simulado):
+"Samara, obrigado por ser direta. Na verdade... eu estou
+sobrecarregado. Além do Lunelli, o Sênior me colocou em
+mais dois projetos paralelos. Estou trabalhando 12h/dia
+e a qualidade está caindo porque estou exausto."
+
+
+🤔 Como você responderia?
+
+
+💡 SUGESTÃO:
+"Breno, obrigado por ser honesto. Isso explica muito.
+Vamos fazer o seguinte:
+
+
+1. Eu vou conversar com o Sênior HOJE sobre tua carga.
+   O Lunelli é prioridade crítica, precisas de foco.
+
+
+2. Para esta semana, vou assumir [Task X] do Lunelli
+   para aliviar tua carga imediata.
+
+
+3. Mas a médio prazo, tu também precisas aprender a dizer
+   não ou escalar quando estiveres sobrecarregado. Isto
+   afeta não só o projeto, mas tua saúde.
+
+
+Combinado? Vamos marcar alinhamento amanhã 10h para
+redistribuir tasks."
+
+
+✅ ANÁLISE DESTA RESPOSTA:
+• Demonstra empatia e ação imediata
+• Oferece ajuda concreta
+• Mantém expectativas claras
+• Ensina habilidade valiosa (assertividade)
+• Define próximos passos
+
+
+📊 Probabilidade de sucesso: 85%
+4. Após a conversa real
+
+$ charlee log-decision "Conversei com o Breno sobre ritmo Lunelli"
+
+
+Como foi? [Bem / Ok / Mal]: Bem
+
+
+Resultado: Ele foi honesto sobre sobrecarga. Combinamos
+         redistribuição de tasks e vou falar com Sênior.
+
+
+✅ DECISÃO REGISTRADA
+
+
+📊 Aprendizado:
+Padrão identificado: Abordagem direta + empática funciona
+bem com Breno. Ele valoriza honestidade e ofertas de ajuda.
+
+
+📅 Follow-ups criados:
+• Conversa com Sênior sobre carga do Breno (HOJE 15h)
+• Alinhamento com Breno (AMANHÃ 10h)
+• Revisão de progresso (PRÓXIMA SEMANA)
+
+
+💡 Reflexão:
+Esta conversa poderia ter sido mais fácil se você tivesse
+identificado a sobrecarga dele há 2 semanas. Seu Capacity
+Guardian agora vai monitorar sinais de sobrecarga em todo
+o time, não só em você.
+5. 10.5 Caso de Uso: Curador de Conhecimento em Ação
+Contexto: É quinta-feira à noite, Charlee está curado conhecimento para o fim de semana
+Fluxo:
+21:00 - Curador analisa objetivos atuais
+
+🔍 ANALISANDO SEUS OBJETIVOS...
+
+
+Objetivos de Aprendizado Ativos:
+• Dominar Agno (framework de agentes)
+• Melhorar skills de QA/Testing
+• Aprender sobre fundraising (para TalentFlow)
+
+
+Desafios Atuais:
+• Bugs em produção no Lunelli
+• Apresentação Syssa em 6 semanas
+• Pitch TalentFlow em 8 semanas
+
+
+🔎 Buscando conteúdo relevante...
+1. 21:05 - Curador pesquisa fontes
+
+📚 FONTES MONITORADAS:
+
+
+✅ GitHub: agno-agi/agno
+   • 3 issues novas (2 relevantes)
+   • 1 PR sobre error handling
+
+
+✅ RSS: blog.agno.com
+   • 1 artigo novo sobre multi-agent patterns
+
+
+✅ arXiv: papers sobre AI agents
+   • 2 papers novos sobre agentic systems
+
+
+✅ Twitter: @agnoagi, @sama, @karpathy
+   • Thread interessante sobre RAG patterns
+
+
+✅ HackerNews
+   • Discussão sobre testing AI systems
+
+
+🚫 FILTRADOS (não relevantes):
+   • 45 artigos sobre LangChain (você usa Agno)
+   • 12 posts sobre web scraping
+   • 23 tutoriais de Python básico
+2. 21:10 - Classificação por relevância
+
+🎯 CLASSIFICANDO POR RELEVÂNCIA...
+
+
+[1] Issue #847: Error handling in complex agent graphs
+    Relevância: 98%
+    Razão: Exatamente o bug que você enfrentou ontem no Lunelli
+    Tags: agno, error-handling, production
+    Tempo leitura: 10 min
+    
+[2] Article: "Testing Strategies for Multi-Agent Systems"
+    Relevância: 92%
+    Razão: Mencionado 'QA' 5x nas suas notas esta semana
+    Tags: testing, agno, best-practices
+    Tempo leitura: 25 min
+    
+[3] Paper: "Agentic RAG: Retrieval Patterns for Production"
+    Relevância: 88%
+    Razão: Você está implementando RAG no TalentFlow
+    Tags: rag, agents, research
+    Tempo leitura: 45 min (paper acadêmico)
+    
+[4] Thread: RAG optimization techniques
+    Relevância: 85%
+    Razão: Complementa o paper #3
+    Tags: rag, optimization
+    Tempo leitura: 15 min
+    
+[5] Article: "Preparing Your Startup Pitch"
+    Relevância: 78%
+    Razão: Pitch TalentFlow em 8 semanas
+    Tags: fundraising, pitch, startup
+    Tempo leitura: 20 min
+3. 21:15 - Digest personalizado gerado
+
+📚 DIGEST DE CONHECIMENTO - FIM DE SEMANA
+
+
+Olá Samara! Curei 5 recursos super relevantes para você.
+Tempo total de leitura: ~2h
+
+
+═══════════════════════════════════════════════════
+
+
+🔥 URGENTE - Ler ANTES de trabalhar no Lunelli segunda
+
+
+[1] GitHub Issue #847: Error handling in complex agent graphs
+    https://github.com/agno-agi/agno/issues/847
+    
+    💡 POR QUE AGORA:
+    Esta issue discute EXATAMENTE o tipo de erro que causou
+    o bug de ontem no deploy do Lunelli. O autor propõe um
+    pattern de "graceful degradation" que você pode implementar.
+    
+    🎯 O QUE FAZER:
+    • Ler a issue completa (10 min)
+    • Testar o código de exemplo no sandbox
+    • Implementar no Lunelli na segunda de manhã
+    • Pode economizar 4-6h de debugging
+    
+    ⭐ Prioridade: MÁXIMA
+
+
+═══════════════════════════════════════════════════
+
+
+📖 LEITURA PRINCIPAL DO FIM DE SEMANA
+
+
+[2] Article: "Testing Strategies for Multi-Agent Systems"
+    https://blog.agno.com/testing-strategies
+    
+    💡 POR QUE AGORA:
+    • Você mencionou "falta de QA" 5x esta semana
+    • Apresentação Syssa em 6 semanas pode incluir isto
+    • Vai ajudar a prevenir bugs como o do Lunelli
+    
+    🎯 KEY TAKEAWAYS (já li para você):
+    • Unit tests para agentes individuais
+    • Integration tests para agent teams
+    • Mocking de LLM calls para testes determinísticos
+    • Regression tests para casos de uso críticos
+    
+    📝 AÇÃO SUGERIDA:
+    Este artigo pode virar uma seção da sua apresentação!
+    "Como implementamos QA em sistemas multi-agente"
+    
+    ⏰ Ler: Sábado manhã (fase folicular = melhor absorção)
+
+
+═══════════════════════════════════════════════════
+
+
+🧠 DEEP DIVE - Se tiver tempo e energia
+
+
+[3] Paper: "Agentic RAG: Retrieval Patterns for Production"
+    https://arxiv.org/abs/2025.xxxxx
+    
+    💡 POR QUE AGORA:
+    Você está implementando RAG no TalentFlow. Este paper
+    apresenta 7 patterns de produção que podem melhorar
+    significativamente a qualidade dos resultados.
+    
+    🎯 RELEVÂNCIA ESPECÍFICA:
+    • Pattern 3: "Hybrid Search" → você usa só vector search
+    • Pattern 5: "Reranking" → pode melhorar precisão 40%
+    • Pattern 7: "Agentic Query Planning" → perfect fit!
+    
+    ⚠️ AVISO:
+    Paper acadêmico, denso. Reserve 45min de foco total.
+    Recomendo domingo à tarde (você geralmente está mais
+    disposta para conteúdo técnico profundo nesse horário).
+    
+    📋 VOI CRIAR SUMÁRIO:
+    Se quiser, posso ler o paper e criar um sumário executivo
+    de 5 min para você. Comando: charlee summarize [3]
+
+
+═══════════════════════════════════════════════════
+
+
+💼 PREPARAÇÃO ESTRATÉGICA
+
+
+[5] Article: "Preparing Your Startup Pitch"
+    https://ycombinator.com/library/preparing-pitch
+    
+    💡 POR QUE AGORA:
+    Pitch TalentFlow em 8 semanas. Ainda dá tempo de iterar.
+    
+    🎯 CHECKLIST NO ARTIGO:
+    □ Problem statement claro (3 min)
+    □ Solution demo impressionante (5 min)
+    □ Market size com dados (2 min)
+    □ Traction/Milestones (3 min)
+    □ Team slide mostrando competência (1 min)
+    □ Ask claro (1 min)
+    
+    📝 PRÓXIMO PASSO:
+    Após ler, agende sessão "charlee brainstorm pitch"
+    para trabalharmos juntas na estrutura.
+    
+    ⏰ Ler: Domingo à noite (preparação mental para semana)
+
+
+═══════════════════════════════════════════════════
+
+
+📊 RESUMO EXECUTIVO:
+
+
+Tempo total: ~2h de leitura
+
+
+Plano sugerido:
+• Sexta à noite (HOJE): Item [1] (10 min) - URGENTE
+• Sábado manhã: Item [2] (25 min)
+• Domingo tarde: Item [3] (45 min) - Se tiver energia
+• Domingo noite: Item [5] (20 min)
+
+
+🌸 CONSIDERANDO SEU CICLO:
+Você estará na fase folicular (alta energia) no fim de semana.
+Perfeito para absorver conteúdo técnico denso!
+
+
+💾 SALVAR PARA DEPOIS?
+Todos os itens foram salvos em sua biblioteca pessoal.
+Acesse: charlee library
+
+
+❓ QUER AJUDA?
+• charlee summarize [número] - Gero sumário executivo
+• charlee quiz [número] - Testo sua compreensão
+• charlee apply [número] - Ajudo a aplicar no seu projeto
+
+
+Bom fim de semana de aprendizado! 📚✨
+4. Segunda 09:00 - Samara usa o conhecimento
+
+$ charlee apply 1
+
+
+🛠️ APLICANDO: Issue #847 no Projeto Lunelli
+
+
+📋 PASSOS:
+
+
+[1] Analisei seu código do Lunelli
+    Identifiquei 3 lugares onde o pattern seria útil:
+    • agent_workflow.py linha 145
+    • error_handler.py linha 67
+    • main_agent.py linha 203
+
+
+[2] Gerei código de exemplo adaptado:
+
+
+```python
+# agent_workflow.py - Linha 145
+# ANTES (seu código atual):
+try:
+    result = agent.run(task)
+except Exception as e:
+    logger.error(f"Agent failed: {e}")
+    raise
+
+
+# DEPOIS (com graceful degradation):
+from agno.errors import AgentError, RecoverableError
+
+
+try:
+    result = agent.run(task)
+except RecoverableError as e:
+    logger.warning(f"Agent had recoverable error: {e}")
+    # Fallback para resposta padrão
+    result = agent.fallback_response(task, error=e)
+except AgentError as e:
+    logger.error(f"Agent failed critically: {e}")
+    # Notifica equipe mas não quebra o sistema
+    notify_team(e)
+    result = None
+5.  [3] Criei PR draft no GitHub: https://github.com/samara/lunelli/pull/47 Título: "Implement graceful degradation for agent errors"
+
+[4] Testes adicionados: • test_agent_recoverable_error() • test_agent_critical_error() • test_fallback_response()
+
+⏱️ Tempo economizado: ~4h de debugging manual
+
+✅ Próximo passo: Revisar o PR e mergear
+
+💡 Quer que eu explique o pattern em detalhes? (S/N)
+
+
+10.6 Caso de Uso: Análise Comportamental Automática
+Contexto: Após 4 semanas de uso, Charlee detecta padrão preocupante
+Fluxo:
+Análise comportamental roda automaticamente
+
+ [Sistema - Background Task - 22:00]
+
+
+🔍 ANÁLISE COMPORTAMENTAL SEMANAL...
+
+
+Dados analisados:
+• 28 dias de registro diário
+• 147 tarefas completadas
+• 23 interações com agentes
+• 4 ciclos menstruais completos
+
+
+🚨 PADRÃO PREOCUPANTE DETECTADO:
+
+
+Severidade: ALTA
+Tipo: Risco de Burnout
+Confiança: 87%
+   1. Alerta gerado
+
+ 📊 ANÁLISE COMPORTAMENTAL - ATENÇÃO NECESSÁRIA
+
+
+Samara, identifiquei um padrão que me preocupa:
+
+
+═══════════════════════════════════════════════════
+
+
+🔴 INDICADORES DE RISCO DE BURNOUT
+
+
+Comportamento observado (últimas 4 semanas):
+
+
+[1] SONO INSUFICIENTE (❌)
+    • Média: 6.2h/noite (ideal: 7-8h)
+    • Noites com <6h: 12/28 (43%)
+    • Tendência: Piorando (-0.3h/semana)
+
+
+[2] HORAS DE TRABALHO EXCESSIVAS (❌)
+    • Média: 11.3h/dia (ideal: 8-9h)
+    • Dias >12h: 8/28 (29%)
+    • Fins de semana trabalhados: 4/4 (100%)
+
+
+[3] ENERGIA CONSISTENTEMENTE BAIXA (❌)
+    • Média: 5.2/10 (abaixo de 7/10 saudável)
+    • Mesmo na fase folicular (deveria ser 8-9/10)
+    • Dias com energia <4: 9/28 (32%)
+
+
+[4] NEGLIGÊNCIA DE AUTOCUIDADO (⚠️)
+    • Exercício: 2x nas últimas 4 semanas (meta: 3x/semana)
+    • Meditação: 0x (você costumava fazer 2x/semana)
+    • Refeições puladas: 7 (principalmente almoço)
+
+
+[5] SATURAÇÃO DE CAPACIDADE (❌)
+    • Carga média: 96% (limite seguro: 80%)
+    • Semanas em sobrecarga: 3/4
+    • Pedidos de novos projetos negados: 2
+
+
+═══════════════════════════════════════════════════
+
+
+📈 COMPARAÇÃO COM PERÍODOS ANTERIORES:
+
+
+                 Setembro  Outubro   Nov (agora)
+Sono médio         7.1h      6.8h      6.2h  ⬇️
+Energia média      7.2       6.4       5.2   ⬇️
+Carga trabalho     78%       89%       96%   ⬆️
+Autocuidado        8/10      5/10      3/10  ⬇️
+
+
+Tendência: PIORANDO CONSISTENTEMENTE
+
+
+═══════════════════════════════════════════════════
+
+
+🧠 CONTEXTO RELEVANTE:
+
+
+Suas notas recentes incluem:
+• "Estou exausta mas preciso entregar" (3x)
+• "Dormi mal de novo" (5x)
+• "Sem tempo para mim" (2x)
+• "Só mais uma semana e descanso" (4x - mas não descansou)
+
+
+═══════════════════════════════════════════════════
+
+
+⚠️ RISCOS IDENTIFICADOS:
+
+
+CURTO PRAZO (próximas 2 semanas):
+• Qualidade do trabalho pode cair 30-40%
+• Maior chance de erros e bugs
+• Irritabilidade aumentada (pode afetar relacionamentos)
+• Sistema imunológico enfraquecido (maior risco de doença)
+
+
+MÉDIO PRAZO (próximos 2 meses):
+• Risco significativo de burnout completo
+• Apresentações Syssa/TalentFlow podem ser comprometidas
+• Recuperação pode levar 3-6 meses
+
+
+LONGO PRAZO (objetivo de US$ 1 bilhão):
+• Burnout pode descarrilar completamente seus objetivos
+• Padrão insustentável para carreira de longo prazo
+
+
+═══════════════════════════════════════════════════
+
+
+🛡️ RECOMENDAÇÕES URGENTES:
+
+
+[CRÍTICO] Esta semana:
+
+
+1. REDUZIR CARGA IMEDIATAMENTE
+   • Adiar início "Força-Tarefa Summit" por 2 semanas
+   • Delegar 30% das tasks do Lunelli
+   • Trabalhar MAX 8h/dia esta semana
+
+
+2. PRIORIZAR SONO
+   • Dormir às 22:30 todas as noites
+   • Nada de trabalho após 19h
+   • Cochilo de 20min após almoço (permitido!)
+
+
+3. WEEKEND DETOX
+   • Próximo fim de semana: ZERO trabalho
+   • Fazer algo que te energiza (não produtivo)
+   • Desligar notificações de trabalho
+
+
+[IMPORTANTE] Próximas 4 semanas:
+
+
+4. REINSTITUIR AUTOCUIDADO
+   • Exercício: 3x/semana (não negociável)
+   • Meditação: 10min/dia
+   • Almoço adequado: 12:30-13:30 (bloquear na agenda)
+
+
+5. BUFFERS DE ENERGIA
+   • 1 tarde livre por semana (nenhuma reunião/task)
+   • 1 manhã de sexta só para "projetos pessoais"
+   • Margin de 20% em todas estimativas
+
+
+6. SUPORTE PROFISSIONAL
+   • Considerar conversar com terapeuta
+   • Check médico (fadiga pode ter causas físicas)
+
+
+═══════════════════════════════════════════════════
+
+
+💬 CONVERSAS NECESSÁRIAS:
+
+
+[1] Com Sênior (Syssa):
+    "Preciso reduzir carga temporariamente para manter
+    qualidade. Posso delegar [Tasks X, Y] temporariamente?"
+
+
+[2] Com Time Summit:
+    "Preciso adiar início da força-tarefa por 2 semanas.
+    Estou em sobrecarga e quero entregar com qualidade."
+
+
+[3] Com você mesma:
+    "Meu objetivo é US$ 1 bilhão, mas isso requer 30+ anos
+    de carreira sustentável. Burnout agora compromete tudo."
+
+
+═══════════════════════════════════════════════════
+
+
+🎯 AÇÕES IMEDIATAS:
+
+
+Quero te ajudar AGORA. Escolha:
+
+
+[A] Aceitar plano completo
+    → Charlee reorganiza próximas 4 semanas automaticamente
+    → Gera emails/mensagens para delegar/adiar
+    → Ativa "modo proteção" (bloqueios automáticos)
+
+
+[B] Versão light (só esta semana)
+    → Reduz carga só desta semana
+    → Reavaliamos na segunda
+
+
+[C] Tenho objeções (quero discutir)
+    → Me conta suas preocupações
+    → Ajustamos o plano juntas
+
+
+[D] Ignorar alerta (não recomendado)
+    → Volto a alertar em 1 semana se piorar
+
+
+═══════════════════════════════════════════════════
+
+
+💭 REFLEXÃO FINAL:
+
+
+Samara, você me criou para te proteger de si mesma.
+Este é um daqueles momentos.
+
+
+Você é brilhante, ambiciosa e capaz de coisas incríveis.
+Mas nenhum objetivo vale sua saúde.
+
+
+Seu "eu" do futuro vai te agradecer por pausar agora.
+
+
+O que você decide? [A/B/C/D]
+   2. Samara escolhe A
+
+ $ A
+
+
+✅ MODO PROTEÇÃO ATIVADO
+
+
+🛡️ Reorganizando próximas 4 semanas...
+
+
+[1] CARGA DE TRABALHO AJUSTADA:
+
+
+REMOVIDO/ADIADO:
+❌ Força-Tarefa Summit (adiada 2 semanas)
+❌ 4 tasks não-críticas do Lunelli (delegadas)
+❌ Reunião semanal FAPESC (mudada para mensal)
+
+
+MANTIDO (essencial):
+✅ Apresentação Syssa (reduzida a 1h/dia)
+✅ Estabilidade Lunelli (2h/dia max)
+✅ Pitch TalentFlow (30min/dia)
+
+
+Nova carga: 72% (de 96%)
+
+
+[2] COMUNICAÇÕES PREPARADAS:
+
+
+📧 Email para Sênior (Syssa):
+"Assunto: Ajuste temporário de carga - Lunelli
+
+
+Olá,
+
+
+Para manter a qualidade do nosso trabalho no Lunelli e
+garantir sucesso na apresentação de Janeiro, preciso
+fazer um ajuste temporário na distribuição de tasks.
+
+
+Gostaria de delegar temporariamente:
+• [Task A] - Documentação técnica
+• [Task B] - Refatoração módulo X
+
+
+Isto vai me permitir focar 100% na estabilidade crítica
+e na preparação da apresentação.
+
+
+Podemos conversar amanhã às 10h para alinhar?
+
+
+Samara"
+
+
+✅ Rascunho salvo. Enviar? [S/N]
+
+
+📧 Slack para Time Summit:
+"Pessoal, preciso adiar o início da força-tarefa por
+2 semanas para manter qualidade do trabalho atual.
+Retomamos em [data]. Obrigada pela compreensão!"
+
+
+✅ Rascunho salvo. Enviar? [S/N]
+
+
+[3] AGENDA BLOQUEADA:
+
+
+Próximas 4 semanas:
+• 22:00-07:00: SONO (bloqueado, alarme às 22h)
+• 12:30-13:30: ALMOÇO (bloqueado, nenhuma reunião)
+• 19:00-22:00: TEMPO LIVRE (sem trabalho)
+• Quartas 15:00-17:00: TARDE LIVRE
+• Sábados/Domingos: ZERO trabalho
+
+
+✅ Bloqueios criados no Google Calendar
+
+
+[4] LEMBRETES AUTOMÁTICOS:
+
+
+✅ Diários 22:00: "Hora de dormir! 💤"
+✅ Seg/Qua/Sex 18:00: "Hora do exercício! 💪"
+✅ Diários 08:00: "10min de meditação 🧘"
+✅ Sextas 17:00: "Semana acabou! Celebre! 🎉"
+
+
+[5] MONITORAMENTO INTENSIFICADO:
+
+
+✅ Check-in diário obrigatório
+✅ Se energia <5 → Dia leve automático
+✅ Se sono <6h → Alerta imediato
+✅ Se carga >80% → Bloqueio de novas tasks
+
+
+═══════════════════════════════════════════════════
+
+
+📊 METAS PARA 4 SEMANAS:
+
+
+• Sono médio: 7+ horas ⭐
+• Energia média: 7+ /10 ⭐
+• Carga: <80% ⭐
+• Exercício: 3x/semana ⭐
+• Zero fins de semana trabalhados ⭐
+
+
+═══════════════════════════════════════════════════
+
+
+💪 PRÓXIMOS PASSOS:
+
+
+HOJE:
+• Enviar emails de reorganização ✅
+• Dormir às 22:00 ✅
+
+
+AMANHÃ:
+• Reunião com Sênior 10:00
+• Trabalhar MAX 6h (primeiro dia de ajuste)
+• Exercício 18:00
+
+
+FIM DE SEMANA:
+• ZERO trabalho
+• Fazer algo que te energiza
+• Descansar de verdade
+
+
+═══════════════════════════════════════════════════
+
+
+🌸 MENSAGEM FINAL:
+
+
+Samara, você tomou a decisão certa.
+Estou orgulhosa de você.
+
+
+Nas próximas 4 semanas, vou te ajudar a recuperar o
+equilíbrio sem comprometer seus objetivos.
+
+
+Você é capaz de coisas incríveis.
+Mas primeiro, precisa cuidar de quem vai realizá-las: você.
+
+
+Vamos juntas! 💪🌸
+
+
+═══════════════════════════════════════════════════
+   3. ________________
+
+
+11. Segurança e Privacidade
+11.1 Princípios de Privacidade
+Charlee é projetado com privacidade como prioridade máxima:
+   1. Data Ownership: Todos os dados pertencem exclusivamente a Samara
+   2. Local First: V1 roda 100% localmente (PostgreSQL local)
+   3. Encryption: Dados sensíveis criptografados em repouso
+   4. No Tracking: Zero telemetria ou tracking de uso
+   5. Transparência: Código aberto, auditável
+11.2 Dados Sensíveis
+Categorias de dados:
+Categoria
+	Exemplos
+	Sensibilidade
+	Tratamento
+	Altamente Sensível
+	Ciclo menstrual, saúde, emoções
+	CRÍTICA
+	Criptografado, nunca sai do servidor
+	Sensível
+	Tarefas, projetos, decisões
+	ALTA
+	Criptografado, acesso controlado
+	Moderado
+	OKRs, hábitos
+	MÉDIA
+	Criptografado
+	Público
+	Integrações externas (já públicas)
+	BAIXA
+	Sem criptografia adicional
+	11.3 Segurança de APIs Externas
+LLM Providers (OpenAI, Anthropic):
+# Dados são anonimizados antes de enviar para APIs
+def sanitize_for_llm(data):
+    """Remove informações identificadoras"""
+    sanitized = data.copy()
+    
+    # Remove nomes reais
+    sanitized = replace_names_with_placeholders(sanitized)
+    
+    # Remove datas específicas
+    sanitized = generalize_dates(sanitized)
+    
+    # Remove localizações precisas
+    sanitized = generalize_locations(sanitized)
+    
+    return sanitized
+
+
+# Exemplo:
+# Original: "Samara tem reunião com Breno no escritório Syssa dia 15/01"
+# Sanitizado: "User tem reunião com Colleague A no Workplace B em 2 semanas"
+
+
+Controle de Dados:
+# .env
+SEND_SENSITIVE_TO_LLM=false  # Nunca enviar dados de ciclo/saúde
+ANONYMIZE_BEFORE_LLM=true    # Sempre anonimizar
+LLM_DATA_RETENTION=0         # Zero retention nos providers
+
+
+11.4 Autenticação e Autorização
+V1 (Local):
+   * Sem autenticação necessária (single-user local)
+   * Proteção por senha do OS
+V2+ (Cloud):
+# JWT-based authentication
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+    # Validate JWT token
+    # ...
+    return user
+
+
+RBAC (futuro multi-user):
+CREATE TABLE roles (
+    id UUID PRIMARY KEY,
+    name TEXT NOT NULL,
+    permissions JSONB
+);
+
+
+-- Exemplo: Coach pode ver wellness data, mas não financeiro
+{
+    "wellness": ["read", "write"],
+    "financial": ["none"],
+    "tasks": ["read"]
+}
+
+
+11.5 Backups e Disaster Recovery
+Estratégia de Backup:
+# Backup automático diário
+0 2 * * * /scripts/backup_db.sh
+
+
+# backup_db.sh
+#!/bin/bash
+DATE=$(date +%Y-%m-%d)
+pg_dump charlee_db | gzip > /backups/charlee_$DATE.sql.gz
+
+
+# Encrypt backup
+gpg --encrypt --recipient samara@email.com /backups/charlee_$DATE.sql.gz
+
+
+# Upload to S3 (encrypted)
+aws s3 cp /backups/charlee_$DATE.sql.gz.gpg s3://charlee-backups/
+
+
+# Keep last 30 days locally, 90 days on S3
+find /backups -name "*.gpg" -mtime +30 -delete
+
+
+Recovery:
+# Download backup
+aws s3 cp s3://charlee-backups/charlee_2025-11-01.sql.gz.gpg .
+
+
+# Decrypt
+gpg --decrypt charlee_2025-11-01.sql.gz.gpg | gunzip > restore.sql
+
+
+# Restore
+psql charlee_db < restore.sql
+
+
+11.6 Compliance
+LGPD/GDPR:
+   * Right to access: Export completo de dados
+   * Right to delete: Comando charlee delete-all-my-data
+   * Right to portability: Export em JSON/CSV
+   * Right to be forgotten: Deleção irreversível
+Comandos:
+# Exportar todos os dados
+$ charlee export --format json --output my_data.json
+
+
+# Deletar tudo (irreversível)
+$ charlee delete-all-data --confirm "SIM, TENHO CERTEZA"
+
+
+# Anonymize historical data
+$ charlee anonymize --before 2024-01-01
+
+
+________________
+
+
+12. Troubleshooting
+12.1 Problemas Comuns
+Problema: "Agent response is slow (>10s)"
+Diagnóstico:
+# Check API latency
+$ charlee debug latency
+
+
+# Check database query performance
+$ charlee debug db-performance
+
+
+# Check memory usage
+$ charlee debug memory
+
+
+Soluções:
+   1. Cache de embeddings: Evita recalcular vetores
+# Habilitar cache
+ENABLE_EMBEDDING_CACHE=true
+CACHE_BACKEND=redis
+
+
+   2. Otimizar queries:
+-- Add missing indexes
+CREATE INDEX CONCURRENTLY idx_missing ON table(column);
+
+
+-- Analyze query plan
+EXPLAIN ANALYZE SELECT ...;
+
+
+   3. Upgrade do modelo:
+# Use modelo mais rápido para tasks simples
+fast_model = OpenAIChat(id="gpt-4o-mini")  # Mais barato e rápido
+complex_model = OpenAIChat(id="gpt-4o-mini")     # Só para tasks complexas
+
+
+Problema: "Cycle patterns not being learned"
+Diagnóstico:
+$ charlee debug cycle-learning
+
+
+> Amostras coletadas: 2 ciclos
+> Mínimo necessário: 3 ciclos
+> Status: Dados insuficientes
+
+
+Solução:
+   * Continuar registrando diariamente
+   * Padrões aparecem após 3-4 ciclos completos (3-4 meses)
+Problema: "Capacity alerts are too aggressive"
+Ajuste de sensibilidade:
+$ charlee config capacity-threshold 95  # De 90% para 95%
+$ charlee config warning-threshold 85   # De 80% para 85%
+
+
+Problema: "Voice transcription has low accuracy"
+Soluções:
+   1. Melhorar qualidade do áudio:
+# Use noise cancellation
+$ charlee config audio-preprocessing true
+
+
+# Adjust microphone
+$ charlee audio-test
+
+
+   2. Adicionar contexto:
+# Whisper com prompt de contexto
+transcription = openai.Audio.transcribe(
+    model="whisper-1",
+    file=audio_file,
+    prompt="Contexto: gerenciamento de tarefas, projetos Syssa, Lunelli, TalentFlow"
+)
+
+
+12.2 Logs e Debugging
+Habilitar logs detalhados:
+# .env
+LOG_LEVEL=DEBUG
+LOG_FORMAT=detailed
+LOG_TO_FILE=true
+
+
+Visualizar logs:
+# Real-time
+$ tail -f logs/charlee.log
+
+
+# Filtrar por agente
+$ grep "Wellness Coach" logs/charlee.log
+
+
+# Erros apenas
+$ grep "ERROR" logs/charlee.log
+
+
+Debug mode:
+# Ativa modo debug (mostra reasoning completo)
+$ charlee --debug chat "Qual meu foco?"
+
+
+> [DEBUG] Charlee: Delegando para Wellness Coach...
+> [DEBUG] Wellness Coach: Consultando fase do ciclo...
+> [DEBUG] Database query: SELECT * FROM ciclo_menstrual...
+> [DEBUG] Result: fase=folicular, energia_esperada=1.2
+> [DEBUG] Wellness Coach → Charlee: Resposta pronta
+> [DEBUG] Charlee: Formatando resposta final...
+
+
+12.3 Performance Tuning
+Database:
+-- Vacuum regular
+VACUUM ANALYZE;
+
+
+-- Reindex
+REINDEX DATABASE charlee_db;
+
+
+-- Check slow queries
+SELECT query, mean_exec_time 
+FROM pg_stat_statements 
+ORDER BY mean_exec_time DESC 
+LIMIT 10;
+
+
+Python:
+# Profile código
+import cProfile
+cProfile.run('agent.print_response("test")')
+
+
+# Memory profiling
+from memory_profiler import profile
+@profile
+def problematic_function():
+    # ...
+
+
+Redis Cache:
+# Monitor cache hit rate
+$ redis-cli info stats | grep hit_rate
+
+
+# Clear cache se necessário
+$ redis-cli FLUSHDB
+
+
+________________
+
+
+13. Contribuindo
+13.1 Como Contribuir
+Charlee é um projeto pessoal, mas aceita contribuições!
+Áreas de contribuição:
+   1. Novos agentes especializados
+   2. Integrações com ferramentas
+   3. Melhorias de UI/UX
+   4. Documentação
+   5. Testes
+   6. Bug fixes
+Processo:
+# Fork o repositório
+git clone https://github.com/samara/charlee-fork
+
+
+# Crie branch
+git checkout -b feature/novo-agente-financeiro
+
+
+# Faça mudanças
+# ...
+
+
+# Commit
+git commit -m "Add: Agente Financeiro com análise de gastos"
+
+
+# Push
+git push origin feature/novo-agente-financeiro
+
+
+# Abra Pull Request
+
+
+13.2 Código de Conduta
+   * Seja respeitoso e inclusivo
+   * Foque no problema, não na pessoa
+   * Aceite feedback construtivo
+   * Priorize privacidade e segurança
+13.3 Roadmap Público
+Veja o roadmap completo em: https://github.com/samara/charlee/projects/1
+Vote em features: https://charlee.canny.io
+________________
+
+
+14. FAQ
+P: Charlee vai funcionar offline? R: V1 requer internet para LLM (OpenAI/Anthropic). V2+ terá modo offline com modelos locais (Ollama).
+P: Posso usar com outros LLMs? R: Sim! Agno é model-agnostic. Basta configurar:
+from agno.models.anthropic import Claude
+agent = Agent(model=Claude(id="claude-3-5-sonnet"))
+
+
+P: Quanto custa rodar Charlee? R: V1 (local): ~$20-50/mês em API calls (OpenAI). V2+ (cloud): +$20-30/mês (hosting).
+P: Meus dados são seguros? R: Sim. Dados ficam localmente ou em servidor privado. APIs externas recebem dados anonimizados.
+P: Posso compartilhar Charlee com minha equipe? R: V5+ terá modo multi-user. V1-V4 são single-user.
+P: Como faço backup? R: Comando charlee backup ou backup automático diário (configurável).
+P: Charlee substitui terapia? R: NÃO. Charlee é ferramenta de produtividade, não substituto de profissional de saúde mental.
+________________
+
+
+15. Conclusão
+Charlee representa uma nova categoria de ferramentas: sistemas de inteligência pessoal que vão além de gerenciamento de tarefas para se tornarem verdadeiros "segundos cérebros".
+Diferenciais únicos:
+   * 🌸 Consciência de ciclo menstrual
+   * 🧠 Aprendizado comportamental
+   * 🛡️ Proteção contra sobrecarga
+   * 📊 Dashboard estratégico
+   * 💬 Gestão inteligente de comunicações
+   * 🎯 Conselho estratégico baseado em dados
+Visão de longo prazo: Transformar Charlee em uma plataforma completa de gestão de vida e carreira, democratizando acesso a ferramentas que apenas CEOs de grandes empresas têm (assistentes executivos, coaches, analistas).
+Próximo marco: V1 MVP em 3 semanas. Foco total em valor imediato.
+________________
+
+
+16. Contato e Suporte
+Desenvolvedora: Samara
+GitHub: https://github.com/samara/charlee
+Email: samara@charlee.ai
+Discord: https://discord.gg/charlee
+Documentação: https://docs.charlee.ai
+________________
+
+
+Versão da Documentação: 1.0
+Última Atualização: 01/11/2025
+Próxima Revisão: Após V1 MVP
+________________
+
+
+"Um segundo cérebro que te entende como mulher, profissional e ser humano."
+— Charlee 🌸🧠✨
