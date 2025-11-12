@@ -6,7 +6,6 @@ from agno.db.redis import RedisDb
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import crud, schemas
-from database.config import settings
 
 
 class CharleeAgent(Agent):
@@ -25,7 +24,7 @@ class CharleeAgent(Agent):
         db: Session,
         user_id: str = "samara",
         session_id: Optional[str] = None,
-        redis_url: str = "redis://redis:6379"
+        redis_url: str = "redis://redis:6379",
     ):
         """Initialize Charlee agent with database session and memory."""
         from datetime import datetime
@@ -67,20 +66,20 @@ class CharleeAgent(Agent):
                 self.listar_tarefas,
                 self.criar_tarefa,
                 self.marcar_tarefa_concluida,
-                self.atualizar_tarefa
-            ]
+                self.atualizar_tarefa,
+            ],
         )
 
     # ==================== Big Rocks Tools ====================
 
-    def listar_big_rocks(self, ativo_apenas: bool = True) -> str:
+    def listar_big_rocks(self, active_only: bool = True) -> str:
         """
         Lista todos os Big Rocks (pilares de vida) cadastrados.
 
         Args:
-            ativo_apenas: Se True, lista apenas Big Rocks ativos
+            active_only: Se True, lista apenas Big Rocks ativos
         """
-        big_rocks = crud.get_big_rocks(self.database, ativo_apenas=ativo_apenas)
+        big_rocks = crud.get_big_rocks(self.database, active_only=active_only)
 
         if not big_rocks:
             return "Nenhum Big Rock cadastrado ainda."
@@ -101,20 +100,19 @@ class CharleeAgent(Agent):
             cor: Cor para UI futura (opcional, ex: "#FF5733")
         """
         try:
-            big_rock_data = schemas.BigRockCreate(nome=nome, cor=cor)
+            big_rock_data = schemas.BigRockCreate(name=nome, color=cor)
             new_big_rock = crud.create_big_rock(self.database, big_rock_data)
 
-            return f"✅ Big Rock **'{new_big_rock.nome}'** criado com sucesso! (ID: {new_big_rock.id})"
+            return (
+                f"✅ Big Rock **'{new_big_rock.nome}'** criado com sucesso! (ID: {new_big_rock.id})"
+            )
         except Exception as e:
             return f"❌ Erro ao criar Big Rock: {str(e)}"
 
     # ==================== Tarefas Tools ====================
 
     def listar_tarefas(
-        self,
-        status: Optional[str] = None,
-        big_rock_id: Optional[int] = None,
-        limite: int = 20
+        self, status: Optional[str] = None, big_rock_id: Optional[int] = None, limite: int = 20
     ) -> str:
         """
         Lista tarefas com filtros opcionais.
@@ -124,11 +122,8 @@ class CharleeAgent(Agent):
             big_rock_id: Filtrar por ID do Big Rock
             limite: Número máximo de tarefas a retornar
         """
-        tarefas = crud.get_tarefas(
-            self.database,
-            status=status,
-            big_rock_id=big_rock_id,
-            limit=limite
+        tarefas = crud.get_tasks(
+            self.database, status=status, big_rock_id=big_rock_id, limit=limite
         )
 
         if not tarefas:
@@ -148,7 +143,7 @@ class CharleeAgent(Agent):
                 "Pendente": "⏳",
                 "Em Progresso": "🔄",
                 "Concluída": "✅",
-                "Cancelada": "❌"
+                "Cancelada": "❌",
             }.get(tarefa.status, "❓")
 
             big_rock_nome = tarefa.big_rock.nome if tarefa.big_rock else "Sem Big Rock"
@@ -163,8 +158,8 @@ class CharleeAgent(Agent):
         self,
         descricao: str,
         big_rock_id: Optional[int] = None,
-        tipo: str = "Tarefa",
-        deadline: Optional[str] = None
+        tipo: str = "Task",
+        deadline: Optional[str] = None,
     ) -> str:
         """
         Cria uma nova tarefa.
@@ -172,7 +167,7 @@ class CharleeAgent(Agent):
         Args:
             descricao: Descrição da tarefa
             big_rock_id: ID do Big Rock associado (opcional)
-            tipo: Tipo da tarefa ("Tarefa", "Compromisso Fixo", "Contínuo")
+            tipo: Tipo da tarefa ("Task", "Compromisso Fixo", "Contínuo")
             deadline: Data limite no formato YYYY-MM-DD (opcional)
         """
         try:
@@ -185,20 +180,17 @@ class CharleeAgent(Agent):
                 except ValueError:
                     return "❌ Formato de data inválido. Use YYYY-MM-DD (ex: 2025-01-15)"
 
-            tarefa_data = schemas.TarefaCreate(
-                descricao=descricao,
-                big_rock_id=big_rock_id,
-                tipo=tipo,
-                deadline=deadline_date
+            tarefa_data = schemas.TaskCreate(
+                description=descricao, big_rock_id=big_rock_id, type=tipo, deadline=deadline_date
             )
 
-            new_tarefa = crud.create_tarefa(self.database, tarefa_data)
+            new_tarefa = crud.create_task(self.database, tarefa_data)
 
             big_rock_info = ""
             if new_tarefa.big_rock:
                 big_rock_info = f" no Big Rock **{new_tarefa.big_rock.nome}**"
 
-            return f"✅ Tarefa criada com sucesso{big_rock_info}! (ID: {new_tarefa.id})"
+            return f"✅ Task criada com sucesso{big_rock_info}! (ID: {new_tarefa.id})"
 
         except Exception as e:
             return f"❌ Erro ao criar tarefa: {str(e)}"
@@ -211,12 +203,12 @@ class CharleeAgent(Agent):
             tarefa_id: ID da tarefa
         """
         try:
-            tarefa = crud.marcar_tarefa_concluida(self.database, tarefa_id)
+            tarefa = crud.mark_task_completed(self.database, tarefa_id)
 
             if not tarefa:
-                return f"❌ Tarefa com ID {tarefa_id} não encontrada."
+                return f"❌ Task com ID {tarefa_id} não encontrada."
 
-            return f"✅ Tarefa **'{tarefa.descricao}'** marcada como concluída! 🎉"
+            return f"✅ Task **'{tarefa.descricao}'** marcada como concluída! 🎉"
 
         except Exception as e:
             return f"❌ Erro ao marcar tarefa como concluída: {str(e)}"
@@ -227,7 +219,7 @@ class CharleeAgent(Agent):
         descricao: Optional[str] = None,
         status: Optional[str] = None,
         big_rock_id: Optional[int] = None,
-        deadline: Optional[str] = None
+        deadline: Optional[str] = None,
     ) -> str:
         """
         Atualiza uma tarefa existente.
@@ -249,19 +241,16 @@ class CharleeAgent(Agent):
                 except ValueError:
                     return "❌ Formato de data inválido. Use YYYY-MM-DD"
 
-            update_data = schemas.TarefaUpdate(
-                descricao=descricao,
-                status=status,
-                big_rock_id=big_rock_id,
-                deadline=deadline_date
+            update_data = schemas.TaskUpdate(
+                description=descricao, status=status, big_rock_id=big_rock_id, deadline=deadline_date  # type: ignore[arg-type]
             )
 
-            tarefa = crud.update_tarefa(self.database, tarefa_id, update_data)
+            tarefa = crud.update_task(self.database, tarefa_id, update_data)
 
             if not tarefa:
-                return f"❌ Tarefa com ID {tarefa_id} não encontrada."
+                return f"❌ Task com ID {tarefa_id} não encontrada."
 
-            return f"✅ Tarefa **'{tarefa.descricao}'** atualizada com sucesso!"
+            return f"✅ Task **'{tarefa.descricao}'** atualizada com sucesso!"
 
         except Exception as e:
             return f"❌ Erro ao atualizar tarefa: {str(e)}"
@@ -271,7 +260,7 @@ def create_charlee_agent(
     db: Session,
     user_id: str = "samara",
     session_id: Optional[str] = None,
-    redis_url: str = "redis://redis:6379"
+    redis_url: str = "redis://redis:6379",
 ) -> CharleeAgent:
     """Factory function to create a Charlee agent instance with session support."""
     return CharleeAgent(db, user_id=user_id, session_id=session_id, redis_url=redis_url)

@@ -4,9 +4,8 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
-from typing import Optional, Dict
-from database.models import CicloMenstrual, PadroesCiclo, Tarefa
-from database import crud
+from typing import Optional
+from database.models import MenstrualCycle, CyclePatterns, Task
 
 
 class CycleAwareAgent(Agent):
@@ -38,8 +37,8 @@ class CycleAwareAgent(Agent):
                 self.registrar_fase_ciclo,
                 self.obter_fase_atual,
                 self.sugerir_tarefas_fase,
-                self.analisar_carga_para_fase
-            ]
+                self.analisar_carga_para_fase,
+            ],
         )
 
     def registrar_fase_ciclo(
@@ -50,7 +49,7 @@ class CycleAwareAgent(Agent):
         nivel_foco: Optional[int] = None,
         nivel_criatividade: Optional[int] = None,
         sintomas: Optional[str] = None,
-        notas: Optional[str] = None
+        notas: Optional[str] = None,
     ) -> str:
         """
         Registra uma nova entrada do ciclo menstrual.
@@ -69,14 +68,14 @@ class CycleAwareAgent(Agent):
 
             data = datetime.strptime(data_inicio, "%Y-%m-%d").date()
 
-            ciclo = CicloMenstrual(
+            ciclo = MenstrualCycle(
                 data_inicio=data,
                 fase=fase,
                 nivel_energia=nivel_energia,
                 nivel_foco=nivel_foco,
                 nivel_criatividade=nivel_criatividade,
                 sintomas=sintomas,
-                notas=notas
+                notas=notas,
             )
 
             self.database.add(ciclo)
@@ -94,9 +93,9 @@ class CycleAwareAgent(Agent):
         """
         try:
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -120,20 +119,20 @@ class CycleAwareAgent(Agent):
 
             # Buscar padrões conhecidos para essa fase
             padroes = (
-                self.database.query(PadroesCiclo)
-                .filter(PadroesCiclo.fase == ultimo_registro.fase)
-                .filter(PadroesCiclo.confianca_score > 0.5)
+                self.database.query(CyclePatterns)
+                .filter(CyclePatterns.fase == ultimo_registro.fase)
+                .filter(CyclePatterns.confianca_score > 0.5)
                 .first()
             )
 
             if padroes:
-                result += f"\n💭 **Padrões Conhecidos:**\n"
+                result += "\n💭 **Padrões Conhecidos:**\n"
                 result += f"• Produtividade média: {padroes.produtividade_media:.1f}x\n"
                 result += f"• Energia média: {padroes.energia_media:.1f}x\n"
 
                 if padroes.sugestoes:
-                    result += f"\n💡 **Sugestões:**\n"
-                    for sug in padroes.sugestoes.split(';'):
+                    result += "\n💡 **Sugestões:**\n"
+                    for sug in padroes.sugestoes.split(";"):
                         result += f"• {sug.strip()}\n"
 
             return result
@@ -150,64 +149,62 @@ class CycleAwareAgent(Agent):
         """
         # Configurações por fase
         fase_config = {
-            'menstrual': {
-                'energia': '🔋 Baixa (60%)',
-                'tipos_ideais': [
-                    'Tarefas administrativas leves',
-                    'Reflexão e planejamento',
-                    'Organização de arquivos',
-                    'Revisão de documentos'
+            "menstrual": {
+                "energia": "🔋 Baixa (60%)",
+                "tipos_ideais": [
+                    "Tarefas administrativas leves",
+                    "Reflexão e planejamento",
+                    "Organização de arquivos",
+                    "Revisão de documentos",
                 ],
-                'evitar': [
-                    'Reuniões longas e intensas',
-                    'Decisões estratégicas grandes',
-                    'Apresentações importantes'
+                "evitar": [
+                    "Reuniões longas e intensas",
+                    "Decisões estratégicas grandes",
+                    "Apresentações importantes",
                 ],
-                'mensagem': 'Fase de baixa energia. Priorize descanso e tarefas leves.'
+                "mensagem": "Fase de baixa energia. Priorize descanso e tarefas leves.",
             },
-            'folicular': {
-                'energia': '⚡ Alta (120%)',
-                'tipos_ideais': [
-                    'Trabalho criativo e estratégico',
-                    'Planejamento de projetos novos',
-                    'Networking e relacionamentos',
-                    'Aprendizado de coisas novas'
+            "folicular": {
+                "energia": "⚡ Alta (120%)",
+                "tipos_ideais": [
+                    "Trabalho criativo e estratégico",
+                    "Planejamento de projetos novos",
+                    "Networking e relacionamentos",
+                    "Aprendizado de coisas novas",
                 ],
-                'evitar': [],
-                'mensagem': 'Fase de alta criatividade! Aproveite para tarefas estratégicas.'
+                "evitar": [],
+                "mensagem": "Fase de alta criatividade! Aproveite para tarefas estratégicas.",
             },
-            'ovulacao': {
-                'energia': '🚀 Máxima (140%)',
-                'tipos_ideais': [
-                    'Apresentações e reuniões importantes',
-                    'Negociações críticas',
-                    'Conversas difíceis',
-                    'Tarefas que exigem comunicação'
+            "ovulacao": {
+                "energia": "🚀 Máxima (140%)",
+                "tipos_ideais": [
+                    "Apresentações e reuniões importantes",
+                    "Negociações críticas",
+                    "Conversas difíceis",
+                    "Tarefas que exigem comunicação",
                 ],
-                'evitar': [],
-                'mensagem': 'Pico de energia e comunicação! Agende as reuniões mais importantes.'
+                "evitar": [],
+                "mensagem": "Pico de energia e comunicação! Agende as reuniões mais importantes.",
             },
-            'lutea': {
-                'energia': '🔋 Moderada (80%)',
-                'tipos_ideais': [
-                    'Execução e finalização',
-                    'Organização e conclusão',
-                    'Revisão de pendências',
-                    'Tarefas detalhistas'
+            "lutea": {
+                "energia": "🔋 Moderada (80%)",
+                "tipos_ideais": [
+                    "Execução e finalização",
+                    "Organização e conclusão",
+                    "Revisão de pendências",
+                    "Tarefas detalhistas",
                 ],
-                'evitar': [
-                    'Iniciar projetos grandes e novos'
-                ],
-                'mensagem': 'Fase de finalização. Foque em concluir o que já está em andamento.'
-            }
+                "evitar": ["Iniciar projetos grandes e novos"],
+                "mensagem": "Fase de finalização. Foque em concluir o que já está em andamento.",
+            },
         }
 
         # Se não passou fase, usa a atual
         if not fase:
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -225,13 +222,13 @@ class CycleAwareAgent(Agent):
         result += f"{config['energia']}\n\n"
         result += f"💭 {config['mensagem']}\n\n"
 
-        result += f"✅ **Tipos de tarefas ideais:**\n"
-        for tipo in config['tipos_ideais']:
+        result += "✅ **Tipos de tarefas ideais:**\n"
+        for tipo in config["tipos_ideais"]:
             result += f"• {tipo}\n"
 
-        if config['evitar']:
-            result += f"\n⚠️ **Evitar:**\n"
-            for evitar in config['evitar']:
+        if config["evitar"]:
+            result += "\n⚠️ **Evitar:**\n"
+            for evitar in config["evitar"]:
                 result += f"• {evitar}\n"
 
         return result
@@ -246,9 +243,9 @@ class CycleAwareAgent(Agent):
         try:
             # Obter fase atual
             ultimo_registro = (
-                self.database.query(CicloMenstrual)
-                .filter(CicloMenstrual.data_inicio <= date.today())
-                .order_by(CicloMenstrual.data_inicio.desc())
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.data_inicio <= date.today())
+                .order_by(MenstrualCycle.data_inicio.desc())
                 .first()
             )
 
@@ -261,22 +258,19 @@ class CycleAwareAgent(Agent):
             data_limite = date.today() + timedelta(days=dias_futuro)
 
             tarefas_proximas = (
-                self.database.query(Tarefa)
-                .filter(Tarefa.status == "Pendente")
-                .filter(Tarefa.deadline.isnot(None))
-                .filter(Tarefa.deadline <= data_limite)
+                self.database.query(Task)
+                .filter(Task.status == "Pendente")
+                .filter(Task.deadline.isnot(None))
+                .filter(Task.deadline <= data_limite)
                 .all()
             )
 
             num_tarefas = len(tarefas_proximas)
 
             # Energia esperada para a fase
-            energia_fase = {
-                'menstrual': 0.6,
-                'folicular': 1.2,
-                'ovulacao': 1.4,
-                'lutea': 0.8
-            }.get(fase_atual, 1.0)
+            energia_fase = {"menstrual": 0.6, "folicular": 1.2, "ovulacao": 1.4, "lutea": 0.8}.get(
+                fase_atual, 1.0
+            )
 
             # Análise
             result = f"📊 **Análise de Carga - Próximos {dias_futuro} dias**\n\n"
@@ -291,7 +285,9 @@ class CycleAwareAgent(Agent):
             if num_tarefas > capacidade_ajustada * 1.2:
                 result += "🚨 **ALERTA: Sobrecarga detectada!**\n\n"
                 result += f"Com sua energia de {int(energia_fase * 100)}% nesta fase, "
-                result += f"você idealmente deveria ter no máximo {int(capacidade_ajustada)} tarefas.\n\n"
+                result += (
+                    f"você idealmente deveria ter no máximo {int(capacidade_ajustada)} tarefas.\n\n"
+                )
                 result += "💡 **Recomendação:**\n"
                 result += "• Considere adiar algumas tarefas menos urgentes\n"
                 result += "• Negocie prazos se possível\n"

@@ -2,8 +2,8 @@
 
 from datetime import date, datetime
 from sqlalchemy.orm import Session
-from database.models import Tarefa, BigRock
-from typing import List, Dict
+from database.models import Task
+from typing import List, Optional
 
 
 class SistemaPriorizacao:
@@ -21,7 +21,7 @@ class SistemaPriorizacao:
     def __init__(self, db: Session):
         self.db = db
 
-    def calcular_prioridade(self, tarefa: Tarefa) -> float:
+    def calcular_prioridade(self, tarefa: Task) -> float:
         """
         Calcula score de prioridade para uma tarefa.
 
@@ -43,7 +43,7 @@ class SistemaPriorizacao:
 
         return score
 
-    def _calcular_urgencia(self, tarefa: Tarefa) -> float:
+    def _calcular_urgencia(self, tarefa: Task) -> float:
         """
         Calcula score de urgência baseado no deadline.
 
@@ -83,7 +83,7 @@ class SistemaPriorizacao:
             # Mais de 1 mês
             return 0.1
 
-    def _calcular_importancia(self, tarefa: Tarefa) -> float:
+    def _calcular_importancia(self, tarefa: Task) -> float:
         """
         Calcula score de importância baseado no Big Rock.
 
@@ -101,7 +101,7 @@ class SistemaPriorizacao:
         else:
             return 0.6
 
-    def _calcular_abandono(self, tarefa: Tarefa) -> float:
+    def _calcular_abandono(self, tarefa: Task) -> float:
         """
         Calcula score de abandono (tempo sem atualização).
 
@@ -125,26 +125,19 @@ class SistemaPriorizacao:
         else:
             return 0.2
 
-    def _calcular_tipo(self, tarefa: Tarefa) -> float:
+    def _calcular_tipo(self, tarefa: Task) -> float:
         """
         Calcula score baseado no tipo de tarefa.
 
-        Compromisso Fixo > Tarefa > Contínuo
+        Compromisso Fixo > Task > Contínuo
         """
-        tipo_scores = {
-            "Compromisso Fixo": 1.0,
-            "Tarefa": 0.7,
-            "Contínuo": 0.4
-        }
+        tipo_scores = {"Compromisso Fixo": 1.0, "Task": 0.7, "Contínuo": 0.4}
 
         return tipo_scores.get(tarefa.tipo, 0.5)
 
     def priorizar_tarefas(
-        self,
-        status: str = "Pendente",
-        big_rock_id: int = None,
-        limite: int = 20
-    ) -> List[Tarefa]:
+        self, status: str = "Pendente", big_rock_id: Optional[int] = None, limite: int = 20
+    ) -> List[Task]:
         """
         Retorna lista de tarefas priorizadas.
 
@@ -154,10 +147,10 @@ class SistemaPriorizacao:
             limite: Número máximo de tarefas
         """
         # Buscar tarefas
-        query = self.db.query(Tarefa).filter(Tarefa.status == status)
+        query = self.db.query(Task).filter(Task.status == status)
 
         if big_rock_id:
-            query = query.filter(Tarefa.big_rock_id == big_rock_id)
+            query = query.filter(Task.big_rock_id == big_rock_id)
 
         tarefas = query.all()
 
@@ -174,11 +167,7 @@ class SistemaPriorizacao:
         self.db.commit()
 
         # Ordenar por score (maior = mais prioritário)
-        tarefas_priorizadas = sorted(
-            tarefas,
-            key=lambda t: t.pontuacao_prioridade,
-            reverse=True
-        )
+        tarefas_priorizadas = sorted(tarefas, key=lambda t: t.pontuacao_prioridade, reverse=True)
 
         return tarefas_priorizadas[:limite]
 
