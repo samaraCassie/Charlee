@@ -128,7 +128,9 @@ class AuditLog(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
 
     # Event information
-    event_type = Column(String(50), nullable=False, index=True)  # 'login', 'logout', 'register', etc.
+    event_type = Column(
+        String(50), nullable=False, index=True
+    )  # 'login', 'logout', 'register', etc.
     event_status = Column(String(20), nullable=False)  # 'success', 'failure', 'blocked'
     event_message = Column(Text, nullable=True)
 
@@ -138,7 +140,7 @@ class AuditLog(Base):
     request_path = Column(String(255), nullable=True)
 
     # Additional data (JSON)
-    metadata = Column(JSON, nullable=True)  # Extra contextual information
+    event_metadata = Column(JSON, nullable=True)  # Extra contextual information
 
     # Timestamp
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
@@ -164,7 +166,9 @@ class BigRock(Base):
     __tablename__ = "big_rocks"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(100), nullable=False)
     color = Column(String(20))  # For future UI (e.g., "#FF5733")
     active = Column(Boolean, default=True)
@@ -191,7 +195,9 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     description = Column(Text, nullable=False)
     type = Column(
         String(20),
@@ -255,7 +261,9 @@ class MenstrualCycle(Base):
     __tablename__ = "menstrual_cycles"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     start_date = Column(Date, nullable=False)
     phase = Column(
         String(20),
@@ -354,12 +362,12 @@ class DailyLog(Base):
     """
 
     __tablename__ = "daily_logs"
-    __table_args__ = (
-        UniqueConstraint('user_id', 'date', name='uix_user_date'),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uix_user_date"),)
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     date = Column(Date, nullable=False)
 
     # Sleep

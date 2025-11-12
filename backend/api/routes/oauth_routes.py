@@ -28,7 +28,7 @@ async def google_login(request: Request):
 
     Redirects user to Google authorization page.
     """
-    redirect_uri = request.url_for('google_callback')
+    redirect_uri = request.url_for("google_callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -47,18 +47,18 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         user_info = extract_google_user_info(token)
 
         # Ensure username is unique
-        username = generate_unique_username(db, user_info['username'])
-        user_info['username'] = username
+        username = generate_unique_username(db, user_info["username"])
+        user_info["username"] = username
 
         # Create or update user
         user = create_or_update_oauth_user(
             db=db,
-            provider='google',
-            oauth_id=user_info['oauth_id'],
-            email=user_info['email'],
-            username=user_info['username'],
-            full_name=user_info.get('full_name'),
-            avatar_url=user_info.get('avatar_url'),
+            provider="google",
+            oauth_id=user_info["oauth_id"],
+            email=user_info["email"],
+            username=user_info["username"],
+            full_name=user_info.get("full_name"),
+            avatar_url=user_info.get("avatar_url"),
         )
 
         # Check account lockout (even for OAuth)
@@ -108,13 +108,15 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             request=request,
             user_id=user.id,
             username=user.username,
-            provider='google',
+            provider="google",
         )
 
         # Redirect to frontend with tokens
         # In production, use a more secure method (e.g., httponly cookies)
-        frontend_url = request.url_for('root').replace('/api/v1/auth/oauth/google/callback', '')
-        redirect_url = f"{frontend_url}/?access_token={access_token}&refresh_token={refresh_token_str}"
+        frontend_url = request.url_for("root").replace("/api/v1/auth/oauth/google/callback", "")
+        redirect_url = (
+            f"{frontend_url}/?access_token={access_token}&refresh_token={refresh_token_str}"
+        )
 
         return RedirectResponse(url=redirect_url)
 
@@ -122,7 +124,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         log_login_failure(
             db=db,
             request=request,
-            username='unknown',
+            username="unknown",
             reason=f"OAuth error: {str(e)}",
         )
         raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
@@ -135,7 +137,7 @@ async def github_login(request: Request):
 
     Redirects user to GitHub authorization page.
     """
-    redirect_uri = request.url_for('github_callback')
+    redirect_uri = request.url_for("github_callback")
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
 
@@ -153,34 +155,36 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         # Get user data from GitHub API
         async with httpx.AsyncClient() as client:
             headers = {
-                'Authorization': f"token {token['access_token']}",
-                'Accept': 'application/vnd.github.v3+json',
+                "Authorization": f"token {token['access_token']}",
+                "Accept": "application/vnd.github.v3+json",
             }
 
             # Get user info
-            user_response = await client.get('https://api.github.com/user', headers=headers)
+            user_response = await client.get("https://api.github.com/user", headers=headers)
             user_data = user_response.json()
 
             # Get user emails
-            emails_response = await client.get('https://api.github.com/user/emails', headers=headers)
+            emails_response = await client.get(
+                "https://api.github.com/user/emails", headers=headers
+            )
             email_data = emails_response.json()
 
         # Extract user info
         user_info = extract_github_user_info(user_data, email_data)
 
         # Ensure username is unique
-        username = generate_unique_username(db, user_info['username'])
-        user_info['username'] = username
+        username = generate_unique_username(db, user_info["username"])
+        user_info["username"] = username
 
         # Create or update user
         user = create_or_update_oauth_user(
             db=db,
-            provider='github',
-            oauth_id=user_info['oauth_id'],
-            email=user_info['email'],
-            username=user_info['username'],
-            full_name=user_info.get('full_name'),
-            avatar_url=user_info.get('avatar_url'),
+            provider="github",
+            oauth_id=user_info["oauth_id"],
+            email=user_info["email"],
+            username=user_info["username"],
+            full_name=user_info.get("full_name"),
+            avatar_url=user_info.get("avatar_url"),
         )
 
         # Check account lockout
@@ -230,12 +234,14 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
             request=request,
             user_id=user.id,
             username=user.username,
-            provider='github',
+            provider="github",
         )
 
         # Redirect to frontend with tokens
-        frontend_url = request.url_for('root').replace('/api/v1/auth/oauth/github/callback', '')
-        redirect_url = f"{frontend_url}/?access_token={access_token}&refresh_token={refresh_token_str}"
+        frontend_url = request.url_for("root").replace("/api/v1/auth/oauth/github/callback", "")
+        redirect_url = (
+            f"{frontend_url}/?access_token={access_token}&refresh_token={refresh_token_str}"
+        )
 
         return RedirectResponse(url=redirect_url)
 
@@ -243,7 +249,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         log_login_failure(
             db=db,
             request=request,
-            username='unknown',
+            username="unknown",
             reason=f"OAuth error: {str(e)}",
         )
         raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")

@@ -109,9 +109,7 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_201_CREATED
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "register"
-        ).first()
+        audit_log = db.query(AuditLog).filter(AuditLog.event_type == "register").first()
 
         assert audit_log is not None
         assert audit_log.event_status == "success"
@@ -130,11 +128,15 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_200_OK
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.user_id == sample_user.id,
-            AuditLog.event_type == "login",
-            AuditLog.event_status == "success",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.user_id == sample_user.id,
+                AuditLog.event_type == "login",
+                AuditLog.event_status == "success",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert sample_user.username in audit_log.event_message
@@ -152,13 +154,20 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "login",
-            AuditLog.event_status == "failure",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "login",
+                AuditLog.event_status == "failure",
+            )
+            .first()
+        )
 
         assert audit_log is not None
-        assert "Invalid credentials" in audit_log.event_message or "attempts remaining" in audit_log.event_message
+        assert (
+            "Invalid credentials" in audit_log.event_message
+            or "attempts remaining" in audit_log.event_message
+        )
 
     def test_account_lockout_creates_audit_log(self, client, sample_user, db):
         """Should create audit log entry when account is locked."""
@@ -173,10 +182,14 @@ class TestAuditLog:
             )
 
         # Check for lockout audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.user_id == sample_user.id,
-            AuditLog.event_type == "account_locked",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.user_id == sample_user.id,
+                AuditLog.event_type == "account_locked",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert audit_log.event_status == "blocked"
@@ -203,10 +216,14 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_200_OK
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.user_id == sample_user.id,
-            AuditLog.event_type == "logout",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.user_id == sample_user.id,
+                AuditLog.event_type == "logout",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert audit_log.event_status == "success"
@@ -225,10 +242,14 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_200_OK
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.user_id == sample_user.id,
-            AuditLog.event_type == "password_change",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.user_id == sample_user.id,
+                AuditLog.event_type == "password_change",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert audit_log.event_status == "success"
@@ -247,10 +268,14 @@ class TestAuditLog:
         assert response.status_code == status.HTTP_200_OK
 
         # Check audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.user_id == sample_user.id,
-            AuditLog.event_type == "login",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.user_id == sample_user.id,
+                AuditLog.event_type == "login",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert audit_log.ip_address is not None
@@ -299,8 +324,8 @@ class TestOAuthUser:
         db.refresh(user)
 
         # Test methods exist
-        assert hasattr(user, 'is_locked')
-        assert hasattr(user, 'reset_failed_attempts')
+        assert hasattr(user, "is_locked")
+        assert hasattr(user, "reset_failed_attempts")
 
         # Test is_locked returns False initially
         assert user.is_locked() is False
@@ -336,10 +361,14 @@ class TestSecurityEnhancements:
         assert user_data["email"] == "secure@example.com"
 
         # Verify audit log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "register",
-            AuditLog.event_status == "success",
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "register",
+                AuditLog.event_status == "success",
+            )
+            .first()
+        )
 
         assert audit_log is not None
         assert audit_log.user_id == user_data["id"]

@@ -26,9 +26,7 @@ class JWTConfig:
     REFRESH_TOKEN_EXPIRE_DAYS: int = settings.jwt_refresh_token_expire_days
 
 
-def create_access_token(
-    data: dict, expires_delta: Optional[timedelta] = None
-) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT access token.
 
@@ -49,15 +47,11 @@ def create_access_token(
         )
 
     to_encode.update({"exp": expire, "token_type": "access"})
-    encoded_jwt = jwt.encode(
-        to_encode, JWTConfig.SECRET_KEY, algorithm=JWTConfig.ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, JWTConfig.SECRET_KEY, algorithm=JWTConfig.ALGORITHM)
     return encoded_jwt
 
 
-def create_refresh_token(
-    data: dict, expires_delta: Optional[timedelta] = None
-) -> str:
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT refresh token.
 
@@ -73,14 +67,10 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            days=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        expire = datetime.now(timezone.utc) + timedelta(days=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS)
 
     to_encode.update({"exp": expire, "token_type": "refresh"})
-    encoded_jwt = jwt.encode(
-        to_encode, JWTConfig.REFRESH_SECRET_KEY, algorithm=JWTConfig.ALGORITHM
-    )
+    encoded_jwt = jwt.encode(to_encode, JWTConfig.REFRESH_SECRET_KEY, algorithm=JWTConfig.ALGORITHM)
     return encoded_jwt
 
 
@@ -95,9 +85,7 @@ def decode_access_token(token: str) -> Optional[TokenData]:
         TokenData if valid, None if invalid or expired
     """
     try:
-        payload = jwt.decode(
-            token, JWTConfig.SECRET_KEY, algorithms=[JWTConfig.ALGORITHM]
-        )
+        payload = jwt.decode(token, JWTConfig.SECRET_KEY, algorithms=[JWTConfig.ALGORITHM])
 
         user_id: int = payload.get("user_id")
         username: str = payload.get("username")
@@ -128,9 +116,7 @@ def decode_refresh_token(token: str) -> Optional[TokenData]:
         TokenData if valid, None if invalid or expired
     """
     try:
-        payload = jwt.decode(
-            token, JWTConfig.REFRESH_SECRET_KEY, algorithms=[JWTConfig.ALGORITHM]
-        )
+        payload = jwt.decode(token, JWTConfig.REFRESH_SECRET_KEY, algorithms=[JWTConfig.ALGORITHM])
 
         user_id: int = payload.get("user_id")
         username: str = payload.get("username")

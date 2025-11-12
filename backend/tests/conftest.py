@@ -102,10 +102,7 @@ def sample_big_rock(db, sample_user):
     from database.models import BigRock
 
     big_rock = BigRock(
-        name="Health & Wellness",
-        color="#22c55e",
-        active=True,
-        user_id=sample_user.id
+        name="Health & Wellness", color="#22c55e", active=True, user_id=sample_user.id
     )
     db.add(big_rock)
     db.commit()

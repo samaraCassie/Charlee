@@ -17,6 +17,7 @@ from database.models import User, BigRock, Task, MenstrualCycle, DailyLog
 from api.auth.password import hash_password
 from database.config import settings
 
+
 def create_default_user(db):
     """Create a default user if none exists."""
     existing_user = db.query(User).first()
@@ -67,26 +68,22 @@ def migrate_existing_data(db, user):
 
     # Migrate Big Rocks
     db.query(BigRock).filter(BigRock.user_id == None).update(
-        {BigRock.user_id: user.id},
-        synchronize_session=False
+        {BigRock.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Tasks
     db.query(Task).filter(Task.user_id == None).update(
-        {Task.user_id: user.id},
-        synchronize_session=False
+        {Task.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Menstrual Cycles
     db.query(MenstrualCycle).filter(MenstrualCycle.user_id == None).update(
-        {MenstrualCycle.user_id: user.id},
-        synchronize_session=False
+        {MenstrualCycle.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Daily Logs
     db.query(DailyLog).filter(DailyLog.user_id == None).update(
-        {DailyLog.user_id: user.id},
-        synchronize_session=False
+        {DailyLog.user_id: user.id}, synchronize_session=False
     )
 
     db.commit()
@@ -106,7 +103,9 @@ def main():
 
     try:
         # Check if users table exists
-        result = db.execute(text("SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users'"))
+        result = db.execute(
+            text("SELECT COUNT(*) FROM information_schema.tables WHERE table_name='users'")
+        )
         if result.scalar() == 0:
             print("\n❌ Error: 'users' table not found!")
             print("   Please run the authentication migration first:")

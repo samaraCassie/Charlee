@@ -409,11 +409,13 @@ class TestAuthDataIsolation:
         db.refresh(big_rock)
 
         # User2 tries to access user1's big rock
-        user2_token = create_access_token({
-            "user_id": user2.id,
-            "username": user2.username,
-            "email": user2.email,
-        })
+        user2_token = create_access_token(
+            {
+                "user_id": user2.id,
+                "username": user2.username,
+                "email": user2.email,
+            }
+        )
         user2_headers = {"Authorization": f"Bearer {user2_token}"}
 
         response = client.get(

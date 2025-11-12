@@ -13,9 +13,7 @@ def get_big_rock(db: Session, big_rock_id: int, user_id: int) -> Optional[BigRoc
     """Get a single BigRock by ID for a specific user."""
     return cast(
         Optional[BigRock],
-        db.query(BigRock)
-        .filter(BigRock.id == big_rock_id, BigRock.user_id == user_id)
-        .first(),
+        db.query(BigRock).filter(BigRock.id == big_rock_id, BigRock.user_id == user_id).first(),
     )
 
 

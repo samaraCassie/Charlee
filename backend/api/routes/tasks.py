@@ -46,7 +46,7 @@ def get_tasks(
         limit=limit,
         status=status,
         big_rock_id=big_rock_id,
-        task_type=task_type
+        task_type=task_type,
     )
     return {"total": len(tasks), "tasks": tasks}
 

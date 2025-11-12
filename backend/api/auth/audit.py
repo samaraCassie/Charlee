@@ -13,7 +13,7 @@ def log_auth_event(
     request: Request,
     user_id: Optional[int] = None,
     event_message: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    event_metadata: Optional[Dict[str, Any]] = None,
 ) -> AuditLog:
     """
     Log an authentication event to the audit log.
@@ -25,7 +25,7 @@ def log_auth_event(
         request: FastAPI request object
         user_id: Optional user ID
         event_message: Optional descriptive message
-        metadata: Optional additional data
+        event_metadata: Optional additional data
 
     Returns:
         Created AuditLog instance
@@ -38,7 +38,7 @@ def log_auth_event(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
         request_path=str(request.url.path),
-        metadata=metadata,
+        event_metadata=event_metadata,
     )
 
     db.add(audit_log)
@@ -75,7 +75,7 @@ def log_login_failure(
         request=request,
         user_id=user_id,
         event_message=f"Failed login attempt for '{username}': {reason}",
-        metadata={"username": username, "reason": reason},
+        event_metadata={"username": username, "reason": reason},
     )
 
 
@@ -142,5 +142,5 @@ def log_oauth_login(
         request=request,
         user_id=user_id,
         event_message=f"User '{username}' logged in via {provider}",
-        metadata={"provider": provider},
+        event_metadata={"provider": provider},
     )

@@ -9,37 +9,37 @@ from api.auth.password import hash_password
 import secrets
 
 # OAuth configuration
-config = Config(environ={
-    "GOOGLE_CLIENT_ID": "",
-    "GOOGLE_CLIENT_SECRET": "",
-    "GITHUB_CLIENT_ID": "",
-    "GITHUB_CLIENT_SECRET": "",
-})
+config = Config(
+    environ={
+        "GOOGLE_CLIENT_ID": "",
+        "GOOGLE_CLIENT_SECRET": "",
+        "GITHUB_CLIENT_ID": "",
+        "GITHUB_CLIENT_SECRET": "",
+    }
+)
 
 oauth = OAuth(config)
 
 # Register Google OAuth
 oauth.register(
-    name='google',
-    client_id=config('GOOGLE_CLIENT_ID', default=''),
-    client_secret=config('GOOGLE_CLIENT_SECRET', default=''),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
+    name="google",
+    client_id=config("GOOGLE_CLIENT_ID", default=""),
+    client_secret=config("GOOGLE_CLIENT_SECRET", default=""),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
 )
 
 # Register GitHub OAuth
 oauth.register(
-    name='github',
-    client_id=config('GITHUB_CLIENT_ID', default=''),
-    client_secret=config('GITHUB_CLIENT_SECRET', default=''),
-    access_token_url='https://github.com/login/oauth/access_token',
+    name="github",
+    client_id=config("GITHUB_CLIENT_ID", default=""),
+    client_secret=config("GITHUB_CLIENT_SECRET", default=""),
+    access_token_url="https://github.com/login/oauth/access_token",
     access_token_params=None,
-    authorize_url='https://github.com/login/oauth/authorize',
+    authorize_url="https://github.com/login/oauth/authorize",
     authorize_params=None,
-    api_base_url='https://api.github.com/',
-    client_kwargs={'scope': 'user:email'},
+    api_base_url="https://api.github.com/",
+    client_kwargs={"scope": "user:email"},
 )
 
 
@@ -68,10 +68,7 @@ def create_or_update_oauth_user(
         User instance
     """
     # Check if user exists with this OAuth provider
-    user = db.query(User).filter(
-        User.oauth_provider == provider,
-        User.oauth_id == oauth_id
-    ).first()
+    user = db.query(User).filter(User.oauth_provider == provider, User.oauth_id == oauth_id).first()
 
     if user:
         # Update existing OAuth user
@@ -127,14 +124,14 @@ def extract_google_user_info(token: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dictionary with user information
     """
-    user_info = token.get('userinfo', {})
+    user_info = token.get("userinfo", {})
 
     return {
-        'oauth_id': user_info.get('sub'),
-        'email': user_info.get('email'),
-        'username': user_info.get('email', '').split('@')[0],  # Use email prefix as username
-        'full_name': user_info.get('name'),
-        'avatar_url': user_info.get('picture'),
+        "oauth_id": user_info.get("sub"),
+        "email": user_info.get("email"),
+        "username": user_info.get("email", "").split("@")[0],  # Use email prefix as username
+        "full_name": user_info.get("name"),
+        "avatar_url": user_info.get("picture"),
     }
 
 
@@ -152,19 +149,19 @@ def extract_github_user_info(user_data: Dict[str, Any], email_data: list) -> Dic
     # Get primary email
     primary_email = None
     for email in email_data:
-        if email.get('primary'):
-            primary_email = email.get('email')
+        if email.get("primary"):
+            primary_email = email.get("email")
             break
 
     if not primary_email and email_data:
-        primary_email = email_data[0].get('email')
+        primary_email = email_data[0].get("email")
 
     return {
-        'oauth_id': str(user_data.get('id')),
-        'email': primary_email or user_data.get('email'),
-        'username': user_data.get('login'),
-        'full_name': user_data.get('name'),
-        'avatar_url': user_data.get('avatar_url'),
+        "oauth_id": str(user_data.get("id")),
+        "email": primary_email or user_data.get("email"),
+        "username": user_data.get("login"),
+        "full_name": user_data.get("name"),
+        "avatar_url": user_data.get("avatar_url"),
     }
 
 
