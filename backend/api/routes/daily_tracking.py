@@ -194,39 +194,39 @@ async def get_tracking_status(db: Session = Depends(get_db)):
     - Padrões identificados disponíveis
     """
     try:
-        from database.models import RegistroDiario, PadroesCiclo
+        from database.models import DailyLog, CyclePatterns
         from datetime import timedelta
 
         # Contar registros
-        total_registros = db.query(RegistroDiario).count()
+        total_registros = db.query(DailyLog).count()
 
         # Calcular consistência (últimos 30 dias)
         data_inicio = date.today() - timedelta(days=30)
-        registros_recentes = db.query(RegistroDiario).filter(
-            RegistroDiario.data >= data_inicio
+        registros_recentes = db.query(DailyLog).filter(
+            DailyLog.date >= data_inicio
         ).count()
 
         consistencia = (registros_recentes / 30) * 100
 
         # Último registro
-        ultimo_registro = db.query(RegistroDiario).order_by(
-            RegistroDiario.data.desc()
+        ultimo_registro = db.query(DailyLog).order_by(
+            DailyLog.date.desc()
         ).first()
 
         # Padrões identificados
-        padroes = db.query(PadroesCiclo).all()
+        padroes = db.query(CyclePatterns).all()
 
         return {
             "total_records": total_registros,
             "consistency_30days": f"{consistencia:.1f}%",
-            "last_record_date": str(ultimo_registro.data) if ultimo_registro else None,
+            "last_record_date": str(ultimo_registro.date) if ultimo_registro else None,
             "patterns_identified": len(padroes),
             "patterns": [
                 {
-                    "fase": p.fase,
-                    "produtividade_media": p.produtividade_media,
-                    "confianca_score": p.confianca_score,
-                    "amostras": p.amostras_usadas
+                    "fase": p.phase,
+                    "produtividade_media": p.average_productivity,
+                    "confianca_score": p.confidence_score,
+                    "amostras": p.samples_used
                 }
                 for p in padroes
             ] if padroes else []
@@ -281,20 +281,20 @@ async def get_reminder_status(db: Session = Depends(get_db)):
     - Sugestão de quando registrar
     """
     try:
-        from database.models import RegistroDiario
+        from database.models import DailyLog
 
         # Verificar se já registrou hoje
         hoje = date.today()
-        registro_hoje = db.query(RegistroDiario).filter(
-            RegistroDiario.data == hoje
+        registro_hoje = db.query(DailyLog).filter(
+            DailyLog.date == hoje
         ).first()
 
         # Contar dias consecutivos sem registro (últimos 7 dias)
         dias_sem_registro = []
         for i in range(1, 8):
             data_check = hoje - timedelta(days=i)
-            registro = db.query(RegistroDiario).filter(
-                RegistroDiario.data == data_check
+            registro = db.query(DailyLog).filter(
+                DailyLog.date == data_check
             ).first()
             if not registro:
                 dias_sem_registro.append(str(data_check))
@@ -340,14 +340,14 @@ async def get_insights(
         if days > 90:
             raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
 
-        from database.models import RegistroDiario
+        from database.models import DailyLog
         import statistics
 
         # Buscar registros
         data_inicio = date.today() - timedelta(days=days)
-        registros = db.query(RegistroDiario).filter(
-            RegistroDiario.data >= data_inicio
-        ).order_by(RegistroDiario.data.asc()).all()
+        registros = db.query(DailyLog).filter(
+            DailyLog.date >= data_inicio
+        ).order_by(DailyLog.date.asc()).all()
 
         if not registros:
             return {
@@ -369,14 +369,14 @@ async def get_insights(
         }
 
         for reg in registros:
-            time_series["dates"].append(str(reg.data))
-            time_series["sleep_hours"].append(reg.horas_sono)
-            time_series["sleep_quality"].append(reg.qualidade_sono)
-            time_series["energy_morning"].append(reg.energia_manha)
-            time_series["energy_afternoon"].append(reg.energia_tarde)
-            time_series["energy_evening"].append(reg.energia_noite)
-            time_series["deep_work_hours"].append(reg.horas_deep_work)
-            time_series["tasks_completed"].append(reg.tarefas_completadas)
+            time_series["dates"].append(str(reg.date))
+            time_series["sleep_hours"].append(reg.sleep_hours)
+            time_series["sleep_quality"].append(reg.sleep_quality)
+            time_series["energy_morning"].append(reg.morning_energy)
+            time_series["energy_afternoon"].append(reg.afternoon_energy)
+            time_series["energy_evening"].append(reg.evening_energy)
+            time_series["deep_work_hours"].append(reg.deep_work_hours)
+            time_series["tasks_completed"].append(reg.completed_tasks)
 
         # Calcular médias móveis (7 dias)
         def moving_average(data: List[Optional[float]], window: int = 7) -> List[Optional[float]]:
@@ -503,8 +503,8 @@ def _get_most_productive_phase(registros: List) -> str:
     phase_productivity = defaultdict(list)
 
     for reg in registros:
-        if reg.fase_ciclo and reg.horas_deep_work:
-            phase_productivity[reg.fase_ciclo].append(reg.horas_deep_work)
+        if reg.cycle_phase and reg.deep_work_hours:
+            phase_productivity[reg.cycle_phase].append(reg.deep_work_hours)
 
     if not phase_productivity:
         return "not_enough_data"

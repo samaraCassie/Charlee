@@ -5,7 +5,7 @@ from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 from datetime import date, timedelta, datetime
 from typing import Optional, Dict, List
-from database.models import RegistroDiario, CicloMenstrual, Tarefa, PadroesCiclo
+from database.models import DailyLog, MenstrualCycle, Task, CyclePatterns
 from sqlalchemy import func
 
 
@@ -77,58 +77,58 @@ class DailyTrackingAgent(Agent):
                 data_obj = date.today()
 
             # Verificar se já existe registro
-            registro = self.database.query(RegistroDiario).filter(
-                RegistroDiario.data == data_obj
+            registro = self.database.query(DailyLog).filter(
+                DailyLog.date == data_obj
             ).first()
 
             # Contar tarefas completadas do dia
-            tarefas_hoje = self.database.query(Tarefa).filter(
-                Tarefa.status == "Concluída",
-                func.date(Tarefa.concluido_em) == data_obj
+            tarefas_hoje = self.database.query(Task).filter(
+                Task.status == "Concluída",
+                func.date(Task.completed_at) == data_obj
             ).count()
 
             # Obter fase do ciclo
-            ciclo_atual = self.database.query(CicloMenstrual).filter(
-                CicloMenstrual.data_inicio <= data_obj
-            ).order_by(CicloMenstrual.data_inicio.desc()).first()
+            ciclo_atual = self.database.query(MenstrualCycle).filter(
+                MenstrualCycle.start_date <= data_obj
+            ).order_by(MenstrualCycle.start_date.desc()).first()
 
-            fase_ciclo = ciclo_atual.fase if ciclo_atual else None
+            fase_ciclo = ciclo_atual.phase if ciclo_atual else None
 
             if registro:
                 # Atualizar registro existente
                 if horas_sono is not None:
-                    registro.horas_sono = horas_sono
+                    registro.sleep_hours = horas_sono
                 if qualidade_sono is not None:
-                    registro.qualidade_sono = qualidade_sono
+                    registro.sleep_quality = qualidade_sono
                 if energia_manha is not None:
-                    registro.energia_manha = energia_manha
+                    registro.morning_energy = energia_manha
                 if energia_tarde is not None:
-                    registro.energia_tarde = energia_tarde
+                    registro.afternoon_energy = energia_tarde
                 if energia_noite is not None:
-                    registro.energia_noite = energia_noite
+                    registro.evening_energy = energia_noite
                 if horas_deep_work is not None:
-                    registro.horas_deep_work = horas_deep_work
+                    registro.deep_work_hours = horas_deep_work
                 if notas:
-                    registro.notas_livre = notas
+                    registro.free_notes = notas
 
-                registro.tarefas_completadas = tarefas_hoje
-                registro.fase_ciclo = fase_ciclo
+                registro.completed_tasks = tarefas_hoje
+                registro.cycle_phase = fase_ciclo
 
                 self.database.commit()
                 action = "atualizado"
             else:
                 # Criar novo registro
-                registro = RegistroDiario(
-                    data=data_obj,
-                    horas_sono=horas_sono,
-                    qualidade_sono=qualidade_sono,
-                    energia_manha=energia_manha,
-                    energia_tarde=energia_tarde,
-                    energia_noite=energia_noite,
-                    horas_deep_work=horas_deep_work,
-                    tarefas_completadas=tarefas_hoje,
-                    fase_ciclo=fase_ciclo,
-                    notas_livre=notas
+                registro = DailyLog(
+                    date=data_obj,
+                    sleep_hours=horas_sono,
+                    sleep_quality=qualidade_sono,
+                    morning_energy=energia_manha,
+                    afternoon_energy=energia_tarde,
+                    evening_energy=energia_noite,
+                    deep_work_hours=horas_deep_work,
+                    completed_tasks=tarefas_hoje,
+                    cycle_phase=fase_ciclo,
+                    free_notes=notas
                 )
                 self.database.add(registro)
                 self.database.commit()
@@ -164,8 +164,8 @@ class DailyTrackingAgent(Agent):
         """
         try:
             hoje = date.today()
-            registro = self.database.query(RegistroDiario).filter(
-                RegistroDiario.data == hoje
+            registro = self.database.query(DailyLog).filter(
+                DailyLog.date == hoje
             ).first()
 
             if not registro:
@@ -173,29 +173,29 @@ class DailyTrackingAgent(Agent):
 
             result = f"📊 **Registro de Hoje ({hoje})**\n\n"
 
-            if registro.horas_sono:
-                result += f"💤 **Sono:** {registro.horas_sono}h"
-                if registro.qualidade_sono:
-                    result += f" (qualidade: {registro.qualidade_sono}/10)"
+            if registro.sleep_hours:
+                result += f"💤 **Sono:** {registro.sleep_hours}h"
+                if registro.sleep_quality:
+                    result += f" (qualidade: {registro.sleep_quality}/10)"
                 result += "\n"
 
             result += "\n⚡ **Energia:**\n"
-            if registro.energia_manha:
-                result += f"• Manhã: {registro.energia_manha}/10\n"
-            if registro.energia_tarde:
-                result += f"• Tarde: {registro.energia_tarde}/10\n"
-            if registro.energia_noite:
-                result += f"• Noite: {registro.energia_noite}/10\n"
+            if registro.morning_energy:
+                result += f"• Manhã: {registro.morning_energy}/10\n"
+            if registro.afternoon_energy:
+                result += f"• Tarde: {registro.afternoon_energy}/10\n"
+            if registro.evening_energy:
+                result += f"• Noite: {registro.evening_energy}/10\n"
 
             result += f"\n🎯 **Produtividade:**\n"
-            result += f"• Deep work: {registro.horas_deep_work or 0}h\n"
-            result += f"• Tarefas concluídas: {registro.tarefas_completadas}\n"
+            result += f"• Deep work: {registro.deep_work_hours or 0}h\n"
+            result += f"• Tarefas concluídas: {registro.completed_tasks}\n"
 
-            if registro.fase_ciclo:
-                result += f"\n🌸 Fase do ciclo: {registro.fase_ciclo}\n"
+            if registro.cycle_phase:
+                result += f"\n🌸 Fase do ciclo: {registro.cycle_phase}\n"
 
-            if registro.notas_livre:
-                result += f"\n📝 **Notas:**\n{registro.notas_livre}\n"
+            if registro.free_notes:
+                result += f"\n📝 **Notas:**\n{registro.free_notes}\n"
 
             return result
 
@@ -212,25 +212,25 @@ class DailyTrackingAgent(Agent):
         try:
             data_inicio = date.today() - timedelta(days=dias)
 
-            registros = self.database.query(RegistroDiario).filter(
-                RegistroDiario.data >= data_inicio
-            ).order_by(RegistroDiario.data.desc()).all()
+            registros = self.database.query(DailyLog).filter(
+                DailyLog.date >= data_inicio
+            ).order_by(DailyLog.date.desc()).all()
 
             if not registros:
                 return f"📅 Sem registros nos últimos {dias} dias."
 
             # Calcular médias
             total_registros = len(registros)
-            soma_sono = sum(r.horas_sono for r in registros if r.horas_sono)
-            soma_qualidade_sono = sum(r.qualidade_sono for r in registros if r.qualidade_sono)
-            soma_energia_manha = sum(r.energia_manha for r in registros if r.energia_manha)
-            soma_deep_work = sum(r.horas_deep_work for r in registros if r.horas_deep_work)
-            soma_tarefas = sum(r.tarefas_completadas for r in registros)
+            soma_sono = sum(r.sleep_hours for r in registros if r.sleep_hours)
+            soma_qualidade_sono = sum(r.sleep_quality for r in registros if r.sleep_quality)
+            soma_energia_manha = sum(r.morning_energy for r in registros if r.morning_energy)
+            soma_deep_work = sum(r.deep_work_hours for r in registros if r.deep_work_hours)
+            soma_tarefas = sum(r.completed_tasks for r in registros)
 
-            count_sono = sum(1 for r in registros if r.horas_sono)
-            count_qual = sum(1 for r in registros if r.qualidade_sono)
-            count_energia = sum(1 for r in registros if r.energia_manha)
-            count_deep = sum(1 for r in registros if r.horas_deep_work)
+            count_sono = sum(1 for r in registros if r.sleep_hours)
+            count_qual = sum(1 for r in registros if r.sleep_quality)
+            count_energia = sum(1 for r in registros if r.morning_energy)
+            count_deep = sum(1 for r in registros if r.deep_work_hours)
 
             result = f"📊 **Análise dos Últimos {dias} Dias**\n\n"
             result += f"📅 Registros encontrados: {total_registros}\n\n"
@@ -272,9 +272,9 @@ class DailyTrackingAgent(Agent):
         """
         try:
             # Buscar todos os registros com dados suficientes
-            registros = self.database.query(RegistroDiario).filter(
-                RegistroDiario.horas_sono.isnot(None),
-                RegistroDiario.energia_manha.isnot(None)
+            registros = self.database.query(DailyLog).filter(
+                DailyLog.sleep_hours.isnot(None),
+                DailyLog.morning_energy.isnot(None)
             ).all()
 
             if len(registros) < 7:
@@ -283,19 +283,19 @@ class DailyTrackingAgent(Agent):
             result = "🔍 **Padrões Identificados:**\n\n"
 
             # 1. Correlação sono vs energia
-            media_sono = sum(r.horas_sono for r in registros) / len(registros)
-            media_energia = sum(r.energia_manha for r in registros) / len(registros)
+            media_sono = sum(r.sleep_hours for r in registros) / len(registros)
+            media_energia = sum(r.morning_energy for r in registros) / len(registros)
 
-            dias_sono_bom = [r for r in registros if r.horas_sono >= media_sono]
-            dias_sono_ruim = [r for r in registros if r.horas_sono < media_sono]
+            dias_sono_bom = [r for r in registros if r.sleep_hours >= media_sono]
+            dias_sono_ruim = [r for r in registros if r.sleep_hours < media_sono]
 
             if dias_sono_bom:
-                energia_com_sono_bom = sum(r.energia_manha for r in dias_sono_bom) / len(dias_sono_bom)
+                energia_com_sono_bom = sum(r.morning_energy for r in dias_sono_bom) / len(dias_sono_bom)
             else:
                 energia_com_sono_bom = 0
 
             if dias_sono_ruim:
-                energia_com_sono_ruim = sum(r.energia_manha for r in dias_sono_ruim) / len(dias_sono_ruim)
+                energia_com_sono_ruim = sum(r.morning_energy for r in dias_sono_ruim) / len(dias_sono_ruim)
             else:
                 energia_com_sono_ruim = 0
 
@@ -309,10 +309,10 @@ class DailyTrackingAgent(Agent):
             # 2. Produtividade por fase do ciclo
             fases = {}
             for registro in registros:
-                if registro.fase_ciclo and registro.tarefas_completadas:
-                    if registro.fase_ciclo not in fases:
-                        fases[registro.fase_ciclo] = []
-                    fases[registro.fase_ciclo].append(registro.tarefas_completadas)
+                if registro.cycle_phase and registro.completed_tasks:
+                    if registro.cycle_phase not in fases:
+                        fases[registro.cycle_phase] = []
+                    fases[registro.cycle_phase].append(registro.completed_tasks)
 
             if fases:
                 result += "\n🌸 **Produtividade por Fase do Ciclo:**\n"
@@ -324,8 +324,8 @@ class DailyTrackingAgent(Agent):
                 self._atualizar_padroes_ciclo(fases)
 
             # 3. Melhor horário
-            registros_manha = [r for r in registros if r.energia_manha and r.energia_manha >= 7]
-            registros_tarde = [r for r in registros if r.energia_tarde and r.energia_tarde >= 7]
+            registros_manha = [r for r in registros if r.morning_energy and r.morning_energy >= 7]
+            registros_tarde = [r for r in registros if r.afternoon_energy and r.afternoon_energy >= 7]
 
             result += f"\n⏰ **Períodos de Alta Energia:**\n"
             result += f"• Manhã com energia ≥7: {len(registros_manha)} dias\n"
@@ -350,27 +350,27 @@ class DailyTrackingAgent(Agent):
                 amostras = len(tarefas_completadas)
 
                 # Buscar ou criar padrão
-                padrao = self.database.query(PadroesCiclo).filter(
-                    PadroesCiclo.fase == fase
+                padrao = self.database.query(CyclePatterns).filter(
+                    CyclePatterns.phase == fase
                 ).first()
 
                 if padrao:
                     # Atualizar existente (média móvel)
-                    total_amostras = padrao.amostras_usadas + amostras
-                    padrao.produtividade_media = (
-                        (padrao.produtividade_media * padrao.amostras_usadas) +
+                    total_amostras = padrao.samples_used + amostras
+                    padrao.average_productivity = (
+                        (padrao.average_productivity * padrao.samples_used) +
                         (produtividade_media * amostras)
                     ) / total_amostras
-                    padrao.amostras_usadas = total_amostras
-                    padrao.confianca_score = min(total_amostras / 30, 1.0)  # Max confiança com 30 amostras
+                    padrao.samples_used = total_amostras
+                    padrao.confidence_score = min(total_amostras / 30, 1.0)  # Max confiança com 30 amostras
                 else:
                     # Criar novo
-                    padrao = PadroesCiclo(
-                        fase=fase,
-                        padrao_identificado=f"Média de {produtividade_media:.1f} tarefas por dia",
-                        produtividade_media=produtividade_media,
-                        amostras_usadas=amostras,
-                        confianca_score=min(amostras / 30, 1.0)
+                    padrao = CyclePatterns(
+                        phase=fase,
+                        pattern_identified=f"Média de {produtividade_media:.1f} tarefas por dia",
+                        average_productivity=produtividade_media,
+                        samples_used=amostras,
+                        confidence_score=min(amostras / 30, 1.0)
                     )
                     self.database.add(padrao)
 
@@ -388,8 +388,8 @@ class DailyTrackingAgent(Agent):
 
             # Buscar registros recentes
             data_inicio = date.today() - timedelta(days=14)
-            registros = self.database.query(RegistroDiario).filter(
-                RegistroDiario.data >= data_inicio
+            registros = self.database.query(DailyLog).filter(
+                DailyLog.date >= data_inicio
             ).all()
 
             if len(registros) < 7:
@@ -398,9 +398,9 @@ class DailyTrackingAgent(Agent):
             result = "💡 **Sugestões de Otimização:**\n\n"
 
             # Análise de sono
-            registros_sono = [r for r in registros if r.horas_sono]
+            registros_sono = [r for r in registros if r.sleep_hours]
             if registros_sono:
-                media_sono = sum(r.horas_sono for r in registros_sono) / len(registros_sono)
+                media_sono = sum(r.sleep_hours for r in registros_sono) / len(registros_sono)
 
                 if media_sono < 7:
                     result += "💤 **Sono:**\n"
@@ -409,9 +409,9 @@ class DailyTrackingAgent(Agent):
                     result += "• Benefício: Mais energia e foco no dia seguinte\n\n"
 
             # Análise de deep work
-            registros_deep = [r for r in registros if r.horas_deep_work]
+            registros_deep = [r for r in registros if r.deep_work_hours]
             if registros_deep:
-                media_deep = sum(r.horas_deep_work for r in registros_deep) / len(registros_deep)
+                media_deep = sum(r.deep_work_hours for r in registros_deep) / len(registros_deep)
 
                 if media_deep < 2:
                     result += "🎯 **Trabalho Focado:**\n"
@@ -430,26 +430,26 @@ class DailyTrackingAgent(Agent):
                 result += "• Benefício: Dados mais precisos = insights melhores\n\n"
 
             # Sugestões baseadas em fase do ciclo
-            ciclo = self.database.query(CicloMenstrual).filter(
-                CicloMenstrual.data_inicio <= date.today()
-            ).order_by(CicloMenstrual.data_inicio.desc()).first()
+            ciclo = self.database.query(MenstrualCycle).filter(
+                MenstrualCycle.start_date <= date.today()
+            ).order_by(MenstrualCycle.start_date.desc()).first()
 
             if ciclo:
-                result += f"🌸 **Adaptação ao Ciclo (Fase {ciclo.fase}):**\n"
+                result += f"🌸 **Adaptação ao Ciclo (Fase {ciclo.phase}):**\n"
 
-                if ciclo.fase == "menstrual":
+                if ciclo.phase == "menstrual":
                     result += "• Reduza reuniões e compromissos sociais\n"
                     result += "• Foque em tarefas administrativas leves\n"
                     result += "• Priorize descanso e autocuidado\n"
-                elif ciclo.fase == "folicular":
+                elif ciclo.phase == "folicular":
                     result += "• Ótimo momento para projetos criativos!\n"
                     result += "• Planeje novos projetos estratégicos\n"
                     result += "• Aproveite alta energia para tarefas complexas\n"
-                elif ciclo.fase == "ovulacao":
+                elif ciclo.phase == "ovulacao":
                     result += "• Pico de energia - agende reuniões importantes!\n"
                     result += "• Bom momento para negociações\n"
                     result += "• Apresentações e conversas difíceis\n"
-                elif ciclo.fase == "lutea":
+                elif ciclo.phase == "lutea":
                     result += "• Foque em concluir projetos em andamento\n"
                     result += "• Evite iniciar projetos grandes e novos\n"
                     result += "• Organize e finalize pendências\n"
