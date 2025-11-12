@@ -41,8 +41,8 @@ class DailyTrackingAgent(Agent):
                 self.obter_registro_hoje,
                 self.analise_ultimos_dias,
                 self.identificar_padroes,
-                self.sugerir_otimizacoes
-            ]
+                self.sugerir_otimizacoes,
+            ],
         )
 
     def registrar_dia(
@@ -54,7 +54,7 @@ class DailyTrackingAgent(Agent):
         energia_tarde: Optional[int] = None,
         energia_noite: Optional[int] = None,
         horas_deep_work: Optional[float] = None,
-        notas: Optional[str] = None
+        notas: Optional[str] = None,
     ) -> str:
         """
         Registra dados do dia (hoje ou data específica).
@@ -77,20 +77,22 @@ class DailyTrackingAgent(Agent):
                 data_obj = date.today()
 
             # Verificar se já existe registro
-            registro = self.database.query(DailyLog).filter(
-                DailyLog.date == data_obj
-            ).first()
+            registro = self.database.query(DailyLog).filter(DailyLog.date == data_obj).first()
 
             # Contar tarefas completadas do dia
-            tarefas_hoje = self.database.query(Task).filter(
-                Task.status == "Concluída",
-                func.date(Task.completed_at) == data_obj
-            ).count()
+            tarefas_hoje = (
+                self.database.query(Task)
+                .filter(Task.status == "Concluída", func.date(Task.completed_at) == data_obj)
+                .count()
+            )
 
             # Obter fase do ciclo
-            ciclo_atual = self.database.query(MenstrualCycle).filter(
-                MenstrualCycle.start_date <= data_obj
-            ).order_by(MenstrualCycle.start_date.desc()).first()
+            ciclo_atual = (
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.start_date <= data_obj)
+                .order_by(MenstrualCycle.start_date.desc())
+                .first()
+            )
 
             fase_ciclo = ciclo_atual.phase if ciclo_atual else None
 
@@ -128,7 +130,7 @@ class DailyTrackingAgent(Agent):
                     deep_work_hours=horas_deep_work,
                     completed_tasks=tarefas_hoje,
                     cycle_phase=fase_ciclo,
-                    free_notes=notas
+                    free_notes=notas,
                 )
                 self.database.add(registro)
                 self.database.commit()
@@ -164,9 +166,7 @@ class DailyTrackingAgent(Agent):
         """
         try:
             hoje = date.today()
-            registro = self.database.query(DailyLog).filter(
-                DailyLog.date == hoje
-            ).first()
+            registro = self.database.query(DailyLog).filter(DailyLog.date == hoje).first()
 
             if not registro:
                 return "📅 Ainda não há registro para hoje. Vamos criar um?"
@@ -212,9 +212,12 @@ class DailyTrackingAgent(Agent):
         try:
             data_inicio = date.today() - timedelta(days=dias)
 
-            registros = self.database.query(DailyLog).filter(
-                DailyLog.date >= data_inicio
-            ).order_by(DailyLog.date.desc()).all()
+            registros = (
+                self.database.query(DailyLog)
+                .filter(DailyLog.date >= data_inicio)
+                .order_by(DailyLog.date.desc())
+                .all()
+            )
 
             if not registros:
                 return f"📅 Sem registros nos últimos {dias} dias."
@@ -254,7 +257,9 @@ class DailyTrackingAgent(Agent):
                 pior_dia = min(registros_com_energia, key=lambda r: r.energia_manha)
 
                 result += f"\n🌟 **Melhor dia:** {melhor_dia.data} (energia: {melhor_dia.energia_manha}/10)\n"
-                result += f"😴 **Pior dia:** {pior_dia.data} (energia: {pior_dia.energia_manha}/10)\n"
+                result += (
+                    f"😴 **Pior dia:** {pior_dia.data} (energia: {pior_dia.energia_manha}/10)\n"
+                )
 
             return result
 
@@ -272,10 +277,11 @@ class DailyTrackingAgent(Agent):
         """
         try:
             # Buscar todos os registros com dados suficientes
-            registros = self.database.query(DailyLog).filter(
-                DailyLog.sleep_hours.isnot(None),
-                DailyLog.morning_energy.isnot(None)
-            ).all()
+            registros = (
+                self.database.query(DailyLog)
+                .filter(DailyLog.sleep_hours.isnot(None), DailyLog.morning_energy.isnot(None))
+                .all()
+            )
 
             if len(registros) < 7:
                 return f"📊 Ainda não há dados suficientes para identificar padrões.\nRegistros atuais: {len(registros)}/7 necessários."
@@ -290,18 +296,26 @@ class DailyTrackingAgent(Agent):
             dias_sono_ruim = [r for r in registros if r.sleep_hours < media_sono]
 
             if dias_sono_bom:
-                energia_com_sono_bom = sum(r.morning_energy for r in dias_sono_bom) / len(dias_sono_bom)
+                energia_com_sono_bom = sum(r.morning_energy for r in dias_sono_bom) / len(
+                    dias_sono_bom
+                )
             else:
                 energia_com_sono_bom = 0
 
             if dias_sono_ruim:
-                energia_com_sono_ruim = sum(r.morning_energy for r in dias_sono_ruim) / len(dias_sono_ruim)
+                energia_com_sono_ruim = sum(r.morning_energy for r in dias_sono_ruim) / len(
+                    dias_sono_ruim
+                )
             else:
                 energia_com_sono_ruim = 0
 
             result += "💤 **Sono vs Energia:**\n"
-            result += f"• Com sono ≥ {media_sono:.1f}h: energia média {energia_com_sono_bom:.1f}/10\n"
-            result += f"• Com sono < {media_sono:.1f}h: energia média {energia_com_sono_ruim:.1f}/10\n"
+            result += (
+                f"• Com sono ≥ {media_sono:.1f}h: energia média {energia_com_sono_bom:.1f}/10\n"
+            )
+            result += (
+                f"• Com sono < {media_sono:.1f}h: energia média {energia_com_sono_ruim:.1f}/10\n"
+            )
 
             if energia_com_sono_bom > energia_com_sono_ruim + 1:
                 result += f"💡 **Insight:** Dormir ≥{media_sono:.1f}h aumenta significativamente sua energia!\n"
@@ -325,7 +339,9 @@ class DailyTrackingAgent(Agent):
 
             # 3. Melhor horário
             registros_manha = [r for r in registros if r.morning_energy and r.morning_energy >= 7]
-            registros_tarde = [r for r in registros if r.afternoon_energy and r.afternoon_energy >= 7]
+            registros_tarde = [
+                r for r in registros if r.afternoon_energy and r.afternoon_energy >= 7
+            ]
 
             result += f"\n⏰ **Períodos de Alta Energia:**\n"
             result += f"• Manhã com energia ≥7: {len(registros_manha)} dias\n"
@@ -350,19 +366,21 @@ class DailyTrackingAgent(Agent):
                 amostras = len(tarefas_completadas)
 
                 # Buscar ou criar padrão
-                padrao = self.database.query(CyclePatterns).filter(
-                    CyclePatterns.phase == fase
-                ).first()
+                padrao = (
+                    self.database.query(CyclePatterns).filter(CyclePatterns.phase == fase).first()
+                )
 
                 if padrao:
                     # Atualizar existente (média móvel)
                     total_amostras = padrao.samples_used + amostras
                     padrao.average_productivity = (
-                        (padrao.average_productivity * padrao.samples_used) +
-                        (produtividade_media * amostras)
+                        (padrao.average_productivity * padrao.samples_used)
+                        + (produtividade_media * amostras)
                     ) / total_amostras
                     padrao.samples_used = total_amostras
-                    padrao.confidence_score = min(total_amostras / 30, 1.0)  # Max confiança com 30 amostras
+                    padrao.confidence_score = min(
+                        total_amostras / 30, 1.0
+                    )  # Max confiança com 30 amostras
                 else:
                     # Criar novo
                     padrao = CyclePatterns(
@@ -370,7 +388,7 @@ class DailyTrackingAgent(Agent):
                         identified_pattern=f"Média de {produtividade_media:.1f} tarefas por dia",
                         average_productivity=produtividade_media,
                         samples_used=amostras,
-                        confidence_score=min(amostras / 30, 1.0)
+                        confidence_score=min(amostras / 30, 1.0),
                     )
                     self.database.add(padrao)
 
@@ -388,9 +406,7 @@ class DailyTrackingAgent(Agent):
 
             # Buscar registros recentes
             data_inicio = date.today() - timedelta(days=14)
-            registros = self.database.query(DailyLog).filter(
-                DailyLog.date >= data_inicio
-            ).all()
+            registros = self.database.query(DailyLog).filter(DailyLog.date >= data_inicio).all()
 
             if len(registros) < 7:
                 return "📊 Ainda não há dados suficientes para sugestões personalizadas."
@@ -404,7 +420,9 @@ class DailyTrackingAgent(Agent):
 
                 if media_sono < 7:
                     result += "💤 **Sono:**\n"
-                    result += f"• Você está dormindo {media_sono:.1f}h em média (< 7h recomendadas)\n"
+                    result += (
+                        f"• Você está dormindo {media_sono:.1f}h em média (< 7h recomendadas)\n"
+                    )
                     result += "• Sugestão: Tente ir para cama 30min mais cedo\n"
                     result += "• Benefício: Mais energia e foco no dia seguinte\n\n"
 
@@ -430,9 +448,12 @@ class DailyTrackingAgent(Agent):
                 result += "• Benefício: Dados mais precisos = insights melhores\n\n"
 
             # Sugestões baseadas em fase do ciclo
-            ciclo = self.database.query(MenstrualCycle).filter(
-                MenstrualCycle.start_date <= date.today()
-            ).order_by(MenstrualCycle.start_date.desc()).first()
+            ciclo = (
+                self.database.query(MenstrualCycle)
+                .filter(MenstrualCycle.start_date <= date.today())
+                .order_by(MenstrualCycle.start_date.desc())
+                .first()
+            )
 
             if ciclo:
                 result += f"🌸 **Adaptação ao Ciclo (Fase {ciclo.phase}):**\n"

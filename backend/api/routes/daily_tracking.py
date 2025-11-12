@@ -17,32 +17,34 @@ router = APIRouter()
 
 class DailyRecordRequest(BaseModel):
     """Request model for daily record."""
+
     data: Optional[str] = Field(None, description="Data no formato YYYY-MM-DD (padrão: hoje)")
     horas_sono: Optional[float] = Field(None, ge=0, le=24, description="Horas de sono")
     qualidade_sono: Optional[int] = Field(None, ge=1, le=10, description="Qualidade do sono 1-10")
     energia_manha: Optional[int] = Field(None, ge=1, le=10, description="Energia pela manhã 1-10")
     energia_tarde: Optional[int] = Field(None, ge=1, le=10, description="Energia à tarde 1-10")
     energia_noite: Optional[int] = Field(None, ge=1, le=10, description="Energia à noite 1-10")
-    horas_deep_work: Optional[float] = Field(None, ge=0, le=24, description="Horas de trabalho focado")
+    horas_deep_work: Optional[float] = Field(
+        None, ge=0, le=24, description="Horas de trabalho focado"
+    )
     notas: Optional[str] = Field(None, description="Observações livres")
 
 
 class DailyRecordResponse(BaseModel):
     """Response model for daily record."""
+
     message: str
     data: str
 
 
 class AnalysisRequest(BaseModel):
     """Request model for analysis."""
+
     dias: int = Field(7, ge=1, le=90, description="Número de dias para analisar")
 
 
 @router.post("/record", response_model=DailyRecordResponse)
-async def create_daily_record(
-    request: DailyRecordRequest,
-    db: Session = Depends(get_db)
-):
+async def create_daily_record(request: DailyRecordRequest, db: Session = Depends(get_db)):
     """
     Registra dados do dia (hoje ou data específica).
 
@@ -69,13 +71,10 @@ async def create_daily_record(
             energia_tarde=request.energia_tarde,
             energia_noite=request.energia_noite,
             horas_deep_work=request.horas_deep_work,
-            notas=request.notas
+            notas=request.notas,
         )
 
-        return DailyRecordResponse(
-            message=response,
-            data=request.data or str(date.today())
-        )
+        return DailyRecordResponse(message=response, data=request.data or str(date.today()))
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating daily record: {str(e)}")
@@ -104,10 +103,7 @@ async def get_today_record(db: Session = Depends(get_db)):
 
 
 @router.get("/analysis")
-async def get_analysis(
-    dias: int = 7,
-    db: Session = Depends(get_db)
-):
+async def get_analysis(dias: int = 7, db: Session = Depends(get_db)):
     """
     Analisa tendências dos últimos N dias.
 
@@ -206,16 +202,12 @@ async def get_tracking_status(db: Session = Depends(get_db)):
 
         # Calcular consistência (últimos 30 dias)
         data_inicio = date.today() - timedelta(days=30)
-        registros_recentes = db.query(DailyLog).filter(
-            DailyLog.date >= data_inicio
-        ).count()
+        registros_recentes = db.query(DailyLog).filter(DailyLog.date >= data_inicio).count()
 
         consistencia = (registros_recentes / 30) * 100
 
         # Último registro
-        ultimo_registro = db.query(DailyLog).order_by(
-            DailyLog.date.desc()
-        ).first()
+        ultimo_registro = db.query(DailyLog).order_by(DailyLog.date.desc()).first()
 
         # Padrões identificados
         padroes = db.query(CyclePatterns).all()
@@ -225,15 +217,19 @@ async def get_tracking_status(db: Session = Depends(get_db)):
             "consistency_30days": f"{consistencia:.1f}%",
             "last_record_date": str(ultimo_registro.date) if ultimo_registro else None,
             "patterns_identified": len(padroes),
-            "patterns": [
-                {
-                    "fase": p.phase,
-                    "produtividade_media": p.average_productivity,
-                    "confianca_score": p.confidence_score,
-                    "amostras": p.samples_used
-                }
-                for p in padroes
-            ] if padroes else []
+            "patterns": (
+                [
+                    {
+                        "fase": p.phase,
+                        "produtividade_media": p.average_productivity,
+                        "confianca_score": p.confidence_score,
+                        "amostras": p.samples_used,
+                    }
+                    for p in padroes
+                ]
+                if padroes
+                else []
+            ),
         }
 
     except Exception as e:
@@ -242,15 +238,13 @@ async def get_tracking_status(db: Session = Depends(get_db)):
 
 class ReminderConfigRequest(BaseModel):
     """Request model for reminder configuration."""
+
     enabled: bool = Field(..., description="Ativar/desativar lembretes")
     preferred_time: Optional[str] = Field(None, description="Horário preferido (HH:MM)")
 
 
 @router.post("/reminder/config")
-async def configure_reminder(
-    request: ReminderConfigRequest,
-    db: Session = Depends(get_db)
-):
+async def configure_reminder(request: ReminderConfigRequest, db: Session = Depends(get_db)):
     """
     Configura lembretes diários para registro de dados.
 
@@ -266,7 +260,7 @@ async def configure_reminder(
     """
     logger.info(
         "Configuring reminder",
-        extra={"enabled": request.enabled, "preferred_time": request.preferred_time}
+        extra={"enabled": request.enabled, "preferred_time": request.preferred_time},
     )
 
     return {
@@ -274,8 +268,8 @@ async def configure_reminder(
         "config": {
             "enabled": request.enabled,
             "preferred_time": request.preferred_time or "20:00",
-            "status": "active" if request.enabled else "inactive"
-        }
+            "status": "active" if request.enabled else "inactive",
+        },
     }
 
 
@@ -296,30 +290,25 @@ async def get_reminder_status(db: Session = Depends(get_db)):
 
         # Verificar se já registrou hoje
         hoje = date.today()
-        registro_hoje = db.query(DailyLog).filter(
-            DailyLog.date == hoje
-        ).first()
+        registro_hoje = db.query(DailyLog).filter(DailyLog.date == hoje).first()
 
         # Contar dias consecutivos sem registro (últimos 7 dias)
         dias_sem_registro = []
         for i in range(1, 8):
             data_check = hoje - timedelta(days=i)
-            registro = db.query(DailyLog).filter(
-                DailyLog.date == data_check
-            ).first()
+            registro = db.query(DailyLog).filter(DailyLog.date == data_check).first()
             if not registro:
                 dias_sem_registro.append(str(data_check))
 
         # Status do lembrete
         precisa_lembrete = not registro_hoje
-        mensagem = "Você já registrou hoje! ✓" if registro_hoje else "Lembre-se de registrar seu dia!"
+        mensagem = (
+            "Você já registrou hoje! ✓" if registro_hoje else "Lembre-se de registrar seu dia!"
+        )
 
         logger.info(
             "Reminder status checked",
-            extra={
-                "recorded_today": bool(registro_hoje),
-                "missing_count": len(dias_sem_registro)
-            }
+            extra={"recorded_today": bool(registro_hoje), "missing_count": len(dias_sem_registro)},
         )
 
         return {
@@ -329,7 +318,11 @@ async def get_reminder_status(db: Session = Depends(get_db)):
             "missing_days_last_week": dias_sem_registro,
             "missing_count": len(dias_sem_registro),
             "message": mensagem,
-            "suggestion": "Registre antes de dormir para melhor precisão nos dados de sono." if precisa_lembrete else None
+            "suggestion": (
+                "Registre antes de dormir para melhor precisão nos dados de sono."
+                if precisa_lembrete
+                else None
+            ),
         }
 
     except Exception as e:
@@ -338,10 +331,7 @@ async def get_reminder_status(db: Session = Depends(get_db)):
 
 
 @router.get("/insights")
-async def get_insights(
-    days: int = 30,
-    db: Session = Depends(get_db)
-):
+async def get_insights(days: int = 30, db: Session = Depends(get_db)):
     """
     Retorna dados estruturados para dashboard de insights.
 
@@ -368,9 +358,12 @@ async def get_insights(
 
         # Buscar registros
         data_inicio = date.today() - timedelta(days=days)
-        registros = db.query(DailyLog).filter(
-            DailyLog.date >= data_inicio
-        ).order_by(DailyLog.date.asc()).all()
+        registros = (
+            db.query(DailyLog)
+            .filter(DailyLog.date >= data_inicio)
+            .order_by(DailyLog.date.asc())
+            .all()
+        )
 
         logger.info(f"Found {len(registros)} records for insights")
 
@@ -378,7 +371,7 @@ async def get_insights(
             return {
                 "message": "No data available for the requested period",
                 "days_requested": days,
-                "records_found": 0
+                "records_found": 0,
             }
 
         # Preparar séries temporais
@@ -390,7 +383,7 @@ async def get_insights(
             "energy_afternoon": [],
             "energy_evening": [],
             "deep_work_hours": [],
-            "tasks_completed": []
+            "tasks_completed": [],
         }
 
         for reg in registros:
@@ -408,7 +401,7 @@ async def get_insights(
             """Calculate moving average, handling None values."""
             result = []
             for i in range(len(data)):
-                window_data = [x for x in data[max(0, i-window+1):i+1] if x is not None]
+                window_data = [x for x in data[max(0, i - window + 1) : i + 1] if x is not None]
                 if window_data:
                     result.append(round(statistics.mean(window_data), 2))
                 else:
@@ -419,7 +412,7 @@ async def get_insights(
             "sleep_hours_ma": moving_average(time_series["sleep_hours"]),
             "sleep_quality_ma": moving_average(time_series["sleep_quality"]),
             "energy_morning_ma": moving_average(time_series["energy_morning"]),
-            "deep_work_hours_ma": moving_average(time_series["deep_work_hours"])
+            "deep_work_hours_ma": moving_average(time_series["deep_work_hours"]),
         }
 
         # Calcular estatísticas gerais
@@ -431,7 +424,7 @@ async def get_insights(
             return {
                 "mean": round(statistics.mean(clean_data), 2),
                 "min": min(clean_data),
-                "max": max(clean_data)
+                "max": max(clean_data),
             }
 
         stats = {
@@ -439,7 +432,7 @@ async def get_insights(
             "sleep_quality": safe_stats(time_series["sleep_quality"]),
             "energy_morning": safe_stats(time_series["energy_morning"]),
             "deep_work_hours": safe_stats(time_series["deep_work_hours"]),
-            "tasks_completed": safe_stats(time_series["tasks_completed"])
+            "tasks_completed": safe_stats(time_series["tasks_completed"]),
         }
 
         # Calcular correlação sono x energia (simplificada)
@@ -450,14 +443,21 @@ async def get_insights(
         if len(sleep_data) >= 7 and len(energy_data) >= 7:
             # Correlação simples baseada em tendências
             avg_sleep = statistics.mean(sleep_data)
-            above_avg_sleep = [i for i, s in enumerate(time_series["sleep_hours"])
-                              if s is not None and s > avg_sleep]
+            above_avg_sleep = [
+                i
+                for i, s in enumerate(time_series["sleep_hours"])
+                if s is not None and s > avg_sleep
+            ]
 
-            if above_avg_sleep and len([i for i in above_avg_sleep if i < len(time_series["energy_morning"])]):
-                energy_on_good_sleep = [time_series["energy_morning"][i]
-                                       for i in above_avg_sleep
-                                       if i < len(time_series["energy_morning"])
-                                       and time_series["energy_morning"][i] is not None]
+            if above_avg_sleep and len(
+                [i for i in above_avg_sleep if i < len(time_series["energy_morning"])]
+            ):
+                energy_on_good_sleep = [
+                    time_series["energy_morning"][i]
+                    for i in above_avg_sleep
+                    if i < len(time_series["energy_morning"])
+                    and time_series["energy_morning"][i] is not None
+                ]
                 if energy_on_good_sleep:
                     avg_energy_good_sleep = statistics.mean(energy_on_good_sleep)
                     avg_energy_overall = statistics.mean(energy_data)
@@ -472,8 +472,12 @@ async def get_insights(
         # Tendências (comparar primeira metade vs segunda metade)
         mid_point = len(registros) // 2
         if mid_point > 0:
-            first_half_energy = [x for x in time_series["energy_morning"][:mid_point] if x is not None]
-            second_half_energy = [x for x in time_series["energy_morning"][mid_point:] if x is not None]
+            first_half_energy = [
+                x for x in time_series["energy_morning"][:mid_point] if x is not None
+            ]
+            second_half_energy = [
+                x for x in time_series["energy_morning"][mid_point:] if x is not None
+            ]
 
             trend = "stable"
             if first_half_energy and second_half_energy:
@@ -490,7 +494,7 @@ async def get_insights(
                 "start_date": str(data_inicio),
                 "end_date": str(date.today()),
                 "days_requested": days,
-                "records_found": len(registros)
+                "records_found": len(registros),
             },
             "time_series": time_series,
             "moving_averages": moving_averages,
@@ -499,22 +503,22 @@ async def get_insights(
                 "sleep_energy_correlation": correlation_strength,
                 "energy_trend": trend,
                 "most_productive_phase": _get_most_productive_phase(registros),
-                "consistency_score": round((len(registros) / days) * 100, 1)
+                "consistency_score": round((len(registros) / days) * 100, 1),
             },
             "chart_config": {
                 "recommended_chart_types": {
                     "sleep_and_energy": "line",
                     "deep_work": "bar",
                     "tasks_completed": "bar",
-                    "phase_comparison": "radar"
+                    "phase_comparison": "radar",
                 },
                 "color_palette": {
                     "sleep": "#4F46E5",
                     "energy": "#F59E0B",
                     "productivity": "#10B981",
-                    "quality": "#8B5CF6"
-                }
-            }
+                    "quality": "#8B5CF6",
+                },
+            },
         }
 
     except Exception as e:
@@ -536,9 +540,7 @@ def _get_most_productive_phase(registros: List) -> str:
         return "not_enough_data"
 
     avg_by_phase = {
-        phase: sum(hours) / len(hours)
-        for phase, hours in phase_productivity.items()
-        if hours
+        phase: sum(hours) / len(hours) for phase, hours in phase_productivity.items() if hours
     }
 
     if not avg_by_phase:

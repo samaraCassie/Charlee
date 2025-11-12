@@ -151,11 +151,21 @@ class AgentOrchestrator:
 
         # Daily tracking keywords
         daily_tracking_keywords = [
-            "registrar dia", "registro diário", "como foi o dia",
-            "dormi", "sono", "acordei", "energia hoje",
-            "produtividade hoje", "deep work", "padrões",
-            "identificar padrão", "otimizar", "sugestões",
-            "análise", "últimos dias"
+            "registrar dia",
+            "registro diário",
+            "como foi o dia",
+            "dormi",
+            "sono",
+            "acordei",
+            "energia hoje",
+            "produtividade hoje",
+            "deep work",
+            "padrões",
+            "identificar padrão",
+            "otimizar",
+            "sugestões",
+            "análise",
+            "últimos dias",
         ]
 
         # Check for daily tracking intent
@@ -186,7 +196,7 @@ class AgentOrchestrator:
         response = self.daily_tracking_agent.print_response(message)
 
         # Extract text from response if it's a RunResponse object
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
@@ -361,12 +371,11 @@ class AgentOrchestrator:
             "user_id": self.user_id,
             "last_agent_used": self.context.get("last_agent_used"),
             "conversation_topic": self.context.get("conversation_topic"),
-
             "agents_available": {
                 "core": True,
                 "cycle_aware": True,
                 "capacity_guard": True,
-                "daily_tracking": True
+                "daily_tracking": True,
             },
             "agents_available": {"core": True, "cycle_aware": True, "capacity_guard": True},
             "orchestration_features": {
@@ -374,9 +383,8 @@ class AgentOrchestrator:
                 "cross_agent_consultation": True,
                 "capacity_aware_task_creation": True,
                 "wellness_context_injection": True,
-
-                "daily_tracking_and_patterns": True
-            }
+                "daily_tracking_and_patterns": True,
+            },
         }
 
     def get_routing_decision(self, message: str) -> Dict[str, Any]:
@@ -431,11 +439,21 @@ class AgentOrchestrator:
 
         if intent == "daily_tracking":
             daily_tracking_keywords = [
-                "registrar dia", "registro diário", "como foi o dia",
-                "dormi", "sono", "acordei", "energia hoje",
-                "produtividade hoje", "deep work", "padrões",
-                "identificar padrão", "otimizar", "sugestões",
-                "análise", "últimos dias"
+                "registrar dia",
+                "registro diário",
+                "como foi o dia",
+                "dormi",
+                "sono",
+                "acordei",
+                "energia hoje",
+                "produtividade hoje",
+                "deep work",
+                "padrões",
+                "identificar padrão",
+                "otimizar",
+                "sugestões",
+                "análise",
+                "últimos dias",
             ]
             matched = [kw for kw in daily_tracking_keywords if kw in message_lower]
 

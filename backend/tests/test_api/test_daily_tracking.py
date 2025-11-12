@@ -12,7 +12,7 @@ class TestDailyTrackingEndpoints:
         """Test enabling reminder configuration."""
         response = client.post(
             "/api/v2/daily-tracking/reminder/config",
-            json={"enabled": True, "preferred_time": "20:30"}
+            json={"enabled": True, "preferred_time": "20:30"},
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -26,10 +26,7 @@ class TestDailyTrackingEndpoints:
 
     def test_reminder_config_disable(self, client):
         """Test disabling reminder configuration."""
-        response = client.post(
-            "/api/v2/daily-tracking/reminder/config",
-            json={"enabled": False}
-        )
+        response = client.post("/api/v2/daily-tracking/reminder/config", json={"enabled": False})
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -40,10 +37,7 @@ class TestDailyTrackingEndpoints:
 
     def test_reminder_config_default_time(self, client):
         """Test reminder configuration with default time."""
-        response = client.post(
-            "/api/v2/daily-tracking/reminder/config",
-            json={"enabled": True}
-        )
+        response = client.post("/api/v2/daily-tracking/reminder/config", json={"enabled": True})
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -73,12 +67,7 @@ class TestDailyTrackingEndpoints:
         from database.models import DailyLog
 
         # Create today's record
-        today_log = DailyLog(
-            date=date.today(),
-            sleep_hours=7.5,
-            sleep_quality=8,
-            morning_energy=7
-        )
+        today_log = DailyLog(date=date.today(), sleep_hours=7.5, sleep_quality=8, morning_energy=7)
         db.add(today_log)
         db.commit()
 
@@ -118,7 +107,7 @@ class TestDailyTrackingEndpoints:
                 afternoon_energy=5 + (i % 3),
                 evening_energy=4 + (i % 2),
                 deep_work_hours=3.0 + (i % 2),
-                completed_tasks=4 + (i % 3)
+                completed_tasks=4 + (i % 3),
             )
             db.add(daily_log)
         db.commit()
@@ -203,7 +192,7 @@ class TestDailyTrackingEndpoints:
                 sleep_quality=8,
                 morning_energy=7,
                 deep_work_hours=4.0,
-                completed_tasks=5
+                completed_tasks=5,
             )
             db.add(daily_log)
         db.commit()
@@ -223,10 +212,7 @@ class TestDailyTrackingEndpoints:
         assert len(data["moving_averages"]["sleep_hours_ma"]) == 10
 
         # With consistent data, moving average should equal the value
-        assert all(
-            ma == 7.5 for ma in data["moving_averages"]["sleep_hours_ma"]
-            if ma is not None
-        )
+        assert all(ma == 7.5 for ma in data["moving_averages"]["sleep_hours_ma"] if ma is not None)
 
     def test_insights_consistency_score(self, client, db):
         """Test that consistency score is calculated correctly."""
@@ -235,12 +221,7 @@ class TestDailyTrackingEndpoints:
         # Create 7 out of 10 days (70% consistency)
         for i in [0, 1, 2, 4, 5, 7, 9]:  # 7 days
             log_date = date.today() - timedelta(days=i)
-            daily_log = DailyLog(
-                date=log_date,
-                sleep_hours=7.0,
-                sleep_quality=8,
-                morning_energy=7
-            )
+            daily_log = DailyLog(date=log_date, sleep_hours=7.0, sleep_quality=8, morning_energy=7)
             db.add(daily_log)
         db.commit()
 
