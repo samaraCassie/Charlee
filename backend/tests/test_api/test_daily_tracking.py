@@ -61,12 +61,12 @@ class TestDailyTrackingEndpoints:
         assert data["recorded_today"] is False
         assert data["today_date"] == str(date.today())
 
-    def test_reminder_status_with_today_record(self, client, db):
+    def test_reminder_status_with_today_record(self, client, db, sample_user):
         """Test reminder status when today's record exists."""
         from database.models import DailyLog
 
         # Create today's record
-        today_log = DailyLog(date=date.today(), sleep_hours=7.5, sleep_quality=8, morning_energy=7)
+        today_log = DailyLog(user_id=sample_user.id, date=date.today(), sleep_hours=7.5, sleep_quality=8, morning_energy=7)
         db.add(today_log)
         db.commit()
 
@@ -91,7 +91,7 @@ class TestDailyTrackingEndpoints:
         assert "records_found" in data
         assert data["records_found"] == 0
 
-    def test_insights_with_data(self, client, db):
+    def test_insights_with_data(self, client, db, sample_user):
         """Test insights endpoint with sample data."""
         from database.models import DailyLog
 
@@ -99,6 +99,7 @@ class TestDailyTrackingEndpoints:
         for i in range(7):
             log_date = date.today() - timedelta(days=i)
             daily_log = DailyLog(
+                user_id=sample_user.id,
                 date=log_date,
                 sleep_hours=7.0 + (i % 2),
                 sleep_quality=7 + (i % 3),
@@ -178,7 +179,7 @@ class TestDailyTrackingEndpoints:
             # When no data, check days_requested in response
             assert data["days_requested"] == 30
 
-    def test_insights_moving_averages(self, client, db):
+    def test_insights_moving_averages(self, client, db, sample_user):
         """Test that moving averages are calculated correctly."""
         from database.models import DailyLog
 
@@ -186,6 +187,7 @@ class TestDailyTrackingEndpoints:
         for i in range(10):
             log_date = date.today() - timedelta(days=i)
             daily_log = DailyLog(
+                user_id=sample_user.id,
                 date=log_date,
                 sleep_hours=7.5,
                 sleep_quality=8,
@@ -213,14 +215,14 @@ class TestDailyTrackingEndpoints:
         # With consistent data, moving average should equal the value
         assert all(ma == 7.5 for ma in data["moving_averages"]["sleep_hours_ma"] if ma is not None)
 
-    def test_insights_consistency_score(self, client, db):
+    def test_insights_consistency_score(self, client, db, sample_user):
         """Test that consistency score is calculated correctly."""
         from database.models import DailyLog
 
         # Create 7 out of 10 days (70% consistency)
         for i in [0, 1, 2, 4, 5, 7, 9]:  # 7 days
             log_date = date.today() - timedelta(days=i)
-            daily_log = DailyLog(date=log_date, sleep_hours=7.0, sleep_quality=8, morning_energy=7)
+            daily_log = DailyLog(user_id=sample_user.id, date=log_date, sleep_hours=7.0, sleep_quality=8, morning_energy=7)
             db.add(daily_log)
         db.commit()
 

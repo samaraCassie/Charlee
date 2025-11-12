@@ -276,7 +276,11 @@ async def refresh_token(
         )
 
     # Check if token is expired
-    if db_token.expires_at < datetime.now(timezone.utc):
+    # Make expires_at timezone-aware if it isn't already
+    expires_at = db_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token expired",

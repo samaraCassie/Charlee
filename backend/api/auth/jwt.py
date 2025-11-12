@@ -62,6 +62,7 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     Returns:
         Encoded JWT refresh token string
     """
+    import uuid
     to_encode = data.copy()
 
     if expires_delta:
@@ -69,7 +70,8 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     else:
         expire = datetime.now(timezone.utc) + timedelta(days=JWTConfig.REFRESH_TOKEN_EXPIRE_DAYS)
 
-    to_encode.update({"exp": expire, "token_type": "refresh"})
+    # Add jti (JWT ID) to ensure tokens are unique even when created at the same time
+    to_encode.update({"exp": expire, "token_type": "refresh", "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, JWTConfig.REFRESH_SECRET_KEY, algorithm=JWTConfig.ALGORITHM)
     return encoded_jwt
 

@@ -82,3 +82,4 @@ backend/test_results.txt
 backend/.ipython/
 package-lock.json
 package.json
+backend/FIXING_TESTS.md
