@@ -1,61 +1,194 @@
-# backend/api/main.py - ATUALIZADO COM CORS
+# backend/api/main.py
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database.config import engine, Base
 from api.routes import (
     big_rocks,
-    tarefas,
+    tasks,
     agent as agent_routes,
     wellness,
     capacity,
     priorizacao,
     inbox,
     analytics,
-    settings
+    settings,
 )
+from api.middleware.rate_limit import (
+    limiter,
+    rate_limit_exceeded_handler,
+    SlowAPIMiddleware,
+    RateLimitExceeded,
+)
+from api.middleware.logging_config import get_logger
+from api.middleware.request_logging import RequestLoggingMiddleware
+from api.middleware.error_handler import GlobalErrorHandlerMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
+# Initialize logger
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan events for FastAPI app."""
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created/verified")
+    logger.info("Database tables created/verified")
+    logger.info("Charlee backend started successfully")
     yield
-    print("👋 Shutting down Charlee...")
+    logger.info("Shutting down Charlee backend...")
 
 
 app = FastAPI(
     title="Charlee API",
-    description="API do sistema de inteligência pessoal Charlee",
+    description="""
+## 🌸 Charlee Personal Intelligence System API
+
+**Charlee** is a personal intelligence system designed to help you manage your life effectively by:
+- 🎯 Managing Big Rocks (life priorities)
+- ✅ Organizing tasks and appointments
+- 🤖 AI-powered task management and prioritization
+- 📊 Wellness and cycle tracking (V2)
+- 📈 Capacity and workload analysis (V2)
+
+### Features
+
+* **Big Rocks**: Manage your life priorities and focus areas
+* **Tasks**: Create, update, and track tasks with deadlines
+* **AI Agent**: Intelligent task analysis and recommendations
+* **Wellness Tracking**: Menstrual cycle and energy patterns (V2)
+* **Capacity Planning**: Workload analysis and risk detection (V2)
+* **Analytics**: Insights and performance metrics (V2)
+
+### Security
+
+This API implements:
+- Restrictive CORS policies
+- Rate limiting (60 requests/minute, 1000/hour, 10000/day)
+- Input sanitization and validation
+- SQL injection protection via SQLAlchemy ORM
+- XSS prevention through HTML escaping
+
+### Version
+
+Current version: **2.0.0**
+
+For detailed setup instructions, see the [Backend README](../README.md).
+    """,
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    contact={
+        "name": "Charlee Support",
+        "url": "https://github.com/samaraCassie/Charlee",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    openapi_tags=[
+        {
+            "name": "Big Rocks",
+            "description": "Manage life priorities and focus areas (Big Rocks methodology)",
+        },
+        {
+            "name": "Tasks",
+            "description": "Task management with deadlines, types, and Big Rock associations",
+        },
+        {
+            "name": "Agent",
+            "description": "AI-powered task analysis and intelligent recommendations",
+        },
+        {
+            "name": "Wellness (V2)",
+            "description": "Menstrual cycle tracking and wellness patterns",
+        },
+        {
+            "name": "Capacity (V2)",
+            "description": "Workload analysis and capacity planning",
+        },
+        {
+            "name": "Priorização (V2)",
+            "description": "Advanced task prioritization algorithms",
+        },
+        {
+            "name": "Inbox (V2)",
+            "description": "Task inbox and quick capture",
+        },
+        {
+            "name": "Analytics (V2)",
+            "description": "Performance metrics and insights",
+        },
+        {
+            "name": "Settings (V2)",
+            "description": "User preferences and configuration",
+        },
+    ],
 )
 
 # ========================================
-# CORS CONFIGURATION - CRÍTICO
+# CORS CONFIGURATION - Restrictive & Secure
 # ========================================
+# Environment-based configuration for production flexibility
+allowed_origins = [
+    "http://localhost:3000",  # Vite dev server
+    "http://localhost:5173",  # Vite alternative port
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+
+# Add production frontend URL from environment if available
+if frontend_url := os.getenv("FRONTEND_URL"):
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Vite dev server
-        "http://localhost:5173",  # Vite alternative port
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # GET, POST, PUT, DELETE, PATCH, OPTIONS
-    allow_headers=["*"],  # Authorization, Content-Type, etc
-    expose_headers=["*"],
+    # Specific HTTP methods only (no wildcards for security)
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    # Specific headers only (no wildcards)
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Accept-Language",
+        "X-Request-ID",
+    ],
+    # Only expose necessary headers
+    expose_headers=["Content-Type", "X-Request-ID"],
+    # Cache preflight requests for 1 hour
+    max_age=3600,
 )
 
-# Include routers V1
+# ========================================
+# RATE LIMITING
+# ========================================
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # type: ignore[arg-type]
+app.add_middleware(SlowAPIMiddleware)
+
+# ========================================
+# ERROR HANDLING
+# ========================================
+app.add_middleware(GlobalErrorHandlerMiddleware)
+
+# ========================================
+# REQUEST LOGGING
+# ========================================
+app.add_middleware(RequestLoggingMiddleware)
+
+# ========================================
+# ROUTERS V1
+# ========================================
 app.include_router(big_rocks.router, prefix="/api/v1/big-rocks", tags=["Big Rocks"])
-app.include_router(tarefas.router, prefix="/api/v1/tarefas", tags=["Tarefas"])
+app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Tasks"])
 app.include_router(agent_routes.router, prefix="/api/v1/agent", tags=["Agent"])
 
-# Include routers V2
+# ========================================
+# ROUTERS V2
+# ========================================
 app.include_router(wellness.router, prefix="/api/v2/wellness", tags=["Wellness (V2)"])
 app.include_router(capacity.router, prefix="/api/v2/capacity", tags=["Capacity (V2)"])
 app.include_router(priorizacao.router, prefix="/api/v2/priorizacao", tags=["Priorização (V2)"])
@@ -63,7 +196,16 @@ app.include_router(inbox.router, prefix="/api/v2/inbox", tags=["Inbox (V2)"])
 app.include_router(analytics.router, prefix="/api/v2/analytics", tags=["Analytics (V2)"])
 app.include_router(settings.router, prefix="/api/v2/settings", tags=["Settings (V2)"])
 
+# ========================================
+# PROMETHEUS METRICS
+# ========================================
+# Instrument the app with Prometheus metrics
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
 
+
+# ========================================
+# BASIC ENDPOINTS
+# ========================================
 @app.get("/")
 async def root():
     """Root endpoint."""
@@ -73,172 +215,71 @@ async def root():
         "status": "online",
         "cors": "enabled",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
+    """Detailed health check endpoint with database connectivity."""
+    from fastapi import status as http_status
+    from sqlalchemy import text
+    from database.config import SessionLocal
+    from datetime import datetime
+
+    health_status = {
         "service": "charlee-backend",
-        "version": "2.0.0"
+        "version": "2.0.0",
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "healthy",
+        "checks": {},
     }
 
-
-# ========================================
-# INBOX ROUTES - CORRIGIDO
-# ========================================
-
-# backend/api/routes/inbox.py
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import List
-from datetime import date, timedelta
-from database.config import get_db
-from database import schemas, crud
-
-router = APIRouter()
-
-
-class InboxResponse(BaseModel):
-    """Response do inbox rápido."""
-    inbox_text: str
-    tarefas: List[schemas.TarefaResponse]
-    total: int
-
-
-@router.get("/rapido", response_model=InboxResponse)
-async def inbox_rapido(
-    limite: int = 10,
-    db: Session = Depends(get_db)
-):
-    """
-    Inbox Rápido - Top tarefas priorizadas para hoje.
-    """
+    # Check database connection
     try:
-        from skills.priorizacao import create_sistema_priorizacao
-        
-        sistema = create_sistema_priorizacao(db)
-        
-        # Gerar inbox em texto
-        inbox_texto = sistema.gerar_inbox_rapido(limite=limite)
-        
-        # Obter tarefas priorizadas
-        tarefas_priorizadas = sistema.priorizar_tarefas(
-            status="Pendente",
-            limite=limite
-        )
-        
-        return {
-            "inbox_text": inbox_texto,
-            "tarefas": tarefas_priorizadas,
-            "total": len(tarefas_priorizadas)
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        health_status["checks"]["database"] = {
+            "status": "healthy",
+            "message": "Database connection successful",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar inbox: {str(e)}")
+        health_status["status"] = "unhealthy"
+        health_status["checks"]["database"] = {
+            "status": "unhealthy",
+            "message": f"Database connection failed: {str(e)}",
+        }
 
-
-@router.get("/hoje", response_model=schemas.TarefaListResponse)
-async def tarefas_hoje(db: Session = Depends(get_db)):
-    """Tarefas com deadline para hoje."""
+    # Check if critical tables exist
     try:
-        today = date.today()
-        
-        # Buscar todas tarefas pendentes
-        tarefas = crud.get_tarefas(db, status="Pendente", limit=100)
-        
-        # Filtrar por deadline hoje
-        tarefas_hoje = [
-            t for t in tarefas 
-            if t.deadline and t.deadline == today
-        ]
-        
-        return {
-            "total": len(tarefas_hoje),
-            "tarefas": tarefas_hoje
+        db = SessionLocal()
+        db.execute(text("SELECT COUNT(*) FROM big_rocks"))
+        db.execute(text("SELECT COUNT(*) FROM tasks"))
+        db.close()
+        health_status["checks"]["tables"] = {
+            "status": "healthy",
+            "message": "Critical tables exist",
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Erro ao buscar tarefas de hoje: {str(e)}"
-        )
-
-
-@router.get("/atrasadas", response_model=schemas.TarefaListResponse)
-async def tarefas_atrasadas(db: Session = Depends(get_db)):
-    """Tarefas com deadline já passado."""
-    try:
-        today = date.today()
-        
-        # Buscar todas tarefas pendentes
-        tarefas = crud.get_tarefas(db, status="Pendente", limit=100)
-        
-        # Filtrar por deadline atrasada
-        tarefas_atrasadas = [
-            t for t in tarefas 
-            if t.deadline and t.deadline < today
-        ]
-        
-        # Ordenar por deadline (mais antigo primeiro)
-        tarefas_atrasadas.sort(key=lambda t: t.deadline)
-        
-        return {
-            "total": len(tarefas_atrasadas),
-            "tarefas": tarefas_atrasadas
+        health_status["status"] = "degraded"
+        health_status["checks"]["tables"] = {
+            "status": "unhealthy",
+            "message": f"Tables check failed: {str(e)}",
         }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao buscar tarefas atrasadas: {str(e)}"
+
+    # Environment info
+    health_status["environment"] = {
+        "python_version": os.sys.version.split()[0],
+        "debug_mode": os.getenv("DEBUG", "false").lower() == "true",
+    }
+
+    # Return appropriate HTTP status code
+    if health_status["status"] == "unhealthy":
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE, content=health_status
         )
 
-
-@router.get("/proxima-semana", response_model=schemas.TarefaListResponse)
-async def tarefas_proxima_semana(db: Session = Depends(get_db)):
-    """Tarefas com deadline nos próximos 7 dias."""
-    try:
-        today = date.today()
-        next_week = today + timedelta(days=7)
-        
-        # Buscar tarefas pendentes
-        tarefas = crud.get_tarefas(db, status="Pendente", limit=100)
-        
-        # Filtrar por deadline próxima semana
-        tarefas_semana = [
-            t for t in tarefas 
-            if t.deadline and today <= t.deadline <= next_week
-        ]
-        
-        # Ordenar por deadline
-        tarefas_semana.sort(key=lambda t: t.deadline)
-        
-        return {
-            "total": len(tarefas_semana),
-            "tarefas": tarefas_semana
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao buscar tarefas da próxima semana: {str(e)}"
-        )
-
-
-# ========================================
-# TESTE RÁPIDO NO TERMINAL
-# ========================================
-
-# Para testar CORS:
-# curl -H "Origin: http://localhost:3000" \
-#      -H "Access-Control-Request-Method: GET" \
-#      -H "Access-Control-Request-Headers: Content-Type" \
-#      -X OPTIONS \
-#      http://localhost:8000/api/v2/inbox/hoje -v
-
-# Deve retornar headers:
-# Access-Control-Allow-Origin: http://localhost:3000
-# Access-Control-Allow-Methods: *
-# Access-Control-Allow-Headers: *
+    return health_status

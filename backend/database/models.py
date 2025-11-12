@@ -1,7 +1,6 @@
 """SQLAlchemy database models for Charlee V1."""
 
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import (
     Boolean,
     Column,
@@ -12,7 +11,7 @@ from sqlalchemy import (
     DateTime,
     Date,
     ForeignKey,
-    CheckConstraint
+    CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 from database.config import Base
@@ -20,220 +19,236 @@ from database.config import Base
 
 class BigRock(Base):
     """
-    Big Rocks - Pilares principais da vida.
+    Big Rocks - Main life pillars.
 
-    Representa as áreas/pilares fundamentais que estruturam
-    a vida e as tarefas de Samara.
+    Represents the fundamental areas/pillars that structure
+    life and tasks.
     """
+
     __tablename__ = "big_rocks"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(100), nullable=False)
-    cor = Column(String(20))  # Para UI futura (ex: "#FF5733")
-    ativo = Column(Boolean, default=True)
-    criado_em = Column(DateTime, default=datetime.utcnow)
+    name = Column(String(100), nullable=False)
+    color = Column(String(20))  # For future UI (e.g., "#FF5733")
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship
-    tarefas = relationship("Tarefa", back_populates="big_rock")
+    tasks = relationship("Task", back_populates="big_rock")
 
     def __repr__(self):
-        return f"<BigRock(id={self.id}, nome='{self.nome}')>"
+        return f"<BigRock(id={self.id}, name='{self.name}')>"
 
 
-class Tarefa(Base):
+class Task(Base):
     """
-    Tarefas - Tasks associadas aos Big Rocks.
+    Tasks - Tasks associated with Big Rocks.
 
-    Representa tarefas que podem ser:
-    - Compromisso Fixo: Eventos com hora marcada
-    - Tarefa: To-do com deadline
-    - Contínuo: Hábitos/rotinas sem deadline específico
+    Represents tasks that can be:
+    - Fixed Appointment: Events with scheduled time
+    - Task: To-do with deadline
+    - Continuous: Habits/routines without specific deadline
     """
-    __tablename__ = "tarefas"
+
+    __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    descricao = Column(Text, nullable=False)
-    tipo = Column(
+    description = Column(Text, nullable=False)
+    type = Column(
         String(20),
-        CheckConstraint("tipo IN ('Compromisso Fixo', 'Tarefa', 'Contínuo')"),
-        default="Tarefa"
+        CheckConstraint("type IN ('fixed_appointment', 'task', 'continuous')"),
+        default="task",
     )
     deadline = Column(Date, nullable=True)
     big_rock_id = Column(Integer, ForeignKey("big_rocks.id"), nullable=True)
     status = Column(
         String(20),
-        CheckConstraint("status IN ('Pendente', 'Em Progresso', 'Concluída', 'Cancelada')"),
-        default="Pendente"
+        CheckConstraint("status IN ('pending', 'in_progress', 'completed', 'cancelled')"),
+        default="pending",
     )
 
-    # Priorização (V2)
-    prioridade_calculada = Column(Integer, default=5)  # 1 (mais urgente) a 10 (menos urgente)
-    pontuacao_prioridade = Column(Float, default=0.0)  # Score calculado por algoritmo
+    # Prioritization (V2)
+    calculated_priority = Column(Integer, default=5)  # 1 (most urgent) to 10 (least urgent)
+    priority_score = Column(Float, default=0.0)  # Score calculated by algorithm
 
     # Timestamps
-    criado_em = Column(DateTime, default=datetime.utcnow)
-    atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    concluido_em = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
 
     # Relationships
-    big_rock = relationship("BigRock", back_populates="tarefas")
+    big_rock = relationship("BigRock", back_populates="tasks")
 
     def __repr__(self):
-        return f"<Tarefa(id={self.id}, descricao='{self.descricao[:30]}...', status='{self.status}')>"
+        return f"<Task(id={self.id}, description='{self.description[:30]}...', status='{self.status}')>"
 
-    def marcar_concluida(self):
-        """Marca a tarefa como concluída."""
-        self.status = "Concluída"
-        self.concluido_em = datetime.utcnow()
-        self.atualizado_em = datetime.utcnow()
+    def mark_as_completed(self):
+        """Mark task as completed."""
+        self.status = "completed"
+        self.completed_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
 
-    def reabrir(self):
-        """Reabre uma tarefa concluída."""
-        self.status = "Pendente"
-        self.concluido_em = None
-        self.atualizado_em = datetime.utcnow()
+    def reopen(self):
+        """Reopen a completed task."""
+        self.status = "pending"
+        self.completed_at = None
+        self.updated_at = datetime.utcnow()
 
 
-# Índices para performance (criados via Alembic migrations)
-# CREATE INDEX idx_tarefas_status ON tarefas(status);
-# CREATE INDEX idx_tarefas_deadline ON tarefas(deadline);
-# CREATE INDEX idx_tarefas_big_rock ON tarefas(big_rock_id);
+# Performance indexes (created via Alembic migrations)
+# CREATE INDEX idx_tasks_status ON tasks(status);
+# CREATE INDEX idx_tasks_deadline ON tasks(deadline);
+# CREATE INDEX idx_tasks_big_rock ON tasks(big_rock_id);
 
 
 # ==================== V2 Models ====================
 
 
-class CicloMenstrual(Base):
+class MenstrualCycle(Base):
     """
-    Ciclo Menstrual - Tracking de bem-estar e padrões.
+    Menstrual Cycle - Well-being and pattern tracking.
 
-    Registra informações sobre o ciclo menstrual para adaptar
-    recomendações e planejamento baseado na fase atual.
+    Records information about the menstrual cycle to adapt
+    recommendations and planning based on current phase.
     """
-    __tablename__ = "ciclo_menstrual"
+
+    __tablename__ = "menstrual_cycles"
 
     id = Column(Integer, primary_key=True, index=True)
-    data_inicio = Column(Date, nullable=False)
-    fase = Column(
+    start_date = Column(Date, nullable=False)
+    phase = Column(
         String(20),
-        CheckConstraint("fase IN ('menstrual', 'folicular', 'ovulacao', 'lutea')"),
-        nullable=False
+        CheckConstraint("phase IN ('menstrual', 'follicular', 'ovulation', 'luteal')"),
+        nullable=False,
     )
-    # Sintomas como lista separada por vírgula
-    sintomas = Column(Text, nullable=True)  # 'fadiga,criatividade_alta,dor'
+    # Symptoms as comma-separated list
+    symptoms = Column(Text, nullable=True)  # 'fatigue,high_creativity,pain'
 
-    # Níveis de energia e humor (1-10)
-    nivel_energia = Column(Integer, CheckConstraint("nivel_energia BETWEEN 1 AND 10"), nullable=True)
-    nivel_foco = Column(Integer, CheckConstraint("nivel_foco BETWEEN 1 AND 10"), nullable=True)
-    nivel_criatividade = Column(Integer, CheckConstraint("nivel_criatividade BETWEEN 1 AND 10"), nullable=True)
+    # Energy and mood levels (1-10)
+    energy_level = Column(Integer, CheckConstraint("energy_level BETWEEN 1 AND 10"), nullable=True)
+    focus_level = Column(Integer, CheckConstraint("focus_level BETWEEN 1 AND 10"), nullable=True)
+    creativity_level = Column(
+        Integer, CheckConstraint("creativity_level BETWEEN 1 AND 10"), nullable=True
+    )
 
-    notas = Column(Text, nullable=True)
-    criado_em = Column(DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<CicloMenstrual(data={self.data_inicio}, fase='{self.fase}')>"
-
-
-class PadroesCiclo(Base):
-    """
-    Padrões do Ciclo - Aprendizado sobre produtividade por fase.
-
-    Armazena padrões identificados pela IA sobre como cada fase
-    do ciclo afeta a produtividade e bem-estar.
-    """
-    __tablename__ = "padroes_ciclo"
-
-    id = Column(Integer, primary_key=True, index=True)
-    fase = Column(String(20), nullable=False)
-    padrao_identificado = Column(Text, nullable=False)
-
-    # Métricas médias dessa fase
-    produtividade_media = Column(Float, default=1.0)  # Multiplicador (1.0 = normal)
-    foco_medio = Column(Float, default=1.0)
-    energia_media = Column(Float, default=1.0)
-
-    confianca_score = Column(Float, default=0.0)  # 0.0 a 1.0
-    sugestoes = Column(Text, nullable=True)  # Sugestões separadas por ;
-    amostras_usadas = Column(Integer, default=0)
-
-    criado_em = Column(DateTime, default=datetime.utcnow)
-    atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<PadroesCiclo(fase='{self.fase}', confianca={self.confianca_score})>"
+        return f"<MenstrualCycle(date={self.start_date}, phase='{self.phase}')>"
 
 
-class CargaTrabalho(Base):
+class CyclePatterns(Base):
     """
-    Carga de Trabalho - Análise de capacidade vs. demanda.
+    Cycle Patterns - Learning about productivity by phase.
 
-    Calcula e monitora a carga de trabalho por Big Rock para
-    identificar sobrecargas e ajudar em decisões de trade-off.
+    Stores patterns identified by AI about how each
+    cycle phase affects productivity and well-being.
     """
-    __tablename__ = "carga_trabalho"
+
+    __tablename__ = "cycle_patterns"
 
     id = Column(Integer, primary_key=True, index=True)
-    periodo_inicio = Column(Date, nullable=False)
-    periodo_fim = Column(Date, nullable=False)
+    phase = Column(String(20), nullable=False)
+    identified_pattern = Column(Text, nullable=False)
+
+    # Average metrics for this phase
+    average_productivity = Column(Float, default=1.0)  # Multiplier (1.0 = normal)
+    average_focus = Column(Float, default=1.0)
+    average_energy = Column(Float, default=1.0)
+
+    confidence_score = Column(Float, default=0.0)  # 0.0 to 1.0
+    suggestions = Column(Text, nullable=True)  # Suggestions separated by ;
+    samples_used = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<CyclePatterns(phase='{self.phase}', confidence={self.confidence_score})>"
+
+
+class Workload(Base):
+    """
+    Workload - Capacity vs. demand analysis.
+
+    Calculates and monitors workload per Big Rock to
+    identify overloads and help with trade-off decisions.
+    """
+
+    __tablename__ = "workloads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    period_start = Column(Date, nullable=False)
+    period_end = Column(Date, nullable=False)
 
     big_rock_id = Column(Integer, ForeignKey("big_rocks.id"), nullable=True)
 
-    # Estimativas de carga
-    horas_estimadas = Column(Float, default=0.0)
-    horas_disponiveis = Column(Float, default=0.0)
-    percentual_carga = Column(Float, default=0.0)  # (estimadas/disponiveis) * 100
+    # Load estimates
+    estimated_hours = Column(Float, default=0.0)
+    available_hours = Column(Float, default=0.0)
+    load_percentage = Column(Float, default=0.0)  # (estimated/available) * 100
 
-    # Alertas
-    em_risco = Column(Boolean, default=False)
-    motivo_risco = Column(Text, nullable=True)
+    # Alerts
+    at_risk = Column(Boolean, default=False)
+    risk_reason = Column(Text, nullable=True)
 
-    calculado_em = Column(DateTime, default=datetime.utcnow)
+    calculated_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     big_rock = relationship("BigRock")
 
     def __repr__(self):
-        return f"<CargaTrabalho(big_rock_id={self.big_rock_id}, carga={self.percentual_carga}%)>"
+        return f"<Workload(big_rock_id={self.big_rock_id}, load={self.load_percentage}%)>"
 
 
-class RegistroDiario(Base):
+class DailyLog(Base):
     """
-    Registro Diário - Tracking de hábitos e energia.
+    Daily Log - Habit and energy tracking.
 
-    Registro diário para aprender padrões de sono, energia e produtividade.
+    Daily log to learn patterns of sleep, energy and productivity.
     """
-    __tablename__ = "registro_diario"
+
+    __tablename__ = "daily_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    data = Column(Date, unique=True, nullable=False)
+    date = Column(Date, unique=True, nullable=False)
 
-    # Sono
-    hora_acordar = Column(String(5), nullable=True)  # HH:MM
-    hora_dormir = Column(String(5), nullable=True)   # HH:MM
-    horas_sono = Column(Float, nullable=True)
-    qualidade_sono = Column(Integer, CheckConstraint("qualidade_sono BETWEEN 1 AND 10"), nullable=True)
+    # Sleep
+    wake_time = Column(String(5), nullable=True)  # HH:MM
+    sleep_time = Column(String(5), nullable=True)  # HH:MM
+    sleep_hours = Column(Float, nullable=True)
+    sleep_quality = Column(
+        Integer, CheckConstraint("sleep_quality BETWEEN 1 AND 10"), nullable=True
+    )
 
-    # Energia ao longo do dia
-    energia_manha = Column(Integer, CheckConstraint("energia_manha BETWEEN 1 AND 10"), nullable=True)
-    energia_tarde = Column(Integer, CheckConstraint("energia_tarde BETWEEN 1 AND 10"), nullable=True)
-    energia_noite = Column(Integer, CheckConstraint("energia_noite BETWEEN 1 AND 10"), nullable=True)
+    # Energy throughout the day
+    morning_energy = Column(
+        Integer, CheckConstraint("morning_energy BETWEEN 1 AND 10"), nullable=True
+    )
+    afternoon_energy = Column(
+        Integer, CheckConstraint("afternoon_energy BETWEEN 1 AND 10"), nullable=True
+    )
+    evening_energy = Column(
+        Integer, CheckConstraint("evening_energy BETWEEN 1 AND 10"), nullable=True
+    )
 
-    # Produtividade
-    horas_deep_work = Column(Float, default=0.0)
-    tarefas_completadas = Column(Integer, default=0)
+    # Productivity
+    deep_work_hours = Column(Float, default=0.0)
+    completed_tasks = Column(Integer, default=0)
 
-    # Contexto
-    fase_ciclo = Column(String(20), nullable=True)
-    eventos_especiais = Column(Text, nullable=True)  # Separados por vírgula
-    notas_livre = Column(Text, nullable=True)
+    # Context
+    cycle_phase = Column(String(20), nullable=True)
+    special_events = Column(Text, nullable=True)  # Comma-separated
+    free_notes = Column(Text, nullable=True)
 
-    criado_em = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<RegistroDiario(data={self.data})>"
+        return f"<DailyLog(date={self.date})>"
 
 
-# Índices adicionais para V2
-# CREATE INDEX idx_ciclo_data ON ciclo_menstrual(data_inicio);
-# CREATE INDEX idx_carga_periodo ON carga_trabalho(periodo_inicio, periodo_fim);
-# CREATE INDEX idx_registro_data ON registro_diario(data);
+# Additional indexes for V2
+# CREATE INDEX idx_cycle_date ON menstrual_cycles(start_date);
+# CREATE INDEX idx_workload_period ON workloads(period_start, period_end);
+# CREATE INDEX idx_daily_log_date ON daily_logs(date);

@@ -11,6 +11,7 @@ router = APIRouter()
 
 class CicloRequest(BaseModel):
     """Request para registrar fase do ciclo."""
+
     data_inicio: str
     fase: str
     nivel_energia: int | None = None
@@ -22,14 +23,12 @@ class CicloRequest(BaseModel):
 
 class AgentResponse(BaseModel):
     """Response padrão dos agentes."""
+
     response: str
 
 
 @router.post("/ciclo/registrar", response_model=AgentResponse)
-async def registrar_fase_ciclo(
-    request: CicloRequest,
-    db: Session = Depends(get_db)
-):
+async def registrar_fase_ciclo(request: CicloRequest, db: Session = Depends(get_db)):
     """Registra uma nova fase do ciclo menstrual."""
     agent = create_cycle_aware_agent(db)
 
@@ -40,7 +39,7 @@ async def registrar_fase_ciclo(
         nivel_foco=request.nivel_foco,
         nivel_criatividade=request.nivel_criatividade,
         sintomas=request.sintomas,
-        notas=request.notas
+        notas=request.notas,
     )
 
     return AgentResponse(response=response)
@@ -55,10 +54,7 @@ async def obter_fase_atual(db: Session = Depends(get_db)):
 
 
 @router.get("/ciclo/sugestoes", response_model=AgentResponse)
-async def sugestoes_fase(
-    fase: str | None = None,
-    db: Session = Depends(get_db)
-):
+async def sugestoes_fase(fase: str | None = None, db: Session = Depends(get_db)):
     """Obtém sugestões de tarefas para a fase do ciclo."""
     agent = create_cycle_aware_agent(db)
     response = agent.sugerir_tarefas_fase(fase)
@@ -66,10 +62,7 @@ async def sugestoes_fase(
 
 
 @router.get("/ciclo/analise-carga", response_model=AgentResponse)
-async def analisar_carga_ciclo(
-    dias_futuro: int = 7,
-    db: Session = Depends(get_db)
-):
+async def analisar_carga_ciclo(dias_futuro: int = 7, db: Session = Depends(get_db)):
     """Analisa se a carga está adequada para a fase atual."""
     agent = create_cycle_aware_agent(db)
     response = agent.analisar_carga_para_fase(dias_futuro)

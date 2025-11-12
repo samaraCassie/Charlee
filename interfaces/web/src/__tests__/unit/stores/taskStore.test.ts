@@ -449,7 +449,7 @@ describe('taskStore', () => {
           id: '1',
           title: 'Test',
           description: 'Test',
-          priority: 2,
+          priority: 2 as const,
           status: 'pending' as const,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',

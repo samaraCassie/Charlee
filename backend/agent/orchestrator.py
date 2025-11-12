@@ -1,11 +1,7 @@
 """Agent Orchestrator - Coordena todos os agentes especializados."""
 
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-from agno.db.redis import RedisDb
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
-from datetime import datetime
 
 from agent.core_agent import CharleeAgent
 from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
@@ -28,7 +24,7 @@ class AgentOrchestrator:
         db: Session,
         user_id: str = "samara",
         session_id: Optional[str] = None,
-        redis_url: str = "redis://redis:6379"
+        redis_url: str = "redis://redis:6379",
     ):
         """Initialize the orchestrator with all specialized agents."""
         self.database = db
@@ -38,10 +34,7 @@ class AgentOrchestrator:
 
         # Initialize all specialized agents
         self.core_agent = CharleeAgent(
-            db=db,
-            user_id=user_id,
-            session_id=session_id,
-            redis_url=redis_url
+            db=db, user_id=user_id, session_id=session_id, redis_url=redis_url
         )
 
         self.cycle_agent = CycleAwareAgent(db=db)
@@ -51,7 +44,7 @@ class AgentOrchestrator:
         self.context: Dict[str, Any] = {
             "last_agent_used": None,
             "conversation_topic": None,
-            "requires_followup": False
+            "requires_followup": False,
         }
 
     def route_message(self, message: str) -> str:
@@ -95,26 +88,61 @@ class AgentOrchestrator:
 
         # Wellness/Cycle keywords (expandido)
         wellness_keywords = [
-            "ciclo", "menstrua", "energia", "cansa", "fase",
-            "TPM", "ovula", "humor", "sintoma", "período",
-            "bem-estar", "descanso", "saúde", "dormir", "sono",
-            "estresse", "ansiedade", "hormônio"
+            "ciclo",
+            "menstrua",
+            "energia",
+            "cansa",
+            "fase",
+            "TPM",
+            "ovula",
+            "humor",
+            "sintoma",
+            "período",
+            "bem-estar",
+            "descanso",
+            "saúde",
+            "dormir",
+            "sono",
+            "estresse",
+            "ansiedade",
+            "hormônio",
         ]
 
         # Capacity keywords (expandido)
         capacity_keywords = [
-            "sobrecarga", "muito trabalho", "novo projeto",
-            "aceitar", "compromisso", "carga", "capacidade",
-            "não consigo", "muito", "trade-off", "projeto novo",
-            "conseguir fazer", "dar conta", "prazo", "deadline",
-            "adiar", "priorizar", "tempo suficiente"
+            "sobrecarga",
+            "muito trabalho",
+            "novo projeto",
+            "aceitar",
+            "compromisso",
+            "carga",
+            "capacidade",
+            "não consigo",
+            "muito",
+            "trade-off",
+            "projeto novo",
+            "conseguir fazer",
+            "dar conta",
+            "prazo",
+            "deadline",
+            "adiar",
+            "priorizar",
+            "tempo suficiente",
         ]
 
         # Task management keywords
         task_keywords = [
-            "tarefa", "criar tarefa", "adicionar tarefa",
-            "listar tarefa", "big rock", "pilar", "objetivo",
-            "fazer hoje", "completar", "concluir", "marcar como"
+            "tarefa",
+            "criar tarefa",
+            "adicionar tarefa",
+            "listar tarefa",
+            "big rock",
+            "pilar",
+            "objetivo",
+            "fazer hoje",
+            "completar",
+            "concluir",
+            "marcar como",
         ]
 
         # Check for wellness intent
@@ -138,10 +166,10 @@ class AgentOrchestrator:
         self.context["conversation_topic"] = "wellness"
 
         # Get response from cycle-aware agent
-        response = self.cycle_agent.print_response(message)
+        response = self.cycle_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
@@ -151,10 +179,10 @@ class AgentOrchestrator:
         self.context["conversation_topic"] = "capacity"
 
         # Get response from capacity guard agent
-        response = self.capacity_agent.print_response(message)
+        response = self.capacity_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
@@ -168,9 +196,10 @@ class AgentOrchestrator:
         self.context["conversation_topic"] = "tasks"
 
         # Check if user is trying to create/add a task
-        is_creating_task = any(word in message.lower() for word in [
-            "criar", "adicionar", "nova tarefa", "novo compromisso"
-        ])
+        is_creating_task = any(
+            word in message.lower()
+            for word in ["criar", "adicionar", "nova tarefa", "novo compromisso"]
+        )
 
         if is_creating_task:
             # Get capacity insight before creating task
@@ -179,16 +208,16 @@ class AgentOrchestrator:
 
                 # Add capacity warning to message
                 enhanced_message = f"{message}\n\n**IMPORTANTE - Contexto de Capacidade:**\n{capacity_info}\n\nConsidera isso ao criar a tarefa e avise o usuário se houver risco de sobrecarga."
-                response = self.core_agent.print_response(enhanced_message)
+                response = self.core_agent.print_response(enhanced_message)  # type: ignore[func-returns-value]
             except Exception:
                 # If capacity check fails, proceed normally
-                response = self.core_agent.print_response(message)
+                response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
         else:
             # For other task operations, use core agent normally
-            response = self.core_agent.print_response(message)
+            response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
@@ -205,12 +234,12 @@ class AgentOrchestrator:
 
             # Add context to message
             enhanced_message = self._enhance_message_with_context(message, insights)
-            response = self.core_agent.print_response(enhanced_message)
+            response = self.core_agent.print_response(enhanced_message)  # type: ignore[func-returns-value]
         else:
-            response = self.core_agent.print_response(message)
+            response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
@@ -225,8 +254,12 @@ class AgentOrchestrator:
         message_lower = message.lower()
 
         needs_consultation_keywords = [
-            "foco hoje", "o que fazer", "prioridade",
-            "adicionar tarefa", "novo", "planejar"
+            "foco hoje",
+            "o que fazer",
+            "prioridade",
+            "adicionar tarefa",
+            "novo",
+            "planejar",
         ]
 
         return any(keyword in message_lower for keyword in needs_consultation_keywords)
@@ -298,17 +331,13 @@ class AgentOrchestrator:
             "user_id": self.user_id,
             "last_agent_used": self.context.get("last_agent_used"),
             "conversation_topic": self.context.get("conversation_topic"),
-            "agents_available": {
-                "core": True,
-                "cycle_aware": True,
-                "capacity_guard": True
-            },
+            "agents_available": {"core": True, "cycle_aware": True, "capacity_guard": True},
             "orchestration_features": {
                 "intelligent_routing": True,
                 "cross_agent_consultation": True,
                 "capacity_aware_task_creation": True,
-                "wellness_context_injection": True
-            }
+                "wellness_context_injection": True,
+            },
         }
 
     def get_routing_decision(self, message: str) -> Dict[str, Any]:
@@ -350,7 +379,7 @@ class AgentOrchestrator:
             "agent_to_use": agent,
             "reason": reason,
             "will_consult_other_agents": consultation_needed or intent == "tasks",
-            "keywords_matched": self._get_matched_keywords(message, intent)
+            "keywords_matched": self._get_matched_keywords(message, intent),
         }
 
     def _get_matched_keywords(self, message: str, intent: str) -> list:
@@ -360,28 +389,63 @@ class AgentOrchestrator:
 
         if intent == "wellness":
             wellness_keywords = [
-                "ciclo", "menstrua", "energia", "cansa", "fase",
-                "TPM", "ovula", "humor", "sintoma", "período",
-                "bem-estar", "descanso", "saúde", "dormir", "sono",
-                "estresse", "ansiedade", "hormônio"
+                "ciclo",
+                "menstrua",
+                "energia",
+                "cansa",
+                "fase",
+                "TPM",
+                "ovula",
+                "humor",
+                "sintoma",
+                "período",
+                "bem-estar",
+                "descanso",
+                "saúde",
+                "dormir",
+                "sono",
+                "estresse",
+                "ansiedade",
+                "hormônio",
             ]
             matched = [kw for kw in wellness_keywords if kw in message_lower]
 
         elif intent == "capacity":
             capacity_keywords = [
-                "sobrecarga", "muito trabalho", "novo projeto",
-                "aceitar", "compromisso", "carga", "capacidade",
-                "não consigo", "muito", "trade-off", "projeto novo",
-                "conseguir fazer", "dar conta", "prazo", "deadline",
-                "adiar", "priorizar", "tempo suficiente"
+                "sobrecarga",
+                "muito trabalho",
+                "novo projeto",
+                "aceitar",
+                "compromisso",
+                "carga",
+                "capacidade",
+                "não consigo",
+                "muito",
+                "trade-off",
+                "projeto novo",
+                "conseguir fazer",
+                "dar conta",
+                "prazo",
+                "deadline",
+                "adiar",
+                "priorizar",
+                "tempo suficiente",
             ]
             matched = [kw for kw in capacity_keywords if kw in message_lower]
 
         elif intent == "tasks":
             task_keywords = [
-                "tarefa", "criar tarefa", "adicionar tarefa",
-                "listar tarefa", "big rock", "pilar", "objetivo",
-                "fazer hoje", "completar", "concluir", "marcar como"
+                "tarefa",
+                "criar tarefa",
+                "adicionar tarefa",
+                "listar tarefa",
+                "big rock",
+                "pilar",
+                "objetivo",
+                "fazer hoje",
+                "completar",
+                "concluir",
+                "marcar como",
             ]
             matched = [kw for kw in task_keywords if kw in message_lower]
 
@@ -392,12 +456,7 @@ def create_orchestrator(
     db: Session,
     user_id: str = "samara",
     session_id: Optional[str] = None,
-    redis_url: str = "redis://redis:6379"
+    redis_url: str = "redis://redis:6379",
 ) -> AgentOrchestrator:
     """Factory function to create an orchestrator instance."""
-    return AgentOrchestrator(
-        db=db,
-        user_id=user_id,
-        session_id=session_id,
-        redis_url=redis_url
-    )
+    return AgentOrchestrator(db=db, user_id=user_id, session_id=session_id, redis_url=redis_url)
