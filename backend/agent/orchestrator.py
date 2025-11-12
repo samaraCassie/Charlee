@@ -377,7 +377,6 @@ class AgentOrchestrator:
                 "capacity_guard": True,
                 "daily_tracking": True,
             },
-            "agents_available": {"core": True, "cycle_aware": True, "capacity_guard": True},
             "orchestration_features": {
                 "intelligent_routing": True,
                 "cross_agent_consultation": True,

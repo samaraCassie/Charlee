@@ -137,7 +137,7 @@ class DailyTrackingAgent(Agent):
                 action = "registrado"
 
             result = f"✅ Registro {action} para {data_obj}!\n\n"
-            result += f"📊 **Resumo:**\n"
+            result += "📊 **Resumo:**\n"
             if horas_sono:
                 result += f"• Sono: {horas_sono}h"
                 if qualidade_sono:
@@ -187,7 +187,7 @@ class DailyTrackingAgent(Agent):
             if registro.evening_energy:
                 result += f"• Noite: {registro.evening_energy}/10\n"
 
-            result += f"\n🎯 **Produtividade:**\n"
+            result += "\n🎯 **Produtividade:**\n"
             result += f"• Deep work: {registro.deep_work_hours or 0}h\n"
             result += f"• Tarefas concluídas: {registro.completed_tasks}\n"
 
@@ -290,7 +290,6 @@ class DailyTrackingAgent(Agent):
 
             # 1. Correlação sono vs energia
             media_sono = sum(r.sleep_hours for r in registros) / len(registros)
-            media_energia = sum(r.morning_energy for r in registros) / len(registros)
 
             dias_sono_bom = [r for r in registros if r.sleep_hours >= media_sono]
             dias_sono_ruim = [r for r in registros if r.sleep_hours < media_sono]
@@ -343,7 +342,7 @@ class DailyTrackingAgent(Agent):
                 r for r in registros if r.afternoon_energy and r.afternoon_energy >= 7
             ]
 
-            result += f"\n⏰ **Períodos de Alta Energia:**\n"
+            result += "\n⏰ **Períodos de Alta Energia:**\n"
             result += f"• Manhã com energia ≥7: {len(registros_manha)} dias\n"
             result += f"• Tarde com energia ≥7: {len(registros_tarde)} dias\n"
 
@@ -401,9 +400,6 @@ class DailyTrackingAgent(Agent):
         Sugere otimizações baseadas nos padrões identificados.
         """
         try:
-            # Primeiro identificar padrões
-            padroes_text = self.identificar_padroes()
-
             # Buscar registros recentes
             data_inicio = date.today() - timedelta(days=14)
             registros = self.database.query(DailyLog).filter(DailyLog.date >= data_inicio).all()

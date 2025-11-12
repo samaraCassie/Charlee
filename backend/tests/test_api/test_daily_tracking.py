@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 from fastapi import status
-import pytest
 
 
 class TestDailyTrackingEndpoints:
