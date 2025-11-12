@@ -9,6 +9,7 @@ from api.routes import (
     big_rocks,
     tasks,
     agent as agent_routes,
+    auth,
     wellness,
     capacity,
     priorizacao,
@@ -88,6 +89,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
         "url": "https://opensource.org/licenses/MIT",
     },
     openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": "User authentication, registration, and token management",
+        },
         {
             "name": "Big Rocks",
             "description": "Manage life priorities and focus areas (Big Rocks methodology)",
@@ -182,6 +187,9 @@ app.add_middleware(RequestLoggingMiddleware)
 # ========================================
 # ROUTERS V1
 # ========================================
+# Authentication routes (no prefix, already defined in router)
+app.include_router(auth.router)
+
 app.include_router(big_rocks.router, prefix="/api/v1/big-rocks", tags=["Big Rocks"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Tasks"])
 app.include_router(agent_routes.router, prefix="/api/v1/agent", tags=["Agent"])
