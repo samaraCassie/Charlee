@@ -6,10 +6,8 @@ Create Date: 2025-01-15 12:00:00.000000
 
 """
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Session
+from alembic import op
 from passlib.context import CryptContext
 
 # revision identifiers, used by Alembic.

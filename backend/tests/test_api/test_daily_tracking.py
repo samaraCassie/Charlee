@@ -1,6 +1,7 @@
 """Tests for daily tracking endpoints."""
 
 from datetime import date, timedelta
+
 from fastapi import status
 
 
@@ -66,7 +67,13 @@ class TestDailyTrackingEndpoints:
         from database.models import DailyLog
 
         # Create today's record
-        today_log = DailyLog(user_id=sample_user.id, date=date.today(), sleep_hours=7.5, sleep_quality=8, morning_energy=7)
+        today_log = DailyLog(
+            user_id=sample_user.id,
+            date=date.today(),
+            sleep_hours=7.5,
+            sleep_quality=8,
+            morning_energy=7,
+        )
         db.add(today_log)
         db.commit()
 
@@ -222,7 +229,13 @@ class TestDailyTrackingEndpoints:
         # Create 7 out of 10 days (70% consistency)
         for i in [0, 1, 2, 4, 5, 7, 9]:  # 7 days
             log_date = date.today() - timedelta(days=i)
-            daily_log = DailyLog(user_id=sample_user.id, date=log_date, sleep_hours=7.0, sleep_quality=8, morning_energy=7)
+            daily_log = DailyLog(
+                user_id=sample_user.id,
+                date=log_date,
+                sleep_hours=7.0,
+                sleep_quality=8,
+                morning_energy=7,
+            )
             db.add(daily_log)
         db.commit()
 

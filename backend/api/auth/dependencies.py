@@ -1,13 +1,14 @@
 """Authentication dependencies for FastAPI routes."""
 
 from typing import Optional
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from api.auth.jwt import TokenData, decode_access_token
 from database.config import get_db
 from database.models import User
-from api.auth.jwt import decode_access_token, TokenData
 
 # HTTP Bearer token scheme
 security = HTTPBearer()

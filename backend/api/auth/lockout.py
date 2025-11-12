@@ -1,10 +1,11 @@
 """Account lockout utilities."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Optional
+
 from sqlalchemy.orm import Session
+
 from database.models import User
-from database.config import settings
 
 
 class LockoutConfig:

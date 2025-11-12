@@ -1,9 +1,11 @@
 """Sistema de Priorização Inteligente de Tarefas."""
 
 from datetime import date, datetime
-from sqlalchemy.orm import Session
-from database.models import Task
 from typing import List, Optional
+
+from sqlalchemy.orm import Session
+
+from database.models import Task
 
 
 class SistemaPriorizacao:

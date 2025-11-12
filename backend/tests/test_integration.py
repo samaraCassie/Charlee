@@ -1,7 +1,8 @@
 """Integration tests for complete workflows."""
 
-from fastapi import status
 from datetime import date, timedelta
+
+from fastapi import status
 
 
 class TestBigRockTaskWorkflow:
@@ -49,7 +50,9 @@ class TestBigRockTaskWorkflow:
 
         # Step 4: Verify Task shows up in filtered list
         list_response = client.get(
-            "/api/v1/tasks", params={"status": "completed", "big_rock_id": big_rock_id}, headers=auth_headers
+            "/api/v1/tasks",
+            params={"status": "completed", "big_rock_id": big_rock_id},
+            headers=auth_headers,
         )
         assert list_response.status_code == status.HTTP_200_OK
         tasks_data = list_response.json()
@@ -71,7 +74,9 @@ class TestBigRockTaskWorkflow:
         assert get_task_response.status_code == status.HTTP_404_NOT_FOUND
 
         # Step 8: Delete the Big Rock
-        delete_big_rock_response = client.delete(f"/api/v1/big-rocks/{big_rock_id}", headers=auth_headers)
+        delete_big_rock_response = client.delete(
+            f"/api/v1/big-rocks/{big_rock_id}", headers=auth_headers
+        )
         assert delete_big_rock_response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_create_multiple_tasks_for_big_rock(self, client, auth_headers):
@@ -100,18 +105,24 @@ class TestBigRockTaskWorkflow:
             task_ids.append(task_response.json()["id"])
 
         # Get all tasks for this Big Rock
-        list_response = client.get("/api/v1/tasks", params={"big_rock_id": big_rock_id}, headers=auth_headers)
+        list_response = client.get(
+            "/api/v1/tasks", params={"big_rock_id": big_rock_id}, headers=auth_headers
+        )
         tasks_data = list_response.json()
         assert tasks_data["total"] == 3
 
         # Complete all tasks
         for task_id in task_ids:
-            complete_response = client.post(f"/api/v1/tasks/{task_id}/complete", headers=auth_headers)
+            complete_response = client.post(
+                f"/api/v1/tasks/{task_id}/complete", headers=auth_headers
+            )
             assert complete_response.status_code == status.HTTP_200_OK
 
         # Verify all completed
         completed_list = client.get(
-            "/api/v1/tasks", params={"big_rock_id": big_rock_id, "status": "completed"}, headers=auth_headers
+            "/api/v1/tasks",
+            params={"big_rock_id": big_rock_id, "status": "completed"},
+            headers=auth_headers,
         )
         assert completed_list.json()["total"] == 3
 
@@ -267,7 +278,9 @@ class TestConcurrentOperations:
         ]
 
         for update in updates:
-            response = client.patch(f"/api/v1/tasks/{sample_task.id}", json=update, headers=auth_headers)
+            response = client.patch(
+                f"/api/v1/tasks/{sample_task.id}", json=update, headers=auth_headers
+            )
             assert response.status_code == status.HTTP_200_OK
 
         # Get final state

@@ -1,22 +1,24 @@
 """OAuth authentication routes for Google and GitHub."""
 
+from datetime import datetime, timedelta, timezone
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from database.config import get_db
-from api.auth.oauth import (
-    oauth,
-    create_or_update_oauth_user,
-    extract_google_user_info,
-    extract_github_user_info,
-    generate_unique_username,
-)
-from api.auth.jwt import create_access_token, create_refresh_token, JWTConfig
-from api.auth.audit import log_oauth_login, log_login_failure
+
+from api.auth.audit import log_login_failure, log_oauth_login
+from api.auth.jwt import JWTConfig, create_access_token, create_refresh_token
 from api.auth.lockout import check_account_lockout
-from datetime import datetime, timedelta, timezone
+from api.auth.oauth import (
+    create_or_update_oauth_user,
+    extract_github_user_info,
+    extract_google_user_info,
+    generate_unique_username,
+    oauth,
+)
+from database.config import get_db
 from database.models import RefreshToken
-import httpx
 
 router = APIRouter(prefix="/api/v1/auth/oauth", tags=["OAuth"])
 

@@ -1,13 +1,15 @@
 """Settings API routes - Configurações do usuário e sistema."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from api.auth.dependencies import get_current_user
 from database.config import get_db
 from database.models import User
-from api.auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -89,7 +91,7 @@ async def get_system_stats(
     db: Session = Depends(get_db),
 ):
     """Obter estatísticas do sistema."""
-    from database.models import Task, BigRock
+    from database.models import BigRock, Task
 
     total_tasks = db.query(Task).filter(Task.user_id == current_user.id).count()
     total_big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).count()
@@ -128,7 +130,7 @@ async def export_user_data(
     db: Session = Depends(get_db),
 ):
     """Exportar todos os dados do usuário."""
-    from database.models import Task, BigRock
+    from database.models import BigRock, Task
 
     # Buscar todos os dados
     big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).all()

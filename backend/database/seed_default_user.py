@@ -9,13 +9,14 @@ Usage:
     python -m database.seed_default_user
 """
 
-import os
 import sys
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from database.models import User, BigRock, Task, MenstrualCycle, DailyLog
+
 from api.auth.password import hash_password
 from database.config import settings
+from database.models import BigRock, DailyLog, MenstrualCycle, Task, User
 
 
 def create_default_user(db):
@@ -42,8 +43,8 @@ def create_default_user(db):
 
     print(f"✓ Created default user: {default_user.username}")
     print(f"  Email: {default_user.email}")
-    print(f"  Password: ChangeMe123!")
-    print(f"  ⚠️  IMPORTANT: Change the password after first login!")
+    print("  Password: ChangeMe123!")
+    print("  ⚠️  IMPORTANT: Change the password after first login!")
 
     return default_user
 
@@ -51,10 +52,10 @@ def create_default_user(db):
 def migrate_existing_data(db, user):
     """Migrate existing data to the default user."""
     # Count existing data
-    big_rocks_count = db.query(BigRock).filter(BigRock.user_id == None).count()
-    tasks_count = db.query(Task).filter(Task.user_id == None).count()
-    cycles_count = db.query(MenstrualCycle).filter(MenstrualCycle.user_id == None).count()
-    logs_count = db.query(DailyLog).filter(DailyLog.user_id == None).count()
+    big_rocks_count = db.query(BigRock).filter(BigRock.user_id is None).count()
+    tasks_count = db.query(Task).filter(Task.user_id is None).count()
+    cycles_count = db.query(MenstrualCycle).filter(MenstrualCycle.user_id is None).count()
+    logs_count = db.query(DailyLog).filter(DailyLog.user_id is None).count()
 
     if big_rocks_count == 0 and tasks_count == 0 and cycles_count == 0 and logs_count == 0:
         print("\n✓ No existing data to migrate")
@@ -67,22 +68,22 @@ def migrate_existing_data(db, user):
     print(f"  - Daily Logs: {logs_count}")
 
     # Migrate Big Rocks
-    db.query(BigRock).filter(BigRock.user_id == None).update(
+    db.query(BigRock).filter(BigRock.user_id is None).update(
         {BigRock.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Tasks
-    db.query(Task).filter(Task.user_id == None).update(
+    db.query(Task).filter(Task.user_id is None).update(
         {Task.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Menstrual Cycles
-    db.query(MenstrualCycle).filter(MenstrualCycle.user_id == None).update(
+    db.query(MenstrualCycle).filter(MenstrualCycle.user_id is None).update(
         {MenstrualCycle.user_id: user.id}, synchronize_session=False
     )
 
     # Migrate Daily Logs
-    db.query(DailyLog).filter(DailyLog.user_id == None).update(
+    db.query(DailyLog).filter(DailyLog.user_id is None).update(
         {DailyLog.user_id: user.id}, synchronize_session=False
     )
 
@@ -128,7 +129,7 @@ def main():
         print("\n🔐 Default credentials:")
         print(f"   Username: {user.username}")
         print(f"   Email: {user.email}")
-        print(f"   Password: ChangeMe123!")
+        print("   Password: ChangeMe123!")
         print("\n")
 
     except Exception as e:

@@ -1,12 +1,13 @@
 """Agent API routes for interacting with Charlee."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from agent.orchestrator import create_orchestrator
+from api.auth.dependencies import get_current_user
 from database.config import get_db
 from database.models import User
-from api.auth.dependencies import get_current_user
-from agent.orchestrator import create_orchestrator
 
 router = APIRouter()
 

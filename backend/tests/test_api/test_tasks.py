@@ -1,7 +1,8 @@
 """Tests for Tasks API endpoints."""
 
-from fastapi import status
 from datetime import date, timedelta
+
+from fastapi import status
 
 
 class TestTasksAPI:

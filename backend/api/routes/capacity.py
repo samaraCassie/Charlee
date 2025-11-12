@@ -1,12 +1,13 @@
 """Capacity API routes - Gestão de capacidade e sobrecarga."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from agent.specialized_agents.capacity_guard_agent import create_capacity_guard_agent
+from api.auth.dependencies import get_current_user
 from database.config import get_db
 from database.models import User
-from api.auth.dependencies import get_current_user
-from agent.specialized_agents.capacity_guard_agent import create_capacity_guard_agent
 
 router = APIRouter()
 

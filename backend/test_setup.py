@@ -1,9 +1,11 @@
 """Script to test the Charlee backend setup."""
 
 import sys
-from database.config import engine, Base, settings
-from database.models import BigRock, Task
+
 from sqlalchemy import text
+
+from database.config import Base, engine, settings
+from database.models import BigRock, Task
 
 
 def test_database_connection():

@@ -1,43 +1,43 @@
 """Authentication routes for user registration, login, and token management."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from database.config import get_db
-from database.models import User, RefreshToken
-from api.auth.schemas import (
-    UserCreate,
-    UserResponse,
-    LoginRequest,
-    TokenResponse,
-    TokenRefreshRequest,
-    TokenRefreshResponse,
-    MessageResponse,
-    PasswordChangeRequest,
+from api.auth.audit import (
+    log_account_locked,
+    log_login_failure,
+    log_login_success,
+    log_logout,
+    log_password_change,
+    log_registration,
 )
-from api.auth.password import hash_password, verify_password
+from api.auth.dependencies import get_current_user
 from api.auth.jwt import (
+    JWTConfig,
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
-    JWTConfig,
-)
-from api.auth.dependencies import get_current_user
-from api.auth.audit import (
-    log_registration,
-    log_login_success,
-    log_login_failure,
-    log_logout,
-    log_password_change,
-    log_account_locked,
 )
 from api.auth.lockout import (
     check_account_lockout,
     record_failed_login,
     record_successful_login,
 )
+from api.auth.password import hash_password, verify_password
+from api.auth.schemas import (
+    LoginRequest,
+    MessageResponse,
+    PasswordChangeRequest,
+    TokenRefreshRequest,
+    TokenRefreshResponse,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+)
+from database.config import get_db
+from database.models import RefreshToken, User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
@@ -147,7 +147,7 @@ async def login(
                 )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Account locked due to multiple failed login attempts. Try again in 30 minutes.",
+                    detail="Account locked due to multiple failed login attempts. Try again in 30 minutes.",
                 )
 
             log_login_failure(

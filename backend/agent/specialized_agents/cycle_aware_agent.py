@@ -1,11 +1,13 @@
 """CycleAwareAgent - Agente especializado em bem-estar e ciclo menstrual."""
 
+from datetime import date, timedelta
+from typing import Optional
+
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
-from datetime import date, timedelta
-from typing import Optional
-from database.models import MenstrualCycle, CyclePatterns, Task
+
+from database.models import CyclePatterns, MenstrualCycle, Task
 
 
 class CycleAwareAgent(Agent):

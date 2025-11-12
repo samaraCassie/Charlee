@@ -1,12 +1,14 @@
 """OAuth utilities for Google and GitHub authentication."""
 
-from typing import Optional, Dict, Any
-from authlib.integrations.starlette_client import OAuth
-from starlette.config import Config
-from sqlalchemy.orm import Session
-from database.models import User
-from api.auth.password import hash_password
 import secrets
+from typing import Any, Dict, Optional
+
+from authlib.integrations.starlette_client import OAuth
+from sqlalchemy.orm import Session
+from starlette.config import Config
+
+from api.auth.password import hash_password
+from database.models import User
 
 # OAuth configuration
 config = Config(

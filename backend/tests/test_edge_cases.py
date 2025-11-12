@@ -1,7 +1,8 @@
 """Edge case tests for API robustness."""
 
-from fastapi import status
 from datetime import date, timedelta
+
+from fastapi import status
 
 
 class TestBigRockEdgeCases:

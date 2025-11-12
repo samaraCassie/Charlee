@@ -1,12 +1,13 @@
 """Wellness API routes - Ciclo menstrual e bem-estar."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from agent.specialized_agents.cycle_aware_agent import create_cycle_aware_agent
+from api.auth.dependencies import get_current_user
 from database.config import get_db
 from database.models import User
-from api.auth.dependencies import get_current_user
-from agent.specialized_agents.cycle_aware_agent import create_cycle_aware_agent
 
 router = APIRouter()
 

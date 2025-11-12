@@ -1,7 +1,7 @@
 """Tests for Authentication API endpoints."""
 
+
 from fastapi import status
-from datetime import datetime, timedelta, timezone
 
 
 class TestAuthRegistration:
@@ -379,9 +379,9 @@ class TestAuthDataIsolation:
 
     def test_user_cannot_access_other_users_data(self, client, db):
         """Should ensure users can only access their own data."""
-        from database.models import User, BigRock
-        from api.auth.password import hash_password
         from api.auth.jwt import create_access_token
+        from api.auth.password import hash_password
+        from database.models import BigRock, User
 
         # Create two users
         user1 = User(

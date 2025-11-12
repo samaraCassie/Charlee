@@ -1,12 +1,13 @@
 """Priorização API routes - Sistema de priorização inteligente."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database.config import get_db
-from database.models import User
+from sqlalchemy.orm import Session
+
 from api.auth.dependencies import get_current_user
 from database import schemas
+from database.config import get_db
+from database.models import User
 from skills.priorizacao import create_sistema_priorizacao
 
 router = APIRouter()

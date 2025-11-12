@@ -1,13 +1,15 @@
 """Inbox API routes - Inbox rápido e gestão de tarefas prioritárias."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from typing import List
-from database.config import get_db
-from database.models import User
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from api.auth.dependencies import get_current_user
 from database import schemas
+from database.config import get_db
+from database.models import User
 from skills.priorizacao import create_sistema_priorizacao
 
 router = APIRouter()
@@ -58,6 +60,7 @@ async def tarefas_hoje(
 ):
     """Tarefas com deadline para hoje."""
     from datetime import date
+
     from database import crud
 
     today = date.today()
@@ -76,6 +79,7 @@ async def tarefas_atrasadas(
 ):
     """Tarefas com deadline já passado."""
     from datetime import date
+
     from database import crud
 
     today = date.today()
@@ -97,6 +101,7 @@ async def tarefas_proxima_semana(
 ):
     """Tarefas com deadline nos próximos 7 dias."""
     from datetime import date, timedelta
+
     from database import crud
 
     today = date.today()

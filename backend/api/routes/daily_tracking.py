@@ -1,13 +1,15 @@
 """Daily Tracking API routes."""
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
 from datetime import date, timedelta
-from database.config import get_db
+from typing import Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
 from agent.specialized_agents.daily_tracking_agent import create_daily_tracking_agent
+from database.config import get_db
 
 # Configure structured logging
 logger = logging.getLogger(__name__)
@@ -194,8 +196,9 @@ async def get_tracking_status(db: Session = Depends(get_db)):
     - Padrões identificados disponíveis
     """
     try:
-        from database.models import DailyLog, CyclePatterns
         from datetime import timedelta
+
+        from database.models import CyclePatterns, DailyLog
 
         # Contar registros
         total_registros = db.query(DailyLog).count()
@@ -353,8 +356,9 @@ async def get_insights(days: int = 30, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
 
     try:
-        from database.models import DailyLog
         import statistics
+
+        from database.models import DailyLog
 
         # Buscar registros
         data_inicio = date.today() - timedelta(days=days)

@@ -1,8 +1,10 @@
 """Audit logging utilities for authentication events."""
 
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
+from typing import Any, Dict, Optional
+
 from fastapi import Request
+from sqlalchemy.orm import Session
+
 from database.models import AuditLog
 
 

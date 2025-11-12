@@ -1,23 +1,24 @@
 """SQLAlchemy database models for Charlee V1."""
 
 from datetime import datetime
+
 from sqlalchemy import (
+    JSON,
     Boolean,
+    CheckConstraint,
     Column,
-    Integer,
+    Date,
+    DateTime,
     Float,
+    ForeignKey,
+    Integer,
     String,
     Text,
-    DateTime,
-    Date,
-    ForeignKey,
-    CheckConstraint,
     UniqueConstraint,
-    JSON,
 )
 from sqlalchemy.orm import relationship
-from database.config import Base
 
+from database.config import Base
 
 # ==================== Authentication Models ====================
 

@@ -1,10 +1,10 @@
 """Pydantic schemas for authentication requests and responses."""
 
+import re
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, field_validator
-import re
 
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ==================== User Schemas ====================
 

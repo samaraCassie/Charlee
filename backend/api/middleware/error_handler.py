@@ -3,11 +3,13 @@
 import os
 import traceback
 from typing import Callable
+
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from api.middleware.logging_config import get_logger
 
 logger = get_logger(__name__)

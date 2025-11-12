@@ -1,7 +1,9 @@
 """Tests for advanced authentication features: lockout, audit log, and OAuth."""
 
-from fastapi import status
 from datetime import datetime, timedelta
+
+from fastapi import status
+
 from database.models import AuditLog
 
 
@@ -288,8 +290,8 @@ class TestOAuthUser:
 
     def test_oauth_user_can_be_created(self, db):
         """Should create user with OAuth provider information."""
-        from database.models import User
         from api.auth.password import hash_password
+        from database.models import User
 
         user = User(
             username="googleuser",
@@ -310,8 +312,8 @@ class TestOAuthUser:
 
     def test_oauth_user_has_methods(self, db):
         """Should have lockout-related methods available."""
-        from database.models import User
         from api.auth.password import hash_password
+        from database.models import User
 
         user = User(
             username="testuser2",
@@ -375,8 +377,8 @@ class TestSecurityEnhancements:
 
     def test_multiple_failed_logins_tracked_per_user(self, client, db):
         """Should track failed login attempts independently per user."""
-        from database.models import User
         from api.auth.password import hash_password
+        from database.models import User
 
         # Create two users
         user1 = User(

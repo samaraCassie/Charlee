@@ -66,8 +66,8 @@ def client(db):
 @pytest.fixture
 def sample_user(db):
     """Create a sample User for testing."""
-    from database.models import User
     from api.auth.password import hash_password
+    from database.models import User
 
     user = User(
         username="testuser",
@@ -113,8 +113,9 @@ def sample_big_rock(db, sample_user):
 @pytest.fixture
 def sample_task(db, sample_big_rock, sample_user):
     """Create a sample Task for testing."""
-    from database.models import Task
     from datetime import date, timedelta
+
+    from database.models import Task
 
     task = Task(
         description="Walk for 30 minutes",

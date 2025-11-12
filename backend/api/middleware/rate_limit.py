@@ -1,12 +1,13 @@
 """Rate limiting middleware for API protection."""
 
 import os
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 __all__ = ["limiter", "rate_limit_exceeded_handler", "SlowAPIMiddleware", "RateLimitExceeded"]
 

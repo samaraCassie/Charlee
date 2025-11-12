@@ -1,14 +1,16 @@
 """Analytics API routes - Métricas e estatísticas."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from pydantic import BaseModel
-from typing import List
 from datetime import date, timedelta
-from database.config import get_db
-from database.models import Task, BigRock, User
+from typing import List
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from api.auth.dependencies import get_current_user
+from database.config import get_db
+from database.models import BigRock, Task, User
 
 router = APIRouter()
 

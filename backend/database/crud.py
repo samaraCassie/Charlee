@@ -1,10 +1,11 @@
 """CRUD operations for database models."""
 
 from typing import Optional, cast
+
 from sqlalchemy.orm import Session
+
 from database.models import BigRock, Task
 from database.schemas import BigRockCreate, BigRockUpdate, TaskCreate, TaskUpdate
-
 
 # ==================== Big Rock CRUD ====================
 

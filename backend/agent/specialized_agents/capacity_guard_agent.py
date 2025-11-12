@@ -1,10 +1,12 @@
 """CapacityGuardAgent - Agente que protege contra sobrecarga."""
 
+from datetime import date, timedelta
+from typing import Optional
+
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
-from datetime import date, timedelta
-from typing import Optional
+
 from database.models import BigRock, Task
 
 

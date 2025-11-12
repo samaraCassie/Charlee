@@ -1,34 +1,38 @@
 # backend/api/main.py
 
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from database.config import engine, Base
-from api.routes import (
-    big_rocks,
-    tasks,
-    agent as agent_routes,
-    auth,
-    oauth_routes,
-    wellness,
-    capacity,
-    priorizacao,
-    inbox,
-    analytics,
-    settings,
-    daily_tracking,
-)
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from api.middleware.error_handler import GlobalErrorHandlerMiddleware
+from api.middleware.logging_config import get_logger
 from api.middleware.rate_limit import (
+    RateLimitExceeded,
+    SlowAPIMiddleware,
     limiter,
     rate_limit_exceeded_handler,
-    SlowAPIMiddleware,
-    RateLimitExceeded,
 )
-from api.middleware.logging_config import get_logger
 from api.middleware.request_logging import RequestLoggingMiddleware
-from api.middleware.error_handler import GlobalErrorHandlerMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator
+from api.routes import (
+    agent as agent_routes,
+)
+from api.routes import (
+    analytics,
+    auth,
+    big_rocks,
+    capacity,
+    daily_tracking,
+    inbox,
+    oauth_routes,
+    priorizacao,
+    settings,
+    tasks,
+    wellness,
+)
+from database.config import Base, engine
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -236,10 +240,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Detailed health check endpoint with database connectivity."""
+    from datetime import datetime
+
     from fastapi import status as http_status
     from sqlalchemy import text
+
     from database.config import SessionLocal
-    from datetime import datetime
 
     health_status = {
         "service": "charlee-backend",

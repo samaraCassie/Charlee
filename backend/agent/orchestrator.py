@@ -1,11 +1,12 @@
 """Agent Orchestrator - Coordena todos os agentes especializados."""
 
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
 
 from agent.core_agent import CharleeAgent
-from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
 from agent.specialized_agents.capacity_guard_agent import CapacityGuardAgent
+from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
 from agent.specialized_agents.daily_tracking_agent import DailyTrackingAgent
 
 
