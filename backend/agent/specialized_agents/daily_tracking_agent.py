@@ -367,7 +367,7 @@ class DailyTrackingAgent(Agent):
                     # Criar novo
                     padrao = CyclePatterns(
                         phase=fase,
-                        pattern_identified=f"Média de {produtividade_media:.1f} tarefas por dia",
+                        identified_pattern=f"Média de {produtividade_media:.1f} tarefas por dia",
                         average_productivity=produtividade_media,
                         samples_used=amostras,
                         confidence_score=min(amostras / 30, 1.0)
