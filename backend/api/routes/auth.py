@@ -25,17 +25,31 @@ from api.auth.jwt import (
     JWTConfig,
 )
 from api.auth.dependencies import get_current_user
+from api.auth.audit import (
+    log_registration,
+    log_login_success,
+    log_login_failure,
+    log_logout,
+    log_password_change,
+    log_account_locked,
+)
+from api.auth.lockout import (
+    check_account_lockout,
+    record_failed_login,
+    record_successful_login,
+)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+async def register(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
     """
     Register a new user.
 
     Args:
         user_data: User registration data
+        request: FastAPI request object
         db: Database session
 
     Returns:
@@ -73,6 +87,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    # Log registration
+    log_registration(db=db, request=request, user_id=new_user.id, username=new_user.username)
+
     return new_user
 
 
@@ -83,7 +100,7 @@ async def login(
     db: Session = Depends(get_db),
 ):
     """
-    Login user and return JWT tokens.
+    Login user and return JWT tokens with account lockout protection.
 
     Args:
         login_data: Login credentials
@@ -94,13 +111,66 @@ async def login(
         Access and refresh tokens
 
     Raises:
-        HTTPException: If credentials are invalid
+        HTTPException: If credentials are invalid or account is locked
     """
     # Find user by username
     user = db.query(User).filter(User.username == login_data.username).first()
 
+    # Check account lockout first
+    if user:
+        is_locked, lock_message = check_account_lockout(user)
+        if is_locked:
+            log_login_failure(
+                db=db,
+                request=request,
+                username=login_data.username,
+                reason="Account locked",
+                user_id=user.id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=lock_message,
+            )
+
     # Verify credentials
     if not user or not verify_password(login_data.password, user.hashed_password):
+        # Record failed login attempt
+        if user:
+            is_now_locked, remaining = record_failed_login(db, user)
+
+            if is_now_locked:
+                log_account_locked(
+                    db=db,
+                    request=request,
+                    user_id=user.id,
+                    username=login_data.username,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Account locked due to multiple failed login attempts. Try again in 30 minutes.",
+                )
+
+            log_login_failure(
+                db=db,
+                request=request,
+                username=login_data.username,
+                reason=f"Invalid credentials. {remaining} attempts remaining.",
+                user_id=user.id,
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Incorrect username or password. {remaining} attempts remaining before account lockout.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # User not found
+        log_login_failure(
+            db=db,
+            request=request,
+            username=login_data.username,
+            reason="User not found",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -109,13 +179,20 @@ async def login(
 
     # Check if user is active
     if not user.is_active:
+        log_login_failure(
+            db=db,
+            request=request,
+            username=login_data.username,
+            reason="Inactive user",
+            user_id=user.id,
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user",
         )
 
-    # Update last login
-    user.last_login = datetime.utcnow()
+    # Record successful login
+    record_successful_login(db, user)
 
     # Create tokens
     token_data = {
@@ -142,6 +219,9 @@ async def login(
 
     db.add(refresh_token)
     db.commit()
+
+    # Log successful login
+    log_login_success(db=db, request=request, user_id=user.id, username=user.username)
 
     return TokenResponse(
         access_token=access_token,
@@ -228,6 +308,7 @@ async def refresh_token(
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
     refresh_request: TokenRefreshRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -236,6 +317,7 @@ async def logout(
 
     Args:
         refresh_request: Refresh token to revoke
+        request: FastAPI request object
         current_user: Current authenticated user
         db: Database session
 
@@ -258,11 +340,15 @@ async def logout(
         db_token.revoked_at = datetime.utcnow()
         db.commit()
 
+    # Log logout
+    log_logout(db=db, request=request, user_id=current_user.id, username=current_user.username)
+
     return MessageResponse(message="Successfully logged out")
 
 
 @router.post("/logout-all", response_model=MessageResponse)
 async def logout_all(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -270,6 +356,7 @@ async def logout_all(
     Logout user from all devices by revoking all refresh tokens.
 
     Args:
+        request: FastAPI request object
         current_user: Current authenticated user
         db: Database session
 
@@ -283,6 +370,9 @@ async def logout_all(
     ).update({"revoked": True, "revoked_at": datetime.utcnow()})
 
     db.commit()
+
+    # Log logout
+    log_logout(db=db, request=request, user_id=current_user.id, username=current_user.username)
 
     return MessageResponse(message="Successfully logged out from all devices")
 
@@ -304,6 +394,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 @router.post("/change-password", response_model=MessageResponse)
 async def change_password(
     password_data: PasswordChangeRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -312,6 +403,7 @@ async def change_password(
 
     Args:
         password_data: Current and new password
+        request: FastAPI request object
         current_user: Current authenticated user
         db: Database session
 
@@ -336,5 +428,13 @@ async def change_password(
     current_user.updated_at = datetime.utcnow()
 
     db.commit()
+
+    # Log password change
+    log_password_change(
+        db=db,
+        request=request,
+        user_id=current_user.id,
+        username=current_user.username,
+    )
 
     return MessageResponse(message="Password changed successfully")

@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     CheckConstraint,
     UniqueConstraint,
+    JSON,
 )
 from sqlalchemy.orm import relationship
 from database.config import Base
@@ -41,6 +42,16 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
 
+    # OAuth fields
+    oauth_provider = Column(String(50), nullable=True)  # 'google', 'github', None (local)
+    oauth_id = Column(String(255), nullable=True, index=True)  # Provider's user ID
+    avatar_url = Column(String(500), nullable=True)
+
+    # Account lockout fields
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_failed_login = Column(DateTime, nullable=True)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -56,6 +67,19 @@ class User(Base):
     refresh_tokens = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
+    audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+
+    def is_locked(self) -> bool:
+        """Check if account is currently locked."""
+        if self.locked_until is None:
+            return False
+        return datetime.utcnow() < self.locked_until
+
+    def reset_failed_attempts(self) -> None:
+        """Reset failed login attempts counter."""
+        self.failed_login_attempts = 0
+        self.locked_until = None
+        self.last_failed_login = None
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -89,6 +113,41 @@ class RefreshToken(Base):
 
     def __repr__(self):
         return f"<RefreshToken(id={self.id}, user_id={self.user_id}, revoked={self.revoked})>"
+
+
+class AuditLog(Base):
+    """
+    Audit Log - Track authentication and security events.
+
+    Records important security events for compliance and security monitoring.
+    """
+
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+
+    # Event information
+    event_type = Column(String(50), nullable=False, index=True)  # 'login', 'logout', 'register', etc.
+    event_status = Column(String(20), nullable=False)  # 'success', 'failure', 'blocked'
+    event_message = Column(Text, nullable=True)
+
+    # Request metadata
+    ip_address = Column(String(50), nullable=True, index=True)
+    user_agent = Column(String(255), nullable=True)
+    request_path = Column(String(255), nullable=True)
+
+    # Additional data (JSON)
+    metadata = Column(JSON, nullable=True)  # Extra contextual information
+
+    # Timestamp
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    user = relationship("User", back_populates="audit_logs")
+
+    def __repr__(self):
+        return f"<AuditLog(id={self.id}, event_type='{self.event_type}', status='{self.event_status}')>"
 
 
 # ==================== Core Models ====================

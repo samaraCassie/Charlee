@@ -10,6 +10,7 @@ from api.routes import (
     tasks,
     agent as agent_routes,
     auth,
+    oauth_routes,
     wellness,
     capacity,
     priorizacao,
@@ -189,6 +190,7 @@ app.add_middleware(RequestLoggingMiddleware)
 # ========================================
 # Authentication routes (no prefix, already defined in router)
 app.include_router(auth.router)
+app.include_router(oauth_routes.router)
 
 app.include_router(big_rocks.router, prefix="/api/v1/big-rocks", tags=["Big Rocks"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Tasks"])
