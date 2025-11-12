@@ -159,9 +159,9 @@ def mark_task_completed(db: Session, task_id: int, user_id: int) -> Optional[Tas
     return db_task
 
 
-def reopen_task(db: Session, task_id: int) -> Optional[Task]:
-    """Reopen a completed Task."""
-    db_task = get_task(db, task_id)
+def reopen_task(db: Session, task_id: int, user_id: int) -> Optional[Task]:
+    """Reopen a completed Task for a specific user."""
+    db_task = get_task(db, task_id, user_id)
     if not db_task:
         return None
 
@@ -171,9 +171,9 @@ def reopen_task(db: Session, task_id: int) -> Optional[Task]:
     return db_task
 
 
-def delete_task(db: Session, task_id: int) -> bool:
-    """Delete a Task permanently."""
-    db_task = get_task(db, task_id)
+def delete_task(db: Session, task_id: int, user_id: int) -> bool:
+    """Delete a Task permanently for a specific user."""
+    db_task = get_task(db, task_id, user_id)
     if not db_task:
         return False
 

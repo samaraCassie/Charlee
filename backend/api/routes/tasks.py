@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from database.config import get_db
 from database import crud, schemas
+from database.models import User
 from api.cache import invalidate_pattern
+from api.auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ router = APIRouter()
     response_model=schemas.TaskListResponse,
     summary="List all tasks",
     description="""
-    Retrieve a list of tasks with optional filtering.
+    Retrieve a list of tasks for the authenticated user with optional filtering.
 
     **Filters:**
     - `status`: Filter by task status (pending, in_progress, completed, cancelled)
@@ -33,11 +35,18 @@ def get_tasks(
     task_type: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get list of Tasks with optional filters."""
+    """Get list of Tasks for authenticated user with optional filters."""
     tasks = crud.get_tasks(
-        db, skip=skip, limit=limit, status=status, big_rock_id=big_rock_id, task_type=task_type
+        db,
+        user_id=current_user.id,
+        skip=skip,
+        limit=limit,
+        status=status,
+        big_rock_id=big_rock_id,
+        task_type=task_type
     )
     return {"total": len(tasks), "tasks": tasks}
 
@@ -46,15 +55,19 @@ def get_tasks(
     "/{task_id}",
     response_model=schemas.TaskResponse,
     summary="Get task by ID",
-    description="Retrieve a single task by its unique ID.",
+    description="Retrieve a single task by its unique ID for the authenticated user.",
     responses={
         200: {"description": "Task found and returned"},
         404: {"description": "Task not found"},
     },
 )
-def get_task(task_id: int, db: Session = Depends(get_db)):
-    """Get a single Task by ID."""
-    task = crud.get_task(db, task_id)
+def get_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get a single Task by ID for authenticated user."""
+    task = crud.get_task(db, task_id, user_id=current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
@@ -66,7 +79,7 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
     status_code=201,
     summary="Create new task",
     description="""
-    Create a new task with optional Big Rock association.
+    Create a new task for the authenticated user with optional Big Rock association.
 
     **Required fields:**
     - `description`: Task description (min 1 char, max 5000 chars, HTML escaped)
@@ -84,10 +97,14 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
         422: {"description": "Validation error (invalid input)"},
     },
 )
-def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
-    """Create a new Task and invalidate cache."""
+def create_task(
+    task: schemas.TaskCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new Task for authenticated user and invalidate cache."""
     try:
-        result = crud.create_task(db, task)
+        result = crud.create_task(db, task, user_id=current_user.id)
 
         # Invalidate all task caches
         invalidate_pattern("tasks:*")
@@ -101,16 +118,21 @@ def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
     "/{task_id}",
     response_model=schemas.TaskResponse,
     summary="Update task",
-    description="Partially update a task. Only provided fields will be updated.",
+    description="Partially update a task for the authenticated user. Only provided fields will be updated.",
     responses={
         200: {"description": "Task updated successfully"},
         404: {"description": "Task not found"},
         422: {"description": "Validation error"},
     },
 )
-def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(get_db)):
-    """Update a Task and invalidate cache."""
-    task = crud.update_task(db, task_id, task_update)
+def update_task(
+    task_id: int,
+    task_update: schemas.TaskUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update a Task for authenticated user and invalidate cache."""
+    task = crud.update_task(db, task_id, task_update, user_id=current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -124,15 +146,19 @@ def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Dep
     "/{task_id}/complete",
     response_model=schemas.TaskResponse,
     summary="Mark task as completed",
-    description="Mark a task as completed and set completion timestamp.",
+    description="Mark a task as completed and set completion timestamp for the authenticated user.",
     responses={
         200: {"description": "Task marked as completed"},
         404: {"description": "Task not found"},
     },
 )
-def mark_task_completed(task_id: int, db: Session = Depends(get_db)):
-    """Mark a Task as completed and invalidate cache."""
-    task = crud.mark_task_completed(db, task_id)
+def mark_task_completed(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark a Task as completed for authenticated user and invalidate cache."""
+    task = crud.mark_task_completed(db, task_id, user_id=current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -146,15 +172,19 @@ def mark_task_completed(task_id: int, db: Session = Depends(get_db)):
     "/{task_id}/reopen",
     response_model=schemas.TaskResponse,
     summary="Reopen completed task",
-    description="Reopen a completed task and reset its status to pending.",
+    description="Reopen a completed task and reset its status to pending for the authenticated user.",
     responses={
         200: {"description": "Task reopened successfully"},
         404: {"description": "Task not found"},
     },
 )
-def reopen_task(task_id: int, db: Session = Depends(get_db)):
-    """Reopen a completed Task and invalidate cache."""
-    task = crud.reopen_task(db, task_id)
+def reopen_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Reopen a completed Task for authenticated user and invalidate cache."""
+    task = crud.reopen_task(db, task_id, user_id=current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -168,15 +198,19 @@ def reopen_task(task_id: int, db: Session = Depends(get_db)):
     "/{task_id}",
     status_code=204,
     summary="Delete task",
-    description="Permanently delete a task. This action cannot be undone.",
+    description="Permanently delete a task for the authenticated user. This action cannot be undone.",
     responses={
         204: {"description": "Task deleted successfully"},
         404: {"description": "Task not found"},
     },
 )
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    """Delete a Task permanently and invalidate cache."""
-    success = crud.delete_task(db, task_id)
+def delete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a Task permanently for authenticated user and invalidate cache."""
+    success = crud.delete_task(db, task_id, user_id=current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
 

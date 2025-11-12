@@ -64,11 +64,49 @@ def client(db):
 
 
 @pytest.fixture
-def sample_big_rock(db):
+def sample_user(db):
+    """Create a sample User for testing."""
+    from database.models import User
+    from api.auth.password import hash_password
+
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        hashed_password=hash_password("TestPass123"),
+        full_name="Test User",
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_headers(sample_user):
+    """Create authentication headers with valid JWT token."""
+    from api.auth.jwt import create_access_token
+
+    token_data = {
+        "user_id": sample_user.id,
+        "username": sample_user.username,
+        "email": sample_user.email,
+    }
+    access_token = create_access_token(token_data)
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def sample_big_rock(db, sample_user):
     """Create a sample Big Rock for testing."""
     from database.models import BigRock
 
-    big_rock = BigRock(name="Health & Wellness", color="#22c55e", active=True)
+    big_rock = BigRock(
+        name="Health & Wellness",
+        color="#22c55e",
+        active=True,
+        user_id=sample_user.id
+    )
     db.add(big_rock)
     db.commit()
     db.refresh(big_rock)
@@ -76,7 +114,7 @@ def sample_big_rock(db):
 
 
 @pytest.fixture
-def sample_task(db, sample_big_rock):
+def sample_task(db, sample_big_rock, sample_user):
     """Create a sample Task for testing."""
     from database.models import Task
     from datetime import date, timedelta
@@ -87,6 +125,7 @@ def sample_task(db, sample_big_rock):
         big_rock_id=sample_big_rock.id,
         status="pending",
         deadline=date.today() + timedelta(days=7),
+        user_id=sample_user.id,
     )
     db.add(task)
     db.commit()
