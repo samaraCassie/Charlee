@@ -356,13 +356,13 @@ async def get_insights(
 
     Formato de retorno otimizado para frontend charts (Chart.js, Recharts, etc).
     """
+    logger.info(f"Generating insights for {days} days")
+
+    if days > 90:
+        logger.warning(f"Requested days ({days}) exceeds maximum (90)")
+        raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
+
     try:
-        logger.info(f"Generating insights for {days} days")
-
-        if days > 90:
-            logger.warning(f"Requested days ({days}) exceeds maximum (90)")
-            raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
-
         from database.models import DailyLog
         import statistics
 

@@ -183,8 +183,12 @@ class TestDailyTrackingEndpoints:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
 
-        # Should default to 30 days
-        assert data["period"]["days_requested"] == 30
+        # Should default to 30 days (even if no data)
+        if "period" in data:
+            assert data["period"]["days_requested"] == 30
+        else:
+            # When no data, check days_requested in response
+            assert data["days_requested"] == 30
 
     def test_insights_moving_averages(self, client, db):
         """Test that moving averages are calculated correctly."""
