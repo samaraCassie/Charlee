@@ -1,5 +1,6 @@
 """Daily Tracking API routes."""
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -7,6 +8,9 @@ from typing import Optional, List, Dict
 from datetime import date, timedelta
 from database.config import get_db
 from agent.specialized_agents.daily_tracking_agent import create_daily_tracking_agent
+
+# Configure structured logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -260,6 +264,11 @@ async def configure_reminder(
     Nota: Esta é uma configuração de intenção. A implementação real
     de notificações requer integração com sistema de notificações.
     """
+    logger.info(
+        "Configuring reminder",
+        extra={"enabled": request.enabled, "preferred_time": request.preferred_time}
+    )
+
     return {
         "message": "Configuração de lembrete salva com sucesso",
         "config": {
@@ -283,6 +292,8 @@ async def get_reminder_status(db: Session = Depends(get_db)):
     try:
         from database.models import DailyLog
 
+        logger.info("Checking reminder status")
+
         # Verificar se já registrou hoje
         hoje = date.today()
         registro_hoje = db.query(DailyLog).filter(
@@ -303,6 +314,14 @@ async def get_reminder_status(db: Session = Depends(get_db)):
         precisa_lembrete = not registro_hoje
         mensagem = "Você já registrou hoje! ✓" if registro_hoje else "Lembre-se de registrar seu dia!"
 
+        logger.info(
+            "Reminder status checked",
+            extra={
+                "recorded_today": bool(registro_hoje),
+                "missing_count": len(dias_sem_registro)
+            }
+        )
+
         return {
             "needs_reminder": precisa_lembrete,
             "recorded_today": bool(registro_hoje),
@@ -314,6 +333,7 @@ async def get_reminder_status(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
+        logger.error(f"Error checking reminder status: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error checking reminder status: {str(e)}")
 
 
@@ -337,7 +357,10 @@ async def get_insights(
     Formato de retorno otimizado para frontend charts (Chart.js, Recharts, etc).
     """
     try:
+        logger.info(f"Generating insights for {days} days")
+
         if days > 90:
+            logger.warning(f"Requested days ({days}) exceeds maximum (90)")
             raise HTTPException(status_code=400, detail="Maximum 90 days allowed")
 
         from database.models import DailyLog
@@ -348,6 +371,8 @@ async def get_insights(
         registros = db.query(DailyLog).filter(
             DailyLog.date >= data_inicio
         ).order_by(DailyLog.date.asc()).all()
+
+        logger.info(f"Found {len(registros)} records for insights")
 
         if not registros:
             return {
@@ -493,6 +518,7 @@ async def get_insights(
         }
 
     except Exception as e:
+        logger.error(f"Error generating insights: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
 
 
