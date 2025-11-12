@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 from agent.core_agent import CharleeAgent
 from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
 from agent.specialized_agents.capacity_guard_agent import CapacityGuardAgent
+from agent.specialized_agents.daily_tracking_agent import DailyTrackingAgent
 
 
 class AgentOrchestrator:
@@ -39,6 +40,7 @@ class AgentOrchestrator:
 
         self.cycle_agent = CycleAwareAgent(db=db)
         self.capacity_agent = CapacityGuardAgent(db=db)
+        self.daily_tracking_agent = DailyTrackingAgent(db=db)
 
         # Track current context
         self.context: Dict[str, Any] = {
@@ -61,7 +63,9 @@ class AgentOrchestrator:
         intent = self._analyze_intent(message)
 
         # Route to appropriate agent based on intent
-        if intent == "wellness" or intent == "cycle":
+        if intent == "daily_tracking":
+            response = self._handle_daily_tracking(message)
+        elif intent == "wellness" or intent == "cycle":
             response = self._handle_wellness(message)
         elif intent == "capacity" or intent == "workload":
             response = self._handle_capacity(message)
@@ -145,6 +149,29 @@ class AgentOrchestrator:
             "marcar como",
         ]
 
+        # Daily tracking keywords
+        daily_tracking_keywords = [
+            "registrar dia",
+            "registro diário",
+            "como foi o dia",
+            "dormi",
+            "sono",
+            "acordei",
+            "energia hoje",
+            "produtividade hoje",
+            "deep work",
+            "padrões",
+            "identificar padrão",
+            "otimizar",
+            "sugestões",
+            "análise",
+            "últimos dias",
+        ]
+
+        # Check for daily tracking intent
+        if any(keyword in message_lower for keyword in daily_tracking_keywords):
+            return "daily_tracking"
+
         # Check for wellness intent
         if any(keyword in message_lower for keyword in wellness_keywords):
             return "wellness"
@@ -159,6 +186,19 @@ class AgentOrchestrator:
 
         # Default to general
         return "general"
+
+    def _handle_daily_tracking(self, message: str) -> str:
+        """Handle daily tracking and pattern analysis queries."""
+        self.context["last_agent_used"] = "daily_tracking"
+        self.context["conversation_topic"] = "daily_tracking"
+
+        # Get response from daily tracking agent
+        response = self.daily_tracking_agent.print_response(message)
+
+        # Extract text from response if it's a RunResponse object
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
 
     def _handle_wellness(self, message: str) -> str:
         """Handle wellness/cycle-related queries."""
@@ -331,12 +371,18 @@ class AgentOrchestrator:
             "user_id": self.user_id,
             "last_agent_used": self.context.get("last_agent_used"),
             "conversation_topic": self.context.get("conversation_topic"),
-            "agents_available": {"core": True, "cycle_aware": True, "capacity_guard": True},
+            "agents_available": {
+                "core": True,
+                "cycle_aware": True,
+                "capacity_guard": True,
+                "daily_tracking": True,
+            },
             "orchestration_features": {
                 "intelligent_routing": True,
                 "cross_agent_consultation": True,
                 "capacity_aware_task_creation": True,
                 "wellness_context_injection": True,
+                "daily_tracking_and_patterns": True,
             },
         }
 
@@ -356,7 +402,10 @@ class AgentOrchestrator:
         consultation_needed = self._check_consultation_needed(message)
 
         # Determine which agent would be used
-        if intent == "wellness":
+        if intent == "daily_tracking":
+            agent = "DailyTrackingAgent"
+            reason = "Mensagem contém palavras-chave relacionadas a registro diário e padrões"
+        elif intent == "wellness":
             agent = "CycleAwareAgent"
             reason = "Mensagem contém palavras-chave relacionadas a bem-estar/ciclo menstrual"
         elif intent == "capacity":
@@ -387,7 +436,27 @@ class AgentOrchestrator:
         message_lower = message.lower()
         matched = []
 
-        if intent == "wellness":
+        if intent == "daily_tracking":
+            daily_tracking_keywords = [
+                "registrar dia",
+                "registro diário",
+                "como foi o dia",
+                "dormi",
+                "sono",
+                "acordei",
+                "energia hoje",
+                "produtividade hoje",
+                "deep work",
+                "padrões",
+                "identificar padrão",
+                "otimizar",
+                "sugestões",
+                "análise",
+                "últimos dias",
+            ]
+            matched = [kw for kw in daily_tracking_keywords if kw in message_lower]
+
+        elif intent == "wellness":
             wellness_keywords = [
                 "ciclo",
                 "menstrua",

@@ -68,8 +68,8 @@ dmypy.json
 test_output/
 *.pyc
 
-# Node modules (NOT package.json or package-lock.json!)
-node_modules/
+node_modules
+package-lock.json
+package.json
 
-# Temporary test data
 test_data.sql

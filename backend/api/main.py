@@ -15,6 +15,7 @@ from api.routes import (
     inbox,
     analytics,
     settings,
+    daily_tracking,
 )
 from api.middleware.rate_limit import (
     limiter,
@@ -195,6 +196,9 @@ app.include_router(priorizacao.router, prefix="/api/v2/priorizacao", tags=["Prio
 app.include_router(inbox.router, prefix="/api/v2/inbox", tags=["Inbox (V2)"])
 app.include_router(analytics.router, prefix="/api/v2/analytics", tags=["Analytics (V2)"])
 app.include_router(settings.router, prefix="/api/v2/settings", tags=["Settings (V2)"])
+app.include_router(
+    daily_tracking.router, prefix="/api/v2/daily-tracking", tags=["Daily Tracking (V2)"]
+)
 
 # ========================================
 # PROMETHEUS METRICS
