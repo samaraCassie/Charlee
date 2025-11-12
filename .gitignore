@@ -67,9 +67,18 @@ dmypy.json
 # Test outputs
 test_output/
 *.pyc
+test_output.txt
+test_results.txt
 
 # Node modules (NOT package.json or package-lock.json!)
 node_modules/
 
 # Temporary test data
 test_data.sql
+
+# Backend specific
+backend/test_output.txt
+backend/test_results.txt
+backend/.ipython/
+package-lock.json
+package.json
