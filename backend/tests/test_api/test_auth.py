@@ -190,7 +190,7 @@ class TestAuthTokens:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_refresh_token(self, client, sample_user):
+    def test_refresh_token(self, client, sample_user, db):
         """Should refresh access token with valid refresh token."""
         # First login to get refresh token
         login_response = client.post(
@@ -200,7 +200,14 @@ class TestAuthTokens:
                 "password": "TestPass123",
             },
         )
+        assert login_response.status_code == status.HTTP_200_OK
         refresh_token = login_response.json()["refresh_token"]
+
+        # Verify token was saved in database
+        from database.models import RefreshToken
+        db_token = db.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
+        assert db_token is not None, "Refresh token should be saved in database"
+        assert db_token.revoked is False, "Refresh token should not be revoked"
 
         # Refresh the token
         response = client.post(
@@ -208,7 +215,7 @@ class TestAuthTokens:
             json={"refresh_token": refresh_token},
         )
 
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK, f"Expected 200, got {response.status_code}. Response: {response.json()}"
         data = response.json()
         assert "access_token" in data
         assert data["token_type"] == "bearer"
