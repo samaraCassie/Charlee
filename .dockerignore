@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Development
+.git/
+.github/
+.gitignore
+.pre-commit-config.yaml
+*.md
+docs/
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Frontend (não necessário no backend)
+interfaces/web/
+node_modules/
+*.log
+
+# Scripts de desenvolvimento
+scripts/
+check-ci.sh
+
+# Backups
+backups/
+*.sql
+*.dump
+
+# OS
+.DS_Store
+Thumbs.db

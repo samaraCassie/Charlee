@@ -123,9 +123,17 @@ python3 tests/test_conversation_history.py
 
 Documentação detalhada em [`docs/`](docs/):
 
+### Implementação
 - **[V1_IMPLEMENTATION.md](docs/V1_IMPLEMENTATION.md)**: Base do sistema (Big Rocks, Tarefas, CRUD)
 - **[V2_IMPLEMENTATION.md](docs/V2_IMPLEMENTATION.md)**: Sistemas de bem-estar e capacidade
 - **[MEMORY_IMPLEMENTATION.md](docs/MEMORY_IMPLEMENTATION.md)**: Memória e sessões com Redis
+
+### Deploy e Produção
+- **[PRODUCTION_QUICKSTART.md](docs/PRODUCTION_QUICKSTART.md)**: ⚡ Quick start - Deploy em 20 minutos
+- **[PRODUCTION_DEPLOYMENT_OPTIONS.md](docs/PRODUCTION_DEPLOYMENT_OPTIONS.md)**: Guia completo de opções de banco de dados e deploy
+- **[DATABASE_MIGRATION_GUIDE.md](docs/DATABASE_MIGRATION_GUIDE.md)**: Passo-a-passo para migrar PostgreSQL local para produção
+- **[AWS_DEPLOYMENT_GUIDE.md](docs/AWS_DEPLOYMENT_GUIDE.md)**: AWS é mais caro? Análise completa de custos
+- **[DEPLOYMENT_SUMMARY.md](docs/DEPLOYMENT_SUMMARY.md)**: Resumo executivo com recomendações
 
 ## 🏛️ Arquitetura
 

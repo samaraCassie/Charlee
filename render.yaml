@@ -1,0 +1,72 @@
+# Render Blueprint for Charlee
+# https://render.com/docs/blueprint-spec
+
+services:
+  # ========================================
+  # Backend API Service
+  # ========================================
+  - type: web
+    name: charlee-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free  # Change to 'starter' for production ($7/mo)
+    region: oregon  # or 'frankfurt', 'singapore'
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      # Database
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+
+      # Redis
+      - key: REDIS_URL
+        sync: false  # Set manually (e.g., from Upstash)
+
+      # JWT Secrets (generate with: openssl rand -hex 32)
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_REFRESH_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        value: 7
+
+      # Anthropic API
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set manually
+
+      # Application
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: false
+
+      # Frontend URL (for CORS)
+      - key: FRONTEND_URL
+        sync: false  # Set to Vercel URL
+
+      # Database pool settings
+      - key: DB_POOL_SIZE
+        value: 2  # Lower for free tier
+      - key: DB_MAX_OVERFLOW
+        value: 3
+      - key: DB_POOL_TIMEOUT
+        value: 30
+      - key: DB_POOL_RECYCLE
+        value: 3600
+
+# ========================================
+# Optional: PostgreSQL Database
+# ========================================
+# Uncomment if you want to use Render's PostgreSQL instead of Supabase
+#
+# databases:
+#   - name: charlee-db
+#     databaseName: charlee_db
+#     user: charlee
+#     plan: free  # or 'starter' ($7/mo)
+#     region: oregon
+#     postgresMajorVersion: 15
