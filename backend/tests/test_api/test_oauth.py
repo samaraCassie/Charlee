@@ -1,7 +1,6 @@
 """Tests for OAuth authentication utilities and helper functions."""
 
 
-
 class TestOAuthHelpers:
     """Test suite for OAuth helper functions."""
 
