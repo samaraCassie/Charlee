@@ -264,7 +264,7 @@ async def refresh_token(
         .filter(
             RefreshToken.token == refresh_request.refresh_token,
             RefreshToken.user_id == token_data.user_id,
-            RefreshToken.revoked == False,
+            not RefreshToken.revoked,
         )
         .first()
     )
@@ -334,7 +334,7 @@ async def logout(
         .filter(
             RefreshToken.token == refresh_request.refresh_token,
             RefreshToken.user_id == current_user.id,
-            RefreshToken.revoked == False,
+            not RefreshToken.revoked,
         )
         .first()
     )
@@ -370,7 +370,7 @@ async def logout_all(
     # Revoke all refresh tokens for the user
     db.query(RefreshToken).filter(
         RefreshToken.user_id == current_user.id,
-        RefreshToken.revoked == False,
+        not RefreshToken.revoked,
     ).update({"revoked": True, "revoked_at": datetime.utcnow()})
 
     db.commit()

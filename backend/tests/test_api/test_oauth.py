@@ -1,6 +1,5 @@
 """Tests for OAuth authentication utilities and helper functions."""
 
-import pytest
 
 
 class TestOAuthHelpers:
