@@ -209,6 +209,13 @@ class TestAuthTokens:
         assert db_token is not None, "Refresh token should be saved in database"
         assert db_token.revoked is False, "Refresh token should not be revoked"
 
+        # Test that we can decode the refresh token
+        from api.auth.jwt import decode_refresh_token
+        decoded = decode_refresh_token(refresh_token)
+        assert decoded is not None, "Failed to decode refresh token. Token might be invalid or using wrong secret."
+        assert decoded.user_id == sample_user.id, f"User ID mismatch: {decoded.user_id} != {sample_user.id}"
+        assert decoded.token_type == "refresh", f"Token type should be 'refresh', got '{decoded.token_type}'"
+
         # Refresh the token
         response = client.post(
             "/api/v1/auth/refresh",
