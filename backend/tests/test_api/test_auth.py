@@ -1,6 +1,5 @@
 """Tests for Authentication API endpoints."""
 
-
 from fastapi import status
 
 

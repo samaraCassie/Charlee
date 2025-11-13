@@ -65,6 +65,7 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
         Encoded JWT refresh token string
     """
     import uuid
+
     to_encode = data.copy()
 
     if expires_delta:
