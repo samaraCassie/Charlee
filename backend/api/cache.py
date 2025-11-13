@@ -1,11 +1,14 @@
 """Redis caching utilities."""
 
-import os
-import json
 import hashlib
+import json
+import os
 from functools import wraps
-from typing import Optional, Callable, Any
-from redis import Redis, ConnectionError as RedisConnectionError
+from typing import Any, Callable, Optional
+
+from redis import ConnectionError as RedisConnectionError
+from redis import Redis
+
 from api.middleware.logging_config import get_logger
 
 logger = get_logger(__name__)

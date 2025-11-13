@@ -1,10 +1,13 @@
 """Agent API routes for interacting with Charlee."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database.config import get_db
+from sqlalchemy.orm import Session
+
 from agent.orchestrator import create_orchestrator
+from api.auth.dependencies import get_current_user
+from database.config import get_db
+from database.models import User
 
 router = APIRouter()
 
@@ -13,7 +16,6 @@ class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
 
     message: str
-    user_id: str = "samara"
     session_id: str | None = None
 
 
@@ -25,7 +27,11 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_with_charlee(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_with_charlee(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Chat with Charlee agent usando orquestração inteligente.
 
@@ -40,7 +46,7 @@ async def chat_with_charlee(request: ChatRequest, db: Session = Depends(get_db))
     try:
         # Create orchestrator (manages all specialized agents)
         orchestrator = create_orchestrator(
-            db=db, user_id=request.user_id, session_id=request.session_id
+            db=db, user_id=current_user.username, session_id=request.session_id
         )
 
         # Route message to appropriate agent
@@ -54,7 +60,9 @@ async def chat_with_charlee(request: ChatRequest, db: Session = Depends(get_db))
 
 @router.get("/status")
 async def get_orchestrator_status(
-    user_id: str = "samara", session_id: str | None = None, db: Session = Depends(get_db)
+    session_id: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
     Obtém o status atual do orquestrador de agentes.
@@ -67,7 +75,9 @@ async def get_orchestrator_status(
     - Features de orquestração ativas
     """
     try:
-        orchestrator = create_orchestrator(db=db, user_id=user_id, session_id=session_id)
+        orchestrator = create_orchestrator(
+            db=db, user_id=current_user.username, session_id=session_id
+        )
 
         return orchestrator.get_status()
 
@@ -76,7 +86,11 @@ async def get_orchestrator_status(
 
 
 @router.post("/analyze-routing")
-async def analyze_routing(request: ChatRequest, db: Session = Depends(get_db)):
+async def analyze_routing(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Analisa como uma mensagem seria roteada pelo orquestrador SEM executá-la.
 
@@ -91,7 +105,7 @@ async def analyze_routing(request: ChatRequest, db: Session = Depends(get_db)):
     """
     try:
         orchestrator = create_orchestrator(
-            db=db, user_id=request.user_id, session_id=request.session_id
+            db=db, user_id=current_user.username, session_id=request.session_id
         )
 
         routing_decision = orchestrator.get_routing_decision(request.message)

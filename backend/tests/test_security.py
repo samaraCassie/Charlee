@@ -1,12 +1,12 @@
 """Security tests for input sanitization and validation."""
 
 from api.security import (
+    SecurityValidator,
+    sanitize_filename,
     sanitize_html,
     sanitize_string,
     validate_color_hex,
-    sanitize_filename,
     validate_email,
-    SecurityValidator,
 )
 
 

@@ -1,10 +1,12 @@
 """Core Charlee Agent - Agente principal do sistema."""
 
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-from agno.db.redis import RedisDb
-from sqlalchemy.orm import Session
 from typing import Optional
+
+from agno.agent import Agent
+from agno.db.redis import RedisDb
+from agno.models.openai import OpenAIChat
+from sqlalchemy.orm import Session
+
 from database import crud, schemas
 
 

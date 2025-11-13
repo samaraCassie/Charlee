@@ -1,11 +1,15 @@
 """Inbox API routes - Inbox rápido e gestão de tarefas prioritárias."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from typing import List
-from database.config import get_db
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from api.auth.dependencies import get_current_user
 from database import schemas
+from database.config import get_db
+from database.models import User
 from skills.priorizacao import create_sistema_priorizacao
 
 router = APIRouter()
@@ -20,7 +24,11 @@ class InboxResponse(BaseModel):
 
 
 @router.get("/rapido", response_model=InboxResponse)
-async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
+async def inbox_rapido(
+    limite: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Inbox Rápido - Top tarefas priorizadas para hoje.
 
@@ -46,13 +54,17 @@ async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
 
 
 @router.get("/hoje", response_model=schemas.TaskListResponse)
-async def tarefas_hoje(db: Session = Depends(get_db)):
+async def tarefas_hoje(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Tarefas com deadline para hoje."""
     from datetime import date
+
     from database import crud
 
     today = date.today()
-    tarefas = crud.get_tasks(db, status="Pendente", limit=50)
+    tarefas = crud.get_tasks(db, user_id=current_user.id, status="Pendente", limit=50)
 
     # Filtrar por deadline hoje
     tarefas_hoje = [t for t in tarefas if t.deadline and t.deadline.date() == today]
@@ -61,13 +73,17 @@ async def tarefas_hoje(db: Session = Depends(get_db)):
 
 
 @router.get("/atrasadas", response_model=schemas.TaskListResponse)
-async def tarefas_atrasadas(db: Session = Depends(get_db)):
+async def tarefas_atrasadas(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Tarefas com deadline já passado."""
     from datetime import date
+
     from database import crud
 
     today = date.today()
-    tarefas = crud.get_tasks(db, status="Pendente", limit=100)
+    tarefas = crud.get_tasks(db, user_id=current_user.id, status="Pendente", limit=100)
 
     # Filtrar por deadline atrasada
     tarefas_atrasadas = [t for t in tarefas if t.deadline and t.deadline.date() < today]
@@ -79,15 +95,19 @@ async def tarefas_atrasadas(db: Session = Depends(get_db)):
 
 
 @router.get("/proxima-semana", response_model=schemas.TaskListResponse)
-async def tarefas_proxima_semana(db: Session = Depends(get_db)):
+async def tarefas_proxima_semana(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Tarefas com deadline nos próximos 7 dias."""
     from datetime import date, timedelta
+
     from database import crud
 
     today = date.today()
     next_week = today + timedelta(days=7)
 
-    tarefas = crud.get_tasks(db, status="Pendente", limit=100)
+    tarefas = crud.get_tasks(db, user_id=current_user.id, status="Pendente", limit=100)
 
     # Filtrar por deadline próxima semana
     tarefas_semana = [t for t in tarefas if t.deadline and today <= t.deadline.date() <= next_week]

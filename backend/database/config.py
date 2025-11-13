@@ -1,9 +1,9 @@
 """Database configuration and connection setup."""
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     db_max_overflow: int = 10
     db_pool_timeout: int = 30
     db_pool_recycle: int = 3600  # Recycle connections after 1 hour
+
+    # Authentication & JWT
+    jwt_secret_key: str = "your-secret-key-change-in-production-use-openssl-rand-hex-32"
+    jwt_refresh_secret_key: str = "your-refresh-secret-key-change-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
 
     # Anthropic API
     anthropic_api_key: str = ""

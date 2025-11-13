@@ -1,12 +1,14 @@
 """DailyTrackingAgent - Agente para registro diário e análise de padrões."""
 
+from datetime import date, datetime, timedelta
+from typing import Dict, List, Optional
+
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from sqlalchemy.orm import Session
-from datetime import date, timedelta, datetime
-from typing import Optional, Dict, List
-from database.models import DailyLog, MenstrualCycle, Task, CyclePatterns
 from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from database.models import CyclePatterns, DailyLog, MenstrualCycle, Task
 
 
 class DailyTrackingAgent(Agent):

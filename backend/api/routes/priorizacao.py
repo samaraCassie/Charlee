@@ -1,10 +1,13 @@
 """Priorização API routes - Sistema de priorização inteligente."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database.config import get_db
+from sqlalchemy.orm import Session
+
+from api.auth.dependencies import get_current_user
 from database import schemas
+from database.config import get_db
+from database.models import User
 from skills.priorizacao import create_sistema_priorizacao
 
 router = APIRouter()
@@ -17,7 +20,11 @@ class InboxResponse(BaseModel):
 
 
 @router.get("/inbox", response_model=InboxResponse)
-async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
+async def inbox_rapido(
+    limite: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Inbox Rápido - Top tarefas priorizadas.
 
@@ -34,7 +41,11 @@ async def inbox_rapido(limite: int = 10, db: Session = Depends(get_db)):
 
 
 @router.post("/recalcular")
-async def recalcular_prioridades(big_rock_id: int | None = None, db: Session = Depends(get_db)):
+async def recalcular_prioridades(
+    big_rock_id: int | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Recalcula prioridades de todas as tarefas pendentes.
 
@@ -49,7 +60,10 @@ async def recalcular_prioridades(big_rock_id: int | None = None, db: Session = D
 
 @router.get("/tarefas-priorizadas", response_model=schemas.TaskListResponse)
 async def listar_tarefas_priorizadas(
-    big_rock_id: int | None = None, limite: int = 20, db: Session = Depends(get_db)
+    big_rock_id: int | None = None,
+    limite: int = 20,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
     Lista tarefas ordenadas por prioridade calculada.

@@ -1,13 +1,16 @@
 """Analytics API routes - Métricas e estatísticas."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from pydantic import BaseModel
-from typing import List
 from datetime import date, timedelta
+from typing import List
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from api.auth.dependencies import get_current_user
 from database.config import get_db
-from database.models import Task, BigRock
+from database.models import BigRock, Task, User
 
 router = APIRouter()
 
@@ -45,7 +48,10 @@ class ProductivityStats(BaseModel):
 
 
 @router.get("/weekly", response_model=List[WeeklyStats])
-async def weekly_stats(db: Session = Depends(get_db)):
+async def weekly_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Estatísticas dos últimos 7 dias."""
     today = date.today()
     stats = []
@@ -58,14 +64,22 @@ async def weekly_stats(db: Session = Depends(get_db)):
         # Contar tarefas concluídas neste dia
         completed = (
             db.query(Task)
-            .filter(Task.status == "Concluída", func.date(Task.concluido_em) == day_date)
+            .filter(
+                Task.user_id == current_user.id,
+                Task.status == "Concluída",
+                func.date(Task.concluido_em) == day_date,
+            )
             .count()
         )
 
         # Contar tarefas pendentes neste dia
         pending = (
             db.query(Task)
-            .filter(Task.status == "Pendente", func.date(Task.deadline) == day_date)
+            .filter(
+                Task.user_id == current_user.id,
+                Task.status == "Pendente",
+                func.date(Task.deadline) == day_date,
+            )
             .count()
         )
 
@@ -75,7 +89,10 @@ async def weekly_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/monthly", response_model=List[MonthlyStats])
-async def monthly_stats(db: Session = Depends(get_db)):
+async def monthly_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Estatísticas dos últimos 6 meses."""
     today = date.today()
     stats = []
@@ -96,6 +113,7 @@ async def monthly_stats(db: Session = Depends(get_db)):
         tasks = (
             db.query(Task)
             .filter(
+                Task.user_id == current_user.id,
                 Task.status == "Concluída",
                 Task.concluido_em >= month_start,
                 Task.concluido_em < month_end,
@@ -109,9 +127,12 @@ async def monthly_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/big-rocks-distribution", response_model=List[BigRockDistribution])
-async def big_rocks_distribution(db: Session = Depends(get_db)):
+async def big_rocks_distribution(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Distribuição de tarefas por Big Rock."""
-    big_rocks = db.query(BigRock).filter(BigRock.ativo).all()
+    big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id, BigRock.ativo).all()
 
     distribution = []
     colors = ["#3b82f6", "#a855f7", "#22c55e", "#f59e0b", "#ef4444", "#94a3b8"]
@@ -123,6 +144,7 @@ async def big_rocks_distribution(db: Session = Depends(get_db)):
         count = (
             db.query(Task)
             .filter(
+                Task.user_id == current_user.id,
                 Task.big_rock_id == br.id,
                 Task.status == "Concluída",
                 Task.concluido_em >= thirty_days_ago,
@@ -139,21 +161,32 @@ async def big_rocks_distribution(db: Session = Depends(get_db)):
 
 
 @router.get("/productivity", response_model=ProductivityStats)
-async def productivity_stats(db: Session = Depends(get_db)):
+async def productivity_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Estatísticas gerais de produtividade."""
 
     # Total de tarefas
-    total_tasks = db.query(Task).count()
+    total_tasks = db.query(Task).filter(Task.user_id == current_user.id).count()
 
     # Tarefas concluídas
-    completed_tasks = db.query(Task).filter(Task.status == "Concluída").count()
+    completed_tasks = (
+        db.query(Task).filter(Task.user_id == current_user.id, Task.status == "Concluída").count()
+    )
 
     # Taxa de conclusão
     completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
 
     # Tarefas atrasadas
     overdue_tasks = (
-        db.query(Task).filter(Task.status == "Pendente", Task.deadline < date.today()).count()
+        db.query(Task)
+        .filter(
+            Task.user_id == current_user.id,
+            Task.status == "Pendente",
+            Task.deadline < date.today(),
+        )
+        .count()
     )
 
     # Tempo médio por tarefa (estimativa)
@@ -172,7 +205,10 @@ async def productivity_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/cycle-productivity")
-async def cycle_productivity(db: Session = Depends(get_db)):
+async def cycle_productivity(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Produtividade por fase do ciclo menstrual."""
 
     # TODO: Implementar análise real quando houver dados de ciclo

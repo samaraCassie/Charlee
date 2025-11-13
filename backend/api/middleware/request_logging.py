@@ -3,8 +3,10 @@
 import time
 import uuid
 from typing import Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from api.middleware.logging_config import get_logger
 
 logger = get_logger(__name__)

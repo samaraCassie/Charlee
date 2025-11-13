@@ -1,13 +1,14 @@
 """Integration tests for complete workflows."""
 
-from fastapi import status
 from datetime import date, timedelta
+
+from fastapi import status
 
 
 class TestBigRockTaskWorkflow:
     """Integration tests for Big Rock and Task workflows."""
 
-    def test_complete_big_rock_workflow(self, client):
+    def test_complete_big_rock_workflow(self, client, auth_headers):
         """Test complete workflow: create Big Rock, create Task, complete Task."""
         # Step 1: Create a Big Rock
         big_rock_response = client.post(
@@ -17,6 +18,7 @@ class TestBigRockTaskWorkflow:
                 "color": "#22c55e",
                 "active": True,
             },
+            headers=auth_headers,
         )
         assert big_rock_response.status_code == status.HTTP_201_CREATED
         big_rock = big_rock_response.json()
@@ -31,6 +33,7 @@ class TestBigRockTaskWorkflow:
                 "big_rock_id": big_rock_id,
                 "deadline": (date.today() + timedelta(days=1)).isoformat(),
             },
+            headers=auth_headers,
         )
         assert task_response.status_code == status.HTTP_201_CREATED
         task = task_response.json()
@@ -39,7 +42,7 @@ class TestBigRockTaskWorkflow:
         assert task["big_rock"]["id"] == big_rock_id
 
         # Step 3: Complete the Task
-        complete_response = client.post(f"/api/v1/tasks/{task_id}/complete")
+        complete_response = client.post(f"/api/v1/tasks/{task_id}/complete", headers=auth_headers)
         assert complete_response.status_code == status.HTTP_200_OK
         completed_task = complete_response.json()
         assert completed_task["status"] == "completed"
@@ -47,7 +50,9 @@ class TestBigRockTaskWorkflow:
 
         # Step 4: Verify Task shows up in filtered list
         list_response = client.get(
-            "/api/v1/tasks", params={"status": "completed", "big_rock_id": big_rock_id}
+            "/api/v1/tasks",
+            params={"status": "completed", "big_rock_id": big_rock_id},
+            headers=auth_headers,
         )
         assert list_response.status_code == status.HTTP_200_OK
         tasks_data = list_response.json()
@@ -55,29 +60,32 @@ class TestBigRockTaskWorkflow:
         assert any(t["id"] == task_id for t in tasks_data["tasks"])
 
         # Step 5: Reopen the Task
-        reopen_response = client.post(f"/api/v1/tasks/{task_id}/reopen")
+        reopen_response = client.post(f"/api/v1/tasks/{task_id}/reopen", headers=auth_headers)
         assert reopen_response.status_code == status.HTTP_200_OK
         reopened_task = reopen_response.json()
         assert reopened_task["status"] == "pending"
 
         # Step 6: Delete the Task
-        delete_task_response = client.delete(f"/api/v1/tasks/{task_id}")
+        delete_task_response = client.delete(f"/api/v1/tasks/{task_id}", headers=auth_headers)
         assert delete_task_response.status_code == status.HTTP_204_NO_CONTENT
 
         # Step 7: Verify Task is gone
-        get_task_response = client.get(f"/api/v1/tasks/{task_id}")
+        get_task_response = client.get(f"/api/v1/tasks/{task_id}", headers=auth_headers)
         assert get_task_response.status_code == status.HTTP_404_NOT_FOUND
 
         # Step 8: Delete the Big Rock
-        delete_big_rock_response = client.delete(f"/api/v1/big-rocks/{big_rock_id}")
+        delete_big_rock_response = client.delete(
+            f"/api/v1/big-rocks/{big_rock_id}", headers=auth_headers
+        )
         assert delete_big_rock_response.status_code == status.HTTP_204_NO_CONTENT
 
-    def test_create_multiple_tasks_for_big_rock(self, client):
+    def test_create_multiple_tasks_for_big_rock(self, client, auth_headers):
         """Test creating multiple tasks for a single Big Rock."""
         # Create Big Rock
         big_rock_response = client.post(
             "/api/v1/big-rocks",
             json={"name": "Career", "color": "#3b82f6"},
+            headers=auth_headers,
         )
         big_rock_id = big_rock_response.json()["id"]
 
@@ -91,23 +99,30 @@ class TestBigRockTaskWorkflow:
                     "type": "task",
                     "big_rock_id": big_rock_id,
                 },
+                headers=auth_headers,
             )
             assert task_response.status_code == status.HTTP_201_CREATED
             task_ids.append(task_response.json()["id"])
 
         # Get all tasks for this Big Rock
-        list_response = client.get("/api/v1/tasks", params={"big_rock_id": big_rock_id})
+        list_response = client.get(
+            "/api/v1/tasks", params={"big_rock_id": big_rock_id}, headers=auth_headers
+        )
         tasks_data = list_response.json()
         assert tasks_data["total"] == 3
 
         # Complete all tasks
         for task_id in task_ids:
-            complete_response = client.post(f"/api/v1/tasks/{task_id}/complete")
+            complete_response = client.post(
+                f"/api/v1/tasks/{task_id}/complete", headers=auth_headers
+            )
             assert complete_response.status_code == status.HTTP_200_OK
 
         # Verify all completed
         completed_list = client.get(
-            "/api/v1/tasks", params={"big_rock_id": big_rock_id, "status": "completed"}
+            "/api/v1/tasks",
+            params={"big_rock_id": big_rock_id, "status": "completed"},
+            headers=auth_headers,
         )
         assert completed_list.json()["total"] == 3
 
@@ -115,7 +130,7 @@ class TestBigRockTaskWorkflow:
 class TestErrorHandlingWorkflow:
     """Integration tests for error handling scenarios."""
 
-    def test_create_task_with_invalid_big_rock(self, client):
+    def test_create_task_with_invalid_big_rock(self, client, auth_headers):
         """Test creating a task with non-existent Big Rock."""
         response = client.post(
             "/api/v1/tasks",
@@ -124,29 +139,31 @@ class TestErrorHandlingWorkflow:
                 "type": "task",
                 "big_rock_id": 99999,
             },
+            headers=auth_headers,
         )
         # Should return 404 due to validation
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
 
-    def test_update_nonexistent_big_rock(self, client):
+    def test_update_nonexistent_big_rock(self, client, auth_headers):
         """Test updating a non-existent Big Rock."""
         response = client.patch(
             "/api/v1/big-rocks/99999",
             json={"name": "Updated Name"},
+            headers=auth_headers,
         )
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_delete_nonexistent_task(self, client):
+    def test_delete_nonexistent_task(self, client, auth_headers):
         """Test deleting a non-existent Task."""
-        response = client.delete("/api/v1/tasks/99999")
+        response = client.delete("/api/v1/tasks/99999", headers=auth_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestPaginationWorkflow:
     """Integration tests for pagination."""
 
-    def test_pagination_with_multiple_tasks(self, client, sample_big_rock):
+    def test_pagination_with_multiple_tasks(self, client, sample_big_rock, auth_headers):
         """Test pagination when creating many tasks."""
         # Create 15 tasks
         for i in range(15):
@@ -157,16 +174,17 @@ class TestPaginationWorkflow:
                     "type": "task",
                     "big_rock_id": sample_big_rock.id,
                 },
+                headers=auth_headers,
             )
 
         # Get first page (limit 10)
-        page1 = client.get("/api/v1/tasks", params={"limit": 10, "skip": 0})
+        page1 = client.get("/api/v1/tasks", params={"limit": 10, "skip": 0}, headers=auth_headers)
         assert page1.status_code == status.HTTP_200_OK
         page1_data = page1.json()
         assert len(page1_data["tasks"]) == 10
 
         # Get second page
-        page2 = client.get("/api/v1/tasks", params={"limit": 10, "skip": 10})
+        page2 = client.get("/api/v1/tasks", params={"limit": 10, "skip": 10}, headers=auth_headers)
         assert page2.status_code == status.HTTP_200_OK
         page2_data = page2.json()
         assert len(page2_data["tasks"]) >= 5
@@ -233,24 +251,25 @@ class TestResponseHeaders:
 class TestConcurrentOperations:
     """Integration tests for concurrent operations."""
 
-    def test_create_and_delete_race_condition(self, client):
+    def test_create_and_delete_race_condition(self, client, auth_headers):
         """Test creating and deleting in quick succession."""
         # Create task
         create_response = client.post(
             "/api/v1/tasks",
             json={"description": "Quick task", "type": "task"},
+            headers=auth_headers,
         )
         task_id = create_response.json()["id"]
 
         # Delete immediately
-        delete_response = client.delete(f"/api/v1/tasks/{task_id}")
+        delete_response = client.delete(f"/api/v1/tasks/{task_id}", headers=auth_headers)
         assert delete_response.status_code == status.HTTP_204_NO_CONTENT
 
         # Try to get - should be 404
-        get_response = client.get(f"/api/v1/tasks/{task_id}")
+        get_response = client.get(f"/api/v1/tasks/{task_id}", headers=auth_headers)
         assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_multiple_updates_same_task(self, client, sample_task):
+    def test_multiple_updates_same_task(self, client, sample_task, auth_headers):
         """Test multiple updates to the same task."""
         updates = [
             {"description": "Updated 1"},
@@ -259,10 +278,12 @@ class TestConcurrentOperations:
         ]
 
         for update in updates:
-            response = client.patch(f"/api/v1/tasks/{sample_task.id}", json=update)
+            response = client.patch(
+                f"/api/v1/tasks/{sample_task.id}", json=update, headers=auth_headers
+            )
             assert response.status_code == status.HTTP_200_OK
 
         # Get final state
-        final_response = client.get(f"/api/v1/tasks/{sample_task.id}")
+        final_response = client.get(f"/api/v1/tasks/{sample_task.id}", headers=auth_headers)
         final_task = final_response.json()
         assert "Updated 3" in final_task["description"]

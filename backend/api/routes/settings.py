@@ -1,11 +1,15 @@
 """Settings API routes - Configurações do usuário e sistema."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from api.auth.dependencies import get_current_user
 from database.config import get_db
+from database.models import User
 
 router = APIRouter()
 
@@ -13,8 +17,9 @@ router = APIRouter()
 class UserSettings(BaseModel):
     """Configurações do usuário."""
 
-    user_id: str = "samara"
-    display_name: str = "Samara"
+    user_id: int
+    username: str
+    display_name: str
     email: Optional[str] = None
     timezone: str = "America/Sao_Paulo"
     language: str = "pt-BR"
@@ -55,31 +60,47 @@ class SystemStats(BaseModel):
 
 
 @router.get("/user", response_model=UserSettings)
-async def get_user_settings(db: Session = Depends(get_db)):
+async def get_user_settings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Obter configurações do usuário."""
     # TODO: Buscar do banco quando implementar tabela de settings
-    return UserSettings()
+    return UserSettings(
+        user_id=current_user.id,
+        username=current_user.username,
+        display_name=current_user.full_name or current_user.username,
+        email=current_user.email,
+    )
 
 
 @router.patch("/user", response_model=UserSettings)
-async def update_user_settings(settings: UserSettings, db: Session = Depends(get_db)):
+async def update_user_settings(
+    settings: UserSettings,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Atualizar configurações do usuário."""
     # TODO: Salvar no banco
     return settings
 
 
 @router.get("/system", response_model=SystemStats)
-async def get_system_stats(db: Session = Depends(get_db)):
+async def get_system_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Obter estatísticas do sistema."""
-    from database.models import Task, BigRock
+    from database.models import BigRock, Task
 
-    total_tasks = db.query(Task).count()
-    total_big_rocks = db.query(BigRock).count()
+    total_tasks = db.query(Task).filter(Task.user_id == current_user.id).count()
+    total_big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).count()
+    total_users = db.query(User).count()
 
     return {
         "version": "2.0.0",
         "uptime_seconds": 0,  # TODO: Implementar tracking de uptime
-        "total_users": 1,
+        "total_users": total_users,
         "total_tasks": total_tasks,
         "total_big_rocks": total_big_rocks,
         "last_backup": None,  # TODO: Implementar sistema de backup
@@ -87,7 +108,11 @@ async def get_system_stats(db: Session = Depends(get_db)):
 
 
 @router.post("/reset")
-async def reset_user_data(confirm: bool = False, db: Session = Depends(get_db)):
+async def reset_user_data(
+    confirm: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Resetar todos os dados do usuário (CUIDADO!)."""
     if not confirm:
         return {
@@ -100,13 +125,16 @@ async def reset_user_data(confirm: bool = False, db: Session = Depends(get_db)):
 
 
 @router.post("/export")
-async def export_user_data(db: Session = Depends(get_db)):
+async def export_user_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Exportar todos os dados do usuário."""
-    from database.models import Task, BigRock
+    from database.models import BigRock, Task
 
     # Buscar todos os dados
-    big_rocks = db.query(BigRock).all()
-    tarefas = db.query(Task).all()
+    big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).all()
+    tarefas = db.query(Task).filter(Task.user_id == current_user.id).all()
 
     export_data = {
         "version": "2.0.0",

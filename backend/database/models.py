@@ -1,20 +1,159 @@
 """SQLAlchemy database models for Charlee V1."""
 
 from datetime import datetime
+
 from sqlalchemy import (
+    JSON,
     Boolean,
+    CheckConstraint,
     Column,
-    Integer,
+    Date,
+    DateTime,
     Float,
+    ForeignKey,
+    Integer,
     String,
     Text,
-    DateTime,
-    Date,
-    ForeignKey,
-    CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
+
 from database.config import Base
+
+# ==================== Authentication Models ====================
+
+
+class User(Base):
+    """
+    User - Authentication and user management.
+
+    Represents users in the system with secure password storage
+    and authentication capabilities.
+    """
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+
+    # User profile
+    full_name = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
+
+    # OAuth fields
+    oauth_provider = Column(String(50), nullable=True)  # 'google', 'github', None (local)
+    oauth_id = Column(String(255), nullable=True, index=True)  # Provider's user ID
+    avatar_url = Column(String(500), nullable=True)
+
+    # Account lockout fields
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_failed_login = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+
+    # Relationships
+    big_rocks = relationship("BigRock", back_populates="user", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    menstrual_cycles = relationship(
+        "MenstrualCycle", back_populates="user", cascade="all, delete-orphan"
+    )
+    daily_logs = relationship("DailyLog", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
+    audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+
+    def is_locked(self) -> bool:
+        """Check if account is currently locked."""
+        if self.locked_until is None:
+            return False
+        return datetime.utcnow() < self.locked_until
+
+    def reset_failed_attempts(self) -> None:
+        """Reset failed login attempts counter."""
+        self.failed_login_attempts = 0
+        self.locked_until = None
+        self.last_failed_login = None
+
+    def __repr__(self):
+        return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
+
+
+class RefreshToken(Base):
+    """
+    Refresh Token - Store refresh tokens for token rotation.
+
+    Stores refresh tokens to enable token revocation and rotation.
+    """
+
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String(500), unique=True, nullable=False, index=True)
+
+    # Token metadata
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    revoked = Column(Boolean, default=False)
+    revoked_at = Column(DateTime, nullable=True)
+
+    # Device/session tracking
+    user_agent = Column(String(255), nullable=True)
+    ip_address = Column(String(50), nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="refresh_tokens")
+
+    def __repr__(self):
+        return f"<RefreshToken(id={self.id}, user_id={self.user_id}, revoked={self.revoked})>"
+
+
+class AuditLog(Base):
+    """
+    Audit Log - Track authentication and security events.
+
+    Records important security events for compliance and security monitoring.
+    """
+
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+
+    # Event information
+    event_type = Column(
+        String(50), nullable=False, index=True
+    )  # 'login', 'logout', 'register', etc.
+    event_status = Column(String(20), nullable=False)  # 'success', 'failure', 'blocked'
+    event_message = Column(Text, nullable=True)
+
+    # Request metadata
+    ip_address = Column(String(50), nullable=True, index=True)
+    user_agent = Column(String(255), nullable=True)
+    request_path = Column(String(255), nullable=True)
+
+    # Additional data (JSON)
+    event_metadata = Column(JSON, nullable=True)  # Extra contextual information
+
+    # Timestamp
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    user = relationship("User", back_populates="audit_logs")
+
+    def __repr__(self):
+        return f"<AuditLog(id={self.id}, event_type='{self.event_type}', status='{self.event_status}')>"
+
+
+# ==================== Core Models ====================
 
 
 class BigRock(Base):
@@ -28,16 +167,20 @@ class BigRock(Base):
     __tablename__ = "big_rocks"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = Column(String(100), nullable=False)
     color = Column(String(20))  # For future UI (e.g., "#FF5733")
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationship
+    # Relationships
+    user = relationship("User", back_populates="big_rocks")
     tasks = relationship("Task", back_populates="big_rock")
 
     def __repr__(self):
-        return f"<BigRock(id={self.id}, name='{self.name}')>"
+        return f"<BigRock(id={self.id}, name='{self.name}', user_id={self.user_id})>"
 
 
 class Task(Base):
@@ -53,6 +196,9 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     description = Column(Text, nullable=False)
     type = Column(
         String(20),
@@ -77,10 +223,11 @@ class Task(Base):
     completed_at = Column(DateTime, nullable=True)
 
     # Relationships
+    user = relationship("User", back_populates="tasks")
     big_rock = relationship("BigRock", back_populates="tasks")
 
     def __repr__(self):
-        return f"<Task(id={self.id}, description='{self.description[:30]}...', status='{self.status}')>"
+        return f"<Task(id={self.id}, description='{self.description[:30]}...', status='{self.status}', user_id={self.user_id})>"
 
     def mark_as_completed(self):
         """Mark task as completed."""
@@ -115,6 +262,9 @@ class MenstrualCycle(Base):
     __tablename__ = "menstrual_cycles"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     start_date = Column(Date, nullable=False)
     phase = Column(
         String(20),
@@ -134,8 +284,11 @@ class MenstrualCycle(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
+    user = relationship("User", back_populates="menstrual_cycles")
+
     def __repr__(self):
-        return f"<MenstrualCycle(date={self.start_date}, phase='{self.phase}')>"
+        return f"<MenstrualCycle(date={self.start_date}, phase='{self.phase}', user_id={self.user_id})>"
 
 
 class CyclePatterns(Base):
@@ -210,9 +363,13 @@ class DailyLog(Base):
     """
 
     __tablename__ = "daily_logs"
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uix_user_date"),)
 
     id = Column(Integer, primary_key=True, index=True)
-    date = Column(Date, unique=True, nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    date = Column(Date, nullable=False)
 
     # Sleep
     wake_time = Column(String(5), nullable=True)  # HH:MM
@@ -244,8 +401,11 @@ class DailyLog(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
+    user = relationship("User", back_populates="daily_logs")
+
     def __repr__(self):
-        return f"<DailyLog(date={self.date})>"
+        return f"<DailyLog(date={self.date}, user_id={self.user_id})>"
 
 
 # Additional indexes for V2

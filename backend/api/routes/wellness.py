@@ -1,10 +1,13 @@
 """Wellness API routes - Ciclo menstrual e bem-estar."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database.config import get_db
+from sqlalchemy.orm import Session
+
 from agent.specialized_agents.cycle_aware_agent import create_cycle_aware_agent
+from api.auth.dependencies import get_current_user
+from database.config import get_db
+from database.models import User
 
 router = APIRouter()
 
@@ -28,7 +31,11 @@ class AgentResponse(BaseModel):
 
 
 @router.post("/ciclo/registrar", response_model=AgentResponse)
-async def registrar_fase_ciclo(request: CicloRequest, db: Session = Depends(get_db)):
+async def registrar_fase_ciclo(
+    request: CicloRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Registra uma nova fase do ciclo menstrual."""
     agent = create_cycle_aware_agent(db)
 
@@ -46,7 +53,10 @@ async def registrar_fase_ciclo(request: CicloRequest, db: Session = Depends(get_
 
 
 @router.get("/ciclo/atual", response_model=AgentResponse)
-async def obter_fase_atual(db: Session = Depends(get_db)):
+async def obter_fase_atual(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Obtém a fase atual do ciclo e recomendações."""
     agent = create_cycle_aware_agent(db)
     response = agent.obter_fase_atual()
@@ -54,7 +64,11 @@ async def obter_fase_atual(db: Session = Depends(get_db)):
 
 
 @router.get("/ciclo/sugestoes", response_model=AgentResponse)
-async def sugestoes_fase(fase: str | None = None, db: Session = Depends(get_db)):
+async def sugestoes_fase(
+    fase: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Obtém sugestões de tarefas para a fase do ciclo."""
     agent = create_cycle_aware_agent(db)
     response = agent.sugerir_tarefas_fase(fase)
@@ -62,7 +76,11 @@ async def sugestoes_fase(fase: str | None = None, db: Session = Depends(get_db))
 
 
 @router.get("/ciclo/analise-carga", response_model=AgentResponse)
-async def analisar_carga_ciclo(dias_futuro: int = 7, db: Session = Depends(get_db)):
+async def analisar_carga_ciclo(
+    dias_futuro: int = 7,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Analisa se a carga está adequada para a fase atual."""
     agent = create_cycle_aware_agent(db)
     response = agent.analisar_carga_para_fase(dias_futuro)
