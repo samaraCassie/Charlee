@@ -1,6 +1,6 @@
 """Sistema de Priorização Inteligente de Tarefas."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -109,7 +109,7 @@ class SistemaPriorizacao:
 
         Score: 0.0 a 1.0
         """
-        hoje = datetime.utcnow()
+        hoje = datetime.now(timezone.utc)
         dias_sem_atualizacao = (hoje - tarefa.atualizado_em).days
 
         if dias_sem_atualizacao > 30:

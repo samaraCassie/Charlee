@@ -31,7 +31,7 @@ class TestBigRocksAPI:
             headers=auth_headers,
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_create_big_rock_without_auth(self, client):
         """Should return 403 without authentication."""

@@ -205,7 +205,7 @@ class TestInputBoundaryConditions:
             json={"description": "", "type": "task"},
             headers=auth_headers,
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_create_task_with_whitespace_only_description(self, client, auth_headers):
         """Should reject whitespace-only description."""
@@ -214,7 +214,7 @@ class TestInputBoundaryConditions:
             json={"description": "   ", "type": "task"},
             headers=auth_headers,
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_create_big_rock_with_invalid_color_format(self, client, auth_headers):
         """Should reject invalid color formats."""
@@ -223,7 +223,7 @@ class TestInputBoundaryConditions:
             json={"name": "Test", "color": "not-a-color"},
             headers=auth_headers,
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_create_big_rock_with_hex_without_hash(self, client, auth_headers):
         """Should reject hex color without # prefix."""
@@ -232,4 +232,4 @@ class TestInputBoundaryConditions:
             json={"name": "Test", "color": "123456"},
             headers=auth_headers,
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

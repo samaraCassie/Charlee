@@ -1,6 +1,6 @@
 """SQLAlchemy database models for Charlee V1."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
@@ -19,6 +19,13 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from database.config import Base
+
+
+# Helper function for timezone-aware datetime defaults
+def utc_now():
+    """Return current UTC datetime with timezone info."""
+    return datetime.now(timezone.utc)
+
 
 # ==================== Authentication Models ====================
 
@@ -54,8 +61,8 @@ class User(Base):
     last_failed_login = Column(DateTime, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     last_login = Column(DateTime, nullable=True)
 
     # Relationships
@@ -74,7 +81,11 @@ class User(Base):
         """Check if account is currently locked."""
         if self.locked_until is None:
             return False
-        return datetime.utcnow() < self.locked_until
+        # Ensure locked_until is timezone-aware
+        locked_until = self.locked_until
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) < locked_until
 
     def reset_failed_attempts(self) -> None:
         """Reset failed login attempts counter."""
@@ -101,7 +112,7 @@ class RefreshToken(Base):
 
     # Token metadata
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     revoked = Column(Boolean, default=False)
     revoked_at = Column(DateTime, nullable=True)
 
@@ -144,7 +155,7 @@ class AuditLog(Base):
     event_metadata = Column(JSON, nullable=True)  # Extra contextual information
 
     # Timestamp
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # Relationships
     user = relationship("User", back_populates="audit_logs")
@@ -173,7 +184,7 @@ class BigRock(Base):
     name = Column(String(100), nullable=False)
     color = Column(String(20))  # For future UI (e.g., "#FF5733")
     active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="big_rocks")
@@ -218,8 +229,8 @@ class Task(Base):
     priority_score = Column(Float, default=0.0)  # Score calculated by algorithm
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     completed_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -232,14 +243,14 @@ class Task(Base):
     def mark_as_completed(self):
         """Mark task as completed."""
         self.status = "completed"
-        self.completed_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def reopen(self):
         """Reopen a completed task."""
         self.status = "pending"
         self.completed_at = None
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
 
 # Performance indexes (created via Alembic migrations)
@@ -282,7 +293,7 @@ class MenstrualCycle(Base):
     )
 
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="menstrual_cycles")
@@ -314,8 +325,8 @@ class CyclePatterns(Base):
     suggestions = Column(Text, nullable=True)  # Suggestions separated by ;
     samples_used = Column(Integer, default=0)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     def __repr__(self):
         return f"<CyclePatterns(phase='{self.phase}', confidence={self.confidence_score})>"
@@ -346,7 +357,7 @@ class Workload(Base):
     at_risk = Column(Boolean, default=False)
     risk_reason = Column(Text, nullable=True)
 
-    calculated_at = Column(DateTime, default=datetime.utcnow)
+    calculated_at = Column(DateTime, default=utc_now)
 
     # Relationships
     big_rock = relationship("BigRock")
@@ -399,7 +410,7 @@ class DailyLog(Base):
     special_events = Column(Text, nullable=True)  # Comma-separated
     free_notes = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="daily_logs")
@@ -408,7 +419,225 @@ class DailyLog(Base):
         return f"<DailyLog(date={self.date}, user_id={self.user_id})>"
 
 
+# ==================== Settings Model ====================
+
+
+class UserSettings(Base):
+    """
+    User Settings - User preferences and configuration.
+
+    Stores user-specific settings and preferences.
+    """
+
+    __tablename__ = "user_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+
+    # Display preferences
+    theme = Column(String(20), default="auto")  # auto, light, dark
+    density = Column(String(20), default="comfortable")  # compact, comfortable, spacious
+    timezone = Column(String(50), default="America/Sao_Paulo")
+    language = Column(String(10), default="pt-BR")
+
+    # Notification preferences
+    notifications_enabled = Column(Boolean, default=True)
+    email_notifications = Column(Boolean, default=False)
+    push_notifications = Column(Boolean, default=True)
+
+    # Work preferences
+    work_hours_per_day = Column(Integer, default=8)
+    work_days_per_week = Column(Integer, default=5)
+    planning_horizon_days = Column(Integer, default=7)
+
+    # Wellness preferences
+    cycle_tracking_enabled = Column(Boolean, default=True)
+    cycle_length_days = Column(Integer, default=28)
+
+    # Integration settings (JSON for flexibility)
+    integrations = Column(JSON, default={})
+    # Example: {"google_calendar": {"enabled": false}, "notion": {"enabled": false}}
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<UserSettings(user_id={self.user_id}, theme='{self.theme}')>"
+
+
+# ==================== Integration Layer Models (V3.1) ====================
+
+
+class SystemEvent(Base):
+    """
+    System Event - Event Bus for inter-module communication.
+
+    Stores all events that occur in the system for pub/sub architecture.
+    Enables modules to communicate asynchronously.
+    """
+
+    __tablename__ = "system_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Event identification
+    tipo = Column(String(100), nullable=False, index=True)
+    # Examples: 'task_created', 'project_accepted', 'focus_started',
+    # 'cycle_phase_changed', 'capacity_alert', 'okr_updated'
+
+    modulo_origem = Column(String(50), nullable=False, index=True)
+    # Examples: 'task_manager', 'projects', 'focus', 'wellness', 'capacity'
+
+    # Event data
+    payload = Column(JSON, nullable=False)
+    # Event-specific data
+
+    # Processing
+    prioridade = Column(Integer, default=5, index=True)
+    processado = Column(Boolean, default=False, index=True)
+
+    # Timestamps
+    criado_em = Column(DateTime, default=utc_now, index=True)
+    processado_em = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<SystemEvent(id={self.id}, tipo='{self.tipo}', origem='{self.modulo_origem}')>"
+
+
+class GlobalContext(Base):
+    """
+    Global Context - Snapshot of current system state.
+
+    Maintains a holistic view of user's current context including
+    wellness, capacity, focus state, etc. Used for context-aware decisions.
+    """
+
+    __tablename__ = "global_context"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Current state
+    fase_ciclo = Column(String(20), nullable=True)
+    energia_atual = Column(Integer, CheckConstraint("energia_atual BETWEEN 1 AND 10"), default=7)
+    carga_trabalho_percentual = Column(Float, default=50.0)
+    em_sessao_foco = Column(Boolean, default=False)
+
+    # Aggregated metrics
+    tarefas_pendentes = Column(Integer, default=0)
+    projetos_ativos = Column(Integer, default=0)
+    notificacoes_nao_lidas = Column(Integer, default=0)
+
+    # Temporal context
+    hora_dia = Column(Integer, CheckConstraint("hora_dia BETWEEN 0 AND 23"), nullable=True)
+    dia_semana = Column(Integer, CheckConstraint("dia_semana BETWEEN 0 AND 6"), nullable=True)
+    periodo_produtivo = Column(String(20), nullable=True)
+    # Examples: 'manha', 'tarde', 'noite'
+
+    # Emotional state (inferred)
+    nivel_stress = Column(Integer, CheckConstraint("nivel_stress BETWEEN 1 AND 10"), default=5)
+    necessita_pausa = Column(Boolean, default=False)
+
+    # Timestamps
+    atualizado_em = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<GlobalContext(user_id={self.user_id}, fase='{self.fase_ciclo}', energia={self.energia_atual})>"
+
+
+class CrossModuleRelation(Base):
+    """
+    Cross Module Relation - Links between entities from different modules.
+
+    Tracks relationships between entities across different modules
+    (e.g., project → task, notification → task, task → okr).
+    """
+
+    __tablename__ = "cross_module_relations"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Relation type
+    tipo_relacao = Column(String(50), nullable=False, index=True)
+    # Examples: 'project_to_task', 'notification_to_task',
+    # 'task_to_okr', 'project_to_portfolio'
+
+    # Origin entity
+    modulo_origem = Column(String(50), nullable=False, index=True)
+    entidade_origem_id = Column(Integer, nullable=False, index=True)
+
+    # Destination entity
+    modulo_destino = Column(String(50), nullable=False, index=True)
+    entidade_destino_id = Column(Integer, nullable=False, index=True)
+
+    # Additional metadata
+    relation_metadata = Column(JSON, nullable=True)
+
+    # Timestamps
+    criado_em = Column(DateTime, default=utc_now)
+
+    def __repr__(self):
+        return f"<CrossModuleRelation(tipo='{self.tipo_relacao}', {self.modulo_origem}→{self.modulo_destino})>"
+
+
+class IntegratedDecision(Base):
+    """
+    Integrated Decision - Cross-module decisions.
+
+    Records decisions that involve multiple modules and require
+    holistic context consideration.
+    """
+
+    __tablename__ = "integrated_decisions"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Decision context
+    situacao = Column(Text, nullable=False)
+    # Description of the situation requiring decision
+
+    modulos_envolvidos = Column(JSON, nullable=False)
+    # List of modules involved in the decision
+
+    contexto_considerado = Column(JSON, nullable=False)
+    # Snapshot of context at decision time
+
+    # Decision process
+    opcoes_avaliadas = Column(JSON, nullable=True)
+    # List of options that were considered
+
+    decisao_tomada = Column(Text, nullable=False)
+    justificativa = Column(Text, nullable=False)
+
+    # Execution
+    executado = Column(Boolean, default=False)
+    resultado = Column(Text, nullable=True)
+
+    # Timestamps
+    criado_em = Column(DateTime, default=utc_now, index=True)
+
+    def __repr__(self):
+        return f"<IntegratedDecision(id={self.id}, modulos={len(self.modulos_envolvidos)}, executado={self.executado})>"
+
+
 # Additional indexes for V2
 # CREATE INDEX idx_cycle_date ON menstrual_cycles(start_date);
 # CREATE INDEX idx_workload_period ON workloads(period_start, period_end);
 # CREATE INDEX idx_daily_log_date ON daily_logs(date);
+
+# Additional indexes for V3.1 (Integration Layer)
+# CREATE INDEX idx_events_tipo_processado ON system_events(tipo, processado);
+# CREATE INDEX idx_events_prioridade ON system_events(prioridade DESC, criado_em);
+# CREATE INDEX idx_cross_module_origem ON cross_module_relations(modulo_origem, entidade_origem_id);
+# CREATE INDEX idx_cross_module_destino ON cross_module_relations(modulo_destino, entidade_destino_id);

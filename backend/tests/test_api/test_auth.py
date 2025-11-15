@@ -69,7 +69,7 @@ class TestAuthRegistration:
             },
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_register_invalid_email(self, client):
         """Should return 422 for invalid email format."""
@@ -82,7 +82,7 @@ class TestAuthRegistration:
             },
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     def test_register_short_username(self, client):
         """Should return 422 for username less than 3 characters."""
@@ -95,7 +95,7 @@ class TestAuthRegistration:
             },
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestAuthLogin:
@@ -376,7 +376,7 @@ class TestAuthPasswordChange:
             headers=auth_headers,
         )
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestAuthUserInfo:

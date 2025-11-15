@@ -101,7 +101,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.add(refresh_token)
 
         # Update last login
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.commit()
 
         # Log successful OAuth login
@@ -227,7 +227,7 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
         db.add(refresh_token)
 
         # Update last login
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.commit()
 
         # Log successful OAuth login

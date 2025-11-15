@@ -1,6 +1,6 @@
 """Tests for advanced authentication features: lockout, audit log, and OAuth."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import status
 
@@ -34,7 +34,7 @@ class TestAccountLockout:
     def test_locked_account_cannot_login(self, client, sample_user, db):
         """Should prevent login when account is locked."""
         # Lock the account manually
-        sample_user.locked_until = datetime.utcnow() + timedelta(minutes=30)
+        sample_user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
         db.commit()
 
         # Try to login with correct password
@@ -75,7 +75,7 @@ class TestAccountLockout:
         """Should reset failed attempts if last failure was > 24 hours ago."""
         # Set old failed attempt
         sample_user.failed_login_attempts = 3
-        sample_user.last_failed_login = datetime.utcnow() - timedelta(hours=25)
+        sample_user.last_failed_login = datetime.now(timezone.utc) - timedelta(hours=25)
         db.commit()
 
         # Try to login with wrong password

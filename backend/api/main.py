@@ -240,7 +240,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Detailed health check endpoint with database connectivity."""
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     from fastapi import status as http_status
     from sqlalchemy import text
@@ -250,7 +250,7 @@ async def health_check():
     health_status = {
         "service": "charlee-backend",
         "version": "2.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": "healthy",
         "checks": {},
     }
