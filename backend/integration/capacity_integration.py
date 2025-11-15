@@ -140,9 +140,9 @@ class CapacityIntegration:
         new_load = current_load + impact
 
         # Decision logic
-        if new_load > 110:
+        if new_load > 100:
             recommendation = "reject"
-            reason = f"Capacity would far exceed limits (current: {current_load:.0f}%, +{impact:.0f}% = {new_load:.0f}%)"
+            reason = f"Capacity would exceed 100% (current: {current_load:.0f}%, +{impact:.0f}% = {new_load:.0f}%)"
         elif new_load > 90:
             recommendation = "negotiate"
             reason = f"Capacity would be critical (current: {current_load:.0f}%, +{impact:.0f}% = {new_load:.0f}%)"

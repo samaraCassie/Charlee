@@ -241,11 +241,16 @@ class ContextManager:
             if hasattr(self.current_context, key):
                 setattr(self.current_context, key, value)
 
-        # Update temporal context
+        # Update temporal context (only if not provided in updates)
         now = datetime.now(timezone.utc)
-        self.current_context.hora_dia = now.hour
-        self.current_context.dia_semana = now.weekday()
-        self.current_context.periodo_produtivo = self._get_periodo_produtivo(now.hour)
+        if "hora_dia" not in updates:
+            self.current_context.hora_dia = now.hour
+        if "dia_semana" not in updates:
+            self.current_context.dia_semana = now.weekday()
+        if "periodo_produtivo" not in updates:
+            self.current_context.periodo_produtivo = self._get_periodo_produtivo(
+                self.current_context.hora_dia
+            )
 
         # Save to database
         self.db.commit()
