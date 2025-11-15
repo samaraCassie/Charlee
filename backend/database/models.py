@@ -532,9 +532,7 @@ class GlobalContext(Base):
     # Examples: 'manha', 'tarde', 'noite'
 
     # Emotional state (inferred)
-    nivel_stress = Column(
-        Integer, CheckConstraint("nivel_stress BETWEEN 1 AND 10"), default=5
-    )
+    nivel_stress = Column(Integer, CheckConstraint("nivel_stress BETWEEN 1 AND 10"), default=5)
     necessita_pausa = Column(Boolean, default=False)
 
     # Timestamps

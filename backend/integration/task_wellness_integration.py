@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from database.models import Task
 from integration.event_bus import Event, EventBus
-from integration.event_types import EventType, ModuleName
+from integration.event_types import EventType
 from integration.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
@@ -60,8 +60,7 @@ class TaskWellnessIntegration:
         tasks = (
             self.db.query(Task)
             .filter(
-                Task.user_id == self.context.user_id,
-                Task.status.in_(["Pendente", "Em Andamento"])
+                Task.user_id == self.context.user_id, Task.status.in_(["Pendente", "Em Andamento"])
             )
             .all()
         )
@@ -113,12 +112,7 @@ class TaskWellnessIntegration:
                     f"⚠️ Heavy task '{task.description[:30]}' created during low-energy menstrual phase"
                 )
 
-    def _calculate_priority_adjustment(
-        self,
-        task: Task,
-        phase: str,
-        energia: float
-    ) -> int:
+    def _calculate_priority_adjustment(self, task: Task, phase: str, energia: float) -> int:
         """
         Calculate priority adjustment based on phase and energy.
 
@@ -182,10 +176,7 @@ class TaskWellnessIntegration:
         # Get pending tasks
         tasks = (
             self.db.query(Task)
-            .filter(
-                Task.user_id == self.context.user_id,
-                Task.status == "Pendente"
-            )
+            .filter(Task.user_id == self.context.user_id, Task.status == "Pendente")
             .order_by(Task.deadline.asc().nullslast())
             .limit(limit * 2)  # Get more to filter
             .all()
@@ -234,6 +225,7 @@ class TaskWellnessIntegration:
             # Check deadline (simplified - assuming deadline within 2 days is urgent)
             if task.deadline:
                 from datetime import datetime, timedelta
+
                 if task.deadline <= datetime.now() + timedelta(days=2):
                     return True
                 return False

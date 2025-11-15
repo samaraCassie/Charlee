@@ -4,10 +4,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from sqlalchemy import extract
 from sqlalchemy.orm import Session
 
-from database.models import GlobalContext, Task, User
+from database.models import GlobalContext, Task
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType, ModuleName
 
@@ -34,7 +33,7 @@ class ContextManager:
         self.db = db_session
         self.event_bus = event_bus
         self.user_id = user_id
-        self.current_context: Optional[ContextoGlobal] = self.load_context()
+        self.current_context: Optional[GlobalContext] = self.load_context()
 
         # Subscribe to events that affect context
         self._subscribe_to_events()
@@ -113,7 +112,9 @@ class ContextManager:
         self.event_bus.subscribe(EventType.TASK_CREATED, self.on_task_created)
         self.event_bus.subscribe(EventType.TASK_COMPLETED, self.on_task_completed)
 
-        logger.info(f"📡 Context Manager subscribed to {len(self.event_bus.subscribers)} event types")
+        logger.info(
+            f"📡 Context Manager subscribed to {len(self.event_bus.subscribers)} event types"
+        )
 
     # ==================== Event Handlers ====================
 
@@ -122,28 +123,34 @@ class ContextManager:
         new_phase = event.payload.get("nova_fase")
         energia_esperada = event.payload.get("energia_esperada", 7)
 
-        self.update_context({
-            "fase_ciclo": new_phase,
-            "energia_atual": int(energia_esperada * 10),
-        })
+        self.update_context(
+            {
+                "fase_ciclo": new_phase,
+                "energia_atual": int(energia_esperada * 10),
+            }
+        )
 
         logger.info(f"🌸 Context updated: cycle phase → {new_phase}")
 
     def on_energy_low(self, event: Event) -> None:
         """Handle low energy event."""
-        self.update_context({
-            "nivel_stress": min(self.current_context.nivel_stress + 2, 10),
-            "necessita_pausa": True,
-        })
+        self.update_context(
+            {
+                "nivel_stress": min(self.current_context.nivel_stress + 2, 10),
+                "necessita_pausa": True,
+            }
+        )
 
         logger.warning("⚡ Energy low - stress increased, pause recommended")
 
     def on_energy_high(self, event: Event) -> None:
         """Handle high energy event."""
-        self.update_context({
-            "nivel_stress": max(self.current_context.nivel_stress - 1, 1),
-            "necessita_pausa": False,
-        })
+        self.update_context(
+            {
+                "nivel_stress": max(self.current_context.nivel_stress - 1, 1),
+                "necessita_pausa": False,
+            }
+        )
 
         logger.info("⚡ Energy high - stress decreased")
 
@@ -151,10 +158,12 @@ class ContextManager:
         """Handle capacity warning."""
         carga = event.payload.get("percentual_carga", 75)
 
-        self.update_context({
-            "carga_trabalho_percentual": carga,
-            "nivel_stress": min(int(carga / 10), 10),
-        })
+        self.update_context(
+            {
+                "carga_trabalho_percentual": carga,
+                "nivel_stress": min(int(carga / 10), 10),
+            }
+        )
 
         logger.warning(f"⚖️ Capacity warning: {carga}%")
 
@@ -162,11 +171,13 @@ class ContextManager:
         """Handle critical capacity."""
         carga = event.payload.get("percentual_carga", 90)
 
-        self.update_context({
-            "carga_trabalho_percentual": carga,
-            "nivel_stress": 10,
-            "necessita_pausa": True,
-        })
+        self.update_context(
+            {
+                "carga_trabalho_percentual": carga,
+                "nivel_stress": 10,
+                "necessita_pausa": True,
+            }
+        )
 
         logger.error(f"🚨 CRITICAL capacity: {carga}%")
 
@@ -174,11 +185,13 @@ class ContextManager:
         """Handle capacity normalization."""
         carga = event.payload.get("percentual_carga", 60)
 
-        self.update_context({
-            "carga_trabalho_percentual": carga,
-            "nivel_stress": max(self.current_context.nivel_stress - 2, 1),
-            "necessita_pausa": False,
-        })
+        self.update_context(
+            {
+                "carga_trabalho_percentual": carga,
+                "nivel_stress": max(self.current_context.nivel_stress - 2, 1),
+                "necessita_pausa": False,
+            }
+        )
 
         logger.info(f"✅ Capacity normalized: {carga}%")
 
@@ -194,10 +207,12 @@ class ContextManager:
         # Decrease energy slightly after focus session
         energia_nova = max(self.current_context.energia_atual - 1, 1)
 
-        self.update_context({
-            "em_sessao_foco": False,
-            "energia_atual": energia_nova,
-        })
+        self.update_context(
+            {
+                "em_sessao_foco": False,
+                "energia_atual": energia_nova,
+            }
+        )
 
         logger.info(f"🎯 Focus session ended (quality: {qualidade}/10)")
 

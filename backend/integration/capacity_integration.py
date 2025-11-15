@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from database.models import Task
 from integration.event_bus import Event, EventBus
-from integration.event_types import EventType, ModuleName
+from integration.event_types import EventType
 from integration.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
@@ -62,9 +62,7 @@ class CapacityIntegration:
         suggestions = self._suggest_task_postponements()
 
         if suggestions:
-            logger.warning(
-                f"💡 Suggested {len(suggestions)} tasks for postponement"
-            )
+            logger.warning(f"💡 Suggested {len(suggestions)} tasks for postponement")
 
     def on_capacity_warning(self, event: Event) -> None:
         """
@@ -113,7 +111,7 @@ class CapacityIntegration:
                 Task.user_id == self.context.user_id,
                 Task.status == "Pendente",
                 Task.task_type != "Compromisso Fixo",
-                Task.deadline > later_date
+                Task.deadline > later_date,
             )
             .order_by(Task.deadline.desc())
             .limit(10)

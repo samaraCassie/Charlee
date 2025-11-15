@@ -164,7 +164,9 @@ class EventBus:
                 event = await self.event_queue.get()
 
                 # Get event type
-                event_type = event.tipo if isinstance(event.tipo, EventType) else EventType(event.tipo)
+                event_type = (
+                    event.tipo if isinstance(event.tipo, EventType) else EventType(event.tipo)
+                )
 
                 # Notify subscribers
                 if event_type in self.subscribers:
@@ -180,14 +182,16 @@ class EventBus:
 
                 # Mark as processed in database
                 self.db.query(SystemEvent).filter(
-                    SystemEvent.tipo == (event.tipo.value if isinstance(event.tipo, EventType) else event.tipo),
-                    SystemEvent.modulo_origem == (
+                    SystemEvent.tipo
+                    == (event.tipo.value if isinstance(event.tipo, EventType) else event.tipo),
+                    SystemEvent.modulo_origem
+                    == (
                         event.modulo_origem.value
                         if isinstance(event.modulo_origem, ModuleName)
                         else event.modulo_origem
                     ),
                     SystemEvent.criado_em == event.timestamp,
-                    SystemEvent.processado == False,
+                    not SystemEvent.processado,
                 ).update({"processado": True, "processado_em": datetime.utcnow()})
 
                 self.db.commit()
@@ -238,7 +242,11 @@ class EventBus:
         if event_type:
             query = query.filter(SystemEvent.tipo == event_type.value)
 
-        events = query.order_by(SystemEvent.prioridade.desc(), SystemEvent.criado_em.desc()).limit(limit).all()
+        events = (
+            query.order_by(SystemEvent.prioridade.desc(), SystemEvent.criado_em.desc())
+            .limit(limit)
+            .all()
+        )
 
         return events
 
@@ -254,7 +262,7 @@ class EventBus:
         """
         events = (
             self.db.query(SystemEvent)
-            .filter(SystemEvent.processado == False)
+            .filter(not SystemEvent.processado)
             .order_by(SystemEvent.prioridade.desc(), SystemEvent.criado_em)
             .limit(limit)
             .all()
@@ -282,13 +290,13 @@ class EventBus:
 
         processed_events = (
             self.db.query(SystemEvent)
-            .filter(SystemEvent.criado_em >= cutoff_time, SystemEvent.processado == True)
+            .filter(SystemEvent.criado_em >= cutoff_time, SystemEvent.processado)
             .count()
         )
 
         unprocessed_events = (
             self.db.query(SystemEvent)
-            .filter(SystemEvent.criado_em >= cutoff_time, SystemEvent.processado == False)
+            .filter(SystemEvent.criado_em >= cutoff_time, not SystemEvent.processado)
             .count()
         )
 
@@ -315,9 +323,7 @@ class EventBus:
             "total_events": total_events,
             "processed_events": processed_events,
             "unprocessed_events": unprocessed_events,
-            "processing_rate": (
-                (processed_events / total_events * 100) if total_events > 0 else 0
-            ),
+            "processing_rate": ((processed_events / total_events * 100) if total_events > 0 else 0),
             "events_by_type": dict(events_by_type),
             "events_by_module": dict(events_by_module),
         }

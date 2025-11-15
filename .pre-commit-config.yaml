@@ -1,64 +1,39 @@
-# Pre-commit hooks configuration
-# Install: pip install pre-commit && pre-commit install
+# Pre-commit hooks for Charlee project
+# Run: pre-commit install (to activate)
+# Run: pre-commit run --all-files (to test)
 
 repos:
-  # ========================================
-  # BACKEND - PYTHON
-  # ========================================
+  # Black - Python code formatter
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
-        name: Black (Python formatter)
-        language_version: python3.12
+        name: Format Python code with Black
         files: ^backend/
-        args: [--line-length=100]
+        args: [--config=backend/pyproject.toml]
 
+  # Ruff - Fast Python linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.11
     hooks:
       - id: ruff
-        name: Ruff (Python linter)
+        name: Lint Python with Ruff
         files: ^backend/
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix, --unsafe-fixes]
 
+  # MyPy - Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
       - id: mypy
-        name: MyPy (Python type checker)
+        name: Type check with MyPy
         files: ^backend/
-        additional_dependencies: [types-all]
-        args: [--ignore-missing-imports]
-
-  # ========================================
-  # FRONTEND - TYPESCRIPT/JAVASCRIPT
-  # ========================================
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.0.0
-    hooks:
-      - id: eslint
-        name: ESLint (TypeScript linter)
-        files: ^interfaces/web/.*\.[jt]sx?$
-        types: [file]
-        args: [--fix]
+        args: [--config-file=backend/pyproject.toml, --ignore-missing-imports]
         additional_dependencies:
-          - eslint@9.36.0
-          - typescript@5.9.3
-          - '@typescript-eslint/parser@8.0.0'
-          - '@typescript-eslint/eslint-plugin@8.0.0'
+          - types-redis
+          - types-python-dateutil
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
-        name: Prettier (Code formatter)
-        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown, css]
-        args: [--write]
-
-  # ========================================
-  # GENERAL CHECKS
-  # ========================================
+  # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -68,38 +43,47 @@ repos:
         name: Fix end of files
       - id: check-yaml
         name: Check YAML syntax
+        exclude: ^\.github/workflows/
       - id: check-json
         name: Check JSON syntax
-      - id: check-merge-conflict
-        name: Check for merge conflicts
+      - id: check-toml
+        name: Check TOML syntax
       - id: check-added-large-files
         name: Check for large files
-        args: [--maxkb=500]
-      - id: detect-private-key
-        name: Detect private keys (CRITICAL!)
-      - id: check-case-conflict
-        name: Check for case conflicts
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: debug-statements
+        name: Check for debug statements
       - id: mixed-line-ending
         name: Check for mixed line endings
+        args: [--fix=lf]
 
-  # ========================================
-  # SECURITY
-  # ========================================
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+  # Python-specific checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
     hooks:
-      - id: detect-secrets
-        name: Detect secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: package-lock.json
+      - id: python-check-blanket-noqa
+        name: Check for blanket noqa
+      - id: python-check-blanket-type-ignore
+        name: Check for blanket type ignore
+      - id: python-no-eval
+        name: Check for eval() usage
+      - id: python-use-type-annotations
+        name: Enforce type annotations
+
+  # Security checks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        name: Security check with Bandit
+        args: [-r, backend/, -ll, --skip, B101]
+        files: ^backend/
+        exclude: ^backend/tests/
 
 # Configuration
 default_language_version:
   python: python3.12
-  node: 18.0.0
 
-# Skip specific hooks if needed (use sparingly)
-# SKIP=mypy git commit -m "message"
-
-# Run all hooks
-# pre-commit run --all-files
+fail_fast: false

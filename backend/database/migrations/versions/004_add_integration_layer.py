@@ -123,9 +123,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_global_context_id"), "global_context", ["id"], unique=False)
-    op.create_index(
-        op.f("ix_global_context_user_id"), "global_context", ["user_id"], unique=False
-    )
+    op.create_index(op.f("ix_global_context_user_id"), "global_context", ["user_id"], unique=False)
 
     # Create cross_module_relations table
     op.create_table(
