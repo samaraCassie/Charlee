@@ -74,7 +74,7 @@ def test_initialization(task_wellness):
 def test_event_subscriptions(task_wellness):
     """Test that events are subscribed correctly."""
     # Check that event handlers are registered
-    subscribers = task_wellness.event_bus._subscribers
+    subscribers = task_wellness.event_bus.subscribers
 
     assert EventType.CYCLE_PHASE_CHANGED in subscribers
     assert EventType.ENERGY_LOW in subscribers

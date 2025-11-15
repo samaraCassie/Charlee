@@ -73,7 +73,7 @@ def test_initialization(capacity_integration):
 
 def test_event_subscriptions(capacity_integration):
     """Test that events are subscribed correctly."""
-    subscribers = capacity_integration.event_bus._subscribers
+    subscribers = capacity_integration.event_bus.subscribers
 
     assert EventType.CAPACITY_CRITICAL in subscribers
     assert EventType.CAPACITY_WARNING in subscribers
