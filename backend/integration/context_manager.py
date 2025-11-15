@@ -383,7 +383,7 @@ class ContextManager:
         """Count pending tasks for user."""
         count = (
             self.db.query(Task)
-            .filter(Task.user_id == self.user_id, Task.status.in_(["Pendente", "Em Andamento"]))
+            .filter(Task.user_id == self.user_id, Task.status.in_(["pending", "in_progress"]))
             .count()
         )
         return count

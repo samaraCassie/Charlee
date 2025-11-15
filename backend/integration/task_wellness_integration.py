@@ -60,7 +60,7 @@ class TaskWellnessIntegration:
         tasks = (
             self.db.query(Task)
             .filter(
-                Task.user_id == self.context.user_id, Task.status.in_(["Pendente", "Em Andamento"])
+                Task.user_id == self.context.user_id, Task.status.in_(["pending", "in_progress"])
             )
             .all()
         )
@@ -136,7 +136,7 @@ class TaskWellnessIntegration:
 
         # During luteal, boost completion tasks
         if phase == "lutea":
-            if task.status == "Em Andamento":
+            if task.status == "in_progress":
                 return +1
 
         return 0
@@ -172,7 +172,7 @@ class TaskWellnessIntegration:
         # Get pending tasks
         tasks = (
             self.db.query(Task)
-            .filter(Task.user_id == self.context.user_id, Task.status == "Pendente")
+            .filter(Task.user_id == self.context.user_id, Task.status == "pending")
             .order_by(Task.deadline.asc().nullslast())
             .limit(limit * 2)  # Get more to filter
             .all()
