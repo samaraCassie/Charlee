@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.auth.dependencies import get_current_user
 from database.config import get_db
-from database.models import User
+from database.models import User, UserSettings as DBUserSettings
 
 router = APIRouter()
 
@@ -65,12 +65,39 @@ async def get_user_settings(
     db: Session = Depends(get_db),
 ):
     """Obter configurações do usuário."""
-    # TODO: Buscar do banco quando implementar tabela de settings
+    # Get or create settings
+    db_settings = db.query(DBUserSettings).filter(DBUserSettings.user_id == current_user.id).first()
+
+    if not db_settings:
+        # Create default settings
+        db_settings = DBUserSettings(user_id=current_user.id)
+        db.add(db_settings)
+        db.commit()
+        db.refresh(db_settings)
+
+    # Parse integrations JSON
+    integrations = db_settings.integrations or {}
+
     return UserSettings(
         user_id=current_user.id,
         username=current_user.username,
         display_name=current_user.full_name or current_user.username,
         email=current_user.email,
+        timezone=db_settings.timezone,
+        language=db_settings.language,
+        notifications_enabled=db_settings.notifications_enabled,
+        email_notifications=db_settings.email_notifications,
+        push_notifications=db_settings.push_notifications,
+        theme=db_settings.theme,
+        density=db_settings.density,
+        work_hours_per_day=db_settings.work_hours_per_day,
+        work_days_per_week=db_settings.work_days_per_week,
+        planning_horizon_days=db_settings.planning_horizon_days,
+        cycle_tracking_enabled=db_settings.cycle_tracking_enabled,
+        cycle_length_days=db_settings.cycle_length_days,
+        google_calendar_enabled=integrations.get("google_calendar", {}).get("enabled", False),
+        notion_enabled=integrations.get("notion", {}).get("enabled", False),
+        trello_enabled=integrations.get("trello", {}).get("enabled", False),
     )
 
 
@@ -81,7 +108,37 @@ async def update_user_settings(
     db: Session = Depends(get_db),
 ):
     """Atualizar configurações do usuário."""
-    # TODO: Salvar no banco
+    # Get or create settings
+    db_settings = db.query(DBUserSettings).filter(DBUserSettings.user_id == current_user.id).first()
+
+    if not db_settings:
+        db_settings = DBUserSettings(user_id=current_user.id)
+        db.add(db_settings)
+
+    # Update fields
+    db_settings.timezone = settings.timezone
+    db_settings.language = settings.language
+    db_settings.notifications_enabled = settings.notifications_enabled
+    db_settings.email_notifications = settings.email_notifications
+    db_settings.push_notifications = settings.push_notifications
+    db_settings.theme = settings.theme
+    db_settings.density = settings.density
+    db_settings.work_hours_per_day = settings.work_hours_per_day
+    db_settings.work_days_per_week = settings.work_days_per_week
+    db_settings.planning_horizon_days = settings.planning_horizon_days
+    db_settings.cycle_tracking_enabled = settings.cycle_tracking_enabled
+    db_settings.cycle_length_days = settings.cycle_length_days
+
+    # Update integrations
+    integrations = db_settings.integrations or {}
+    integrations["google_calendar"] = {"enabled": settings.google_calendar_enabled}
+    integrations["notion"] = {"enabled": settings.notion_enabled}
+    integrations["trello"] = {"enabled": settings.trello_enabled}
+    db_settings.integrations = integrations
+
+    db.commit()
+    db.refresh(db_settings)
+
     return settings
 
 
@@ -97,13 +154,14 @@ async def get_system_stats(
     total_big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).count()
     total_users = db.query(User).count()
 
+    # TODO: Implement uptime tracking and backup system in future
     return {
-        "version": "2.0.0",
-        "uptime_seconds": 0,  # TODO: Implementar tracking de uptime
+        "version": "3.1.0",  # Updated to reflect integration layer
+        "uptime_seconds": 0,  # Placeholder for future uptime tracking
         "total_users": total_users,
         "total_tasks": total_tasks,
         "total_big_rocks": total_big_rocks,
-        "last_backup": None,  # TODO: Implementar sistema de backup
+        "last_backup": None,  # Placeholder for future backup system
     }
 
 
