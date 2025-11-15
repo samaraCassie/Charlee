@@ -1,7 +1,7 @@
 """Context Manager - Maintains holistic view of user's current state."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
@@ -65,7 +65,7 @@ class ContextManager:
         Returns:
             Newly created GlobalContext object
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         context = GlobalContext(
             user_id=self.user_id,
@@ -242,7 +242,7 @@ class ContextManager:
                 setattr(self.current_context, key, value)
 
         # Update temporal context
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         self.current_context.hora_dia = now.hour
         self.current_context.dia_semana = now.weekday()
         self.current_context.periodo_produtivo = self._get_periodo_produtivo(now.hour)

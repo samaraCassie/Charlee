@@ -461,8 +461,8 @@ class UserSettings(Base):
     # Example: {"google_calendar": {"enabled": false}, "notion": {"enabled": false}}
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
     user = relationship("User")
@@ -503,7 +503,7 @@ class SystemEvent(Base):
     processado = Column(Boolean, default=False, index=True)
 
     # Timestamps
-    criado_em = Column(DateTime, default=datetime.utcnow, index=True)
+    criado_em = Column(DateTime, default=utc_now, index=True)
     processado_em = Column(DateTime, nullable=True)
 
     def __repr__(self):
@@ -547,7 +547,7 @@ class GlobalContext(Base):
     necessita_pausa = Column(Boolean, default=False)
 
     # Timestamps
-    atualizado_em = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    atualizado_em = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
     user = relationship("User")
@@ -582,10 +582,10 @@ class CrossModuleRelation(Base):
     entidade_destino_id = Column(Integer, nullable=False, index=True)
 
     # Additional metadata
-    metadata = Column(JSON, nullable=True)
+    relation_metadata = Column(JSON, nullable=True)
 
     # Timestamps
-    criado_em = Column(DateTime, default=datetime.utcnow)
+    criado_em = Column(DateTime, default=utc_now)
 
     def __repr__(self):
         return f"<CrossModuleRelation(tipo='{self.tipo_relacao}', {self.modulo_origem}→{self.modulo_destino})>"
@@ -625,7 +625,7 @@ class IntegratedDecision(Base):
     resultado = Column(Text, nullable=True)
 
     # Timestamps
-    criado_em = Column(DateTime, default=datetime.utcnow, index=True)
+    criado_em = Column(DateTime, default=utc_now, index=True)
 
     def __repr__(self):
         return f"<IntegratedDecision(id={self.id}, modulos={len(self.modulos_envolvidos)}, executado={self.executado})>"

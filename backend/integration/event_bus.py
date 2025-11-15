@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional
 
 from redis import Redis
@@ -29,7 +29,7 @@ class Event:
     def __post_init__(self):
         """Initialize timestamp if not provided."""
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow().isoformat()
+            self.timestamp = datetime.now(timezone.utc).isoformat()
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert event to dictionary."""
@@ -192,7 +192,7 @@ class EventBus:
                     ),
                     SystemEvent.criado_em == event.timestamp,
                     not SystemEvent.processado,
-                ).update({"processado": True, "processado_em": datetime.utcnow()})
+                ).update({"processado": True, "processado_em": datetime.now(timezone.utc)})
 
                 self.db.commit()
 
@@ -280,9 +280,7 @@ class EventBus:
         Returns:
             Dictionary with event statistics
         """
-        from datetime import timedelta
-
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         total_events = (
             self.db.query(SystemEvent).filter(SystemEvent.criado_em >= cutoff_time).count()
