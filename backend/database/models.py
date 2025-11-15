@@ -499,15 +499,15 @@ class SystemEvent(Base):
         return f"<SystemEvent(id={self.id}, tipo='{self.tipo}', origem='{self.modulo_origem}')>"
 
 
-class ContextoGlobal(Base):
+class GlobalContext(Base):
     """
-    Contexto Global - Snapshot of current system state.
+    Global Context - Snapshot of current system state.
 
     Maintains a holistic view of user's current context including
     wellness, capacity, focus state, etc. Used for context-aware decisions.
     """
 
-    __tablename__ = "contexto_global"
+    __tablename__ = "global_context"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
@@ -544,7 +544,7 @@ class ContextoGlobal(Base):
     user = relationship("User")
 
     def __repr__(self):
-        return f"<ContextoGlobal(user_id={self.user_id}, fase='{self.fase_ciclo}', energia={self.energia_atual})>"
+        return f"<GlobalContext(user_id={self.user_id}, fase='{self.fase_ciclo}', energia={self.energia_atual})>"
 
 
 class CrossModuleRelation(Base):
@@ -582,15 +582,15 @@ class CrossModuleRelation(Base):
         return f"<CrossModuleRelation(tipo='{self.tipo_relacao}', {self.modulo_origem}→{self.modulo_destino})>"
 
 
-class DecisaoIntegrada(Base):
+class IntegratedDecision(Base):
     """
-    Decisao Integrada - Cross-module decisions.
+    Integrated Decision - Cross-module decisions.
 
     Records decisions that involve multiple modules and require
     holistic context consideration.
     """
 
-    __tablename__ = "decisoes_integradas"
+    __tablename__ = "integrated_decisions"
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -619,7 +619,7 @@ class DecisaoIntegrada(Base):
     criado_em = Column(DateTime, default=datetime.utcnow, index=True)
 
     def __repr__(self):
-        return f"<DecisaoIntegrada(id={self.id}, modulos={len(self.modulos_envolvidos)}, executado={self.executado})>"
+        return f"<IntegratedDecision(id={self.id}, modulos={len(self.modulos_envolvidos)}, executado={self.executado})>"
 
 
 # Additional indexes for V2

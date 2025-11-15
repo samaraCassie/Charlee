@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from sqlalchemy import extract
 from sqlalchemy.orm import Session
 
-from database.models import ContextoGlobal, Task, User
+from database.models import GlobalContext, Task, User
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType, ModuleName
 
@@ -39,17 +39,17 @@ class ContextManager:
         # Subscribe to events that affect context
         self._subscribe_to_events()
 
-    def load_context(self) -> ContextoGlobal:
+    def load_context(self) -> GlobalContext:
         """
         Load current context from database.
 
         Returns:
-            Current ContextoGlobal object
+            Current GlobalContext object
         """
         context = (
-            self.db.query(ContextoGlobal)
-            .filter(ContextoGlobal.user_id == self.user_id)
-            .order_by(ContextoGlobal.atualizado_em.desc())
+            self.db.query(GlobalContext)
+            .filter(GlobalContext.user_id == self.user_id)
+            .order_by(GlobalContext.atualizado_em.desc())
             .first()
         )
 
@@ -59,16 +59,16 @@ class ContextManager:
 
         return context
 
-    def initialize_context(self) -> ContextoGlobal:
+    def initialize_context(self) -> GlobalContext:
         """
         Initialize context for the first time.
 
         Returns:
-            Newly created ContextoGlobal object
+            Newly created GlobalContext object
         """
         now = datetime.utcnow()
 
-        context = ContextoGlobal(
+        context = GlobalContext(
             user_id=self.user_id,
             fase_ciclo="folicular",  # Default phase
             energia_atual=7,

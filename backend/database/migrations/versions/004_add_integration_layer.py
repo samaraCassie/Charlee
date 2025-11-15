@@ -84,9 +84,9 @@ def upgrade():
         unique=False,
     )
 
-    # Create contexto_global table (Context Manager)
+    # Create global_context table (Context Manager)
     op.create_table(
-        "contexto_global",
+        "global_context",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("fase_ciclo", sa.String(length=20), nullable=True),
@@ -122,9 +122,9 @@ def upgrade():
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_contexto_global_id"), "contexto_global", ["id"], unique=False)
+    op.create_index(op.f("ix_global_context_id"), "global_context", ["id"], unique=False)
     op.create_index(
-        op.f("ix_contexto_global_user_id"), "contexto_global", ["user_id"], unique=False
+        op.f("ix_global_context_user_id"), "global_context", ["user_id"], unique=False
     )
 
     # Create cross_module_relations table
@@ -187,9 +187,9 @@ def upgrade():
         unique=False,
     )
 
-    # Create decisoes_integradas table
+    # Create integrated_decisions table
     op.create_table(
-        "decisoes_integradas",
+        "integrated_decisions",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("situacao", sa.Text(), nullable=False),
         sa.Column("modulos_envolvidos", sa.JSON(), nullable=False),
@@ -203,11 +203,11 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_decisoes_integradas_id"), "decisoes_integradas", ["id"], unique=False
+        op.f("ix_integrated_decisions_id"), "integrated_decisions", ["id"], unique=False
     )
     op.create_index(
-        op.f("ix_decisoes_integradas_criado_em"),
-        "decisoes_integradas",
+        op.f("ix_integrated_decisions_criado_em"),
+        "integrated_decisions",
         ["criado_em"],
         unique=False,
     )
@@ -221,10 +221,10 @@ def downgrade():
     op.drop_index(op.f("ix_user_settings_id"), table_name="user_settings")
     op.drop_table("user_settings")
 
-    # Drop decisoes_integradas table
-    op.drop_index(op.f("ix_decisoes_integradas_criado_em"), table_name="decisoes_integradas")
-    op.drop_index(op.f("ix_decisoes_integradas_id"), table_name="decisoes_integradas")
-    op.drop_table("decisoes_integradas")
+    # Drop integrated_decisions table
+    op.drop_index(op.f("ix_integrated_decisions_criado_em"), table_name="integrated_decisions")
+    op.drop_index(op.f("ix_integrated_decisions_id"), table_name="integrated_decisions")
+    op.drop_table("integrated_decisions")
 
     # Drop cross_module_relations table
     op.drop_index("ix_cross_module_destino", table_name="cross_module_relations")
@@ -247,10 +247,10 @@ def downgrade():
     op.drop_index(op.f("ix_cross_module_relations_id"), table_name="cross_module_relations")
     op.drop_table("cross_module_relations")
 
-    # Drop contexto_global table
-    op.drop_index(op.f("ix_contexto_global_user_id"), table_name="contexto_global")
-    op.drop_index(op.f("ix_contexto_global_id"), table_name="contexto_global")
-    op.drop_table("contexto_global")
+    # Drop global_context table
+    op.drop_index(op.f("ix_global_context_user_id"), table_name="global_context")
+    op.drop_index(op.f("ix_global_context_id"), table_name="global_context")
+    op.drop_table("global_context")
 
     # Drop system_events table
     op.drop_index("ix_events_prioridade_desc", table_name="system_events")
