@@ -1,6 +1,6 @@
 """SQLAlchemy database models for Charlee V1."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
@@ -19,6 +19,13 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from database.config import Base
+
+
+# Helper function for timezone-aware datetime defaults
+def utc_now():
+    """Return current UTC datetime with timezone info."""
+    return datetime.now(timezone.utc)
+
 
 # ==================== Authentication Models ====================
 
@@ -54,8 +61,8 @@ class User(Base):
     last_failed_login = Column(DateTime, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     last_login = Column(DateTime, nullable=True)
 
     # Relationships
@@ -74,7 +81,11 @@ class User(Base):
         """Check if account is currently locked."""
         if self.locked_until is None:
             return False
-        return datetime.utcnow() < self.locked_until
+        # Ensure locked_until is timezone-aware
+        locked_until = self.locked_until
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) < locked_until
 
     def reset_failed_attempts(self) -> None:
         """Reset failed login attempts counter."""
@@ -101,7 +112,7 @@ class RefreshToken(Base):
 
     # Token metadata
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     revoked = Column(Boolean, default=False)
     revoked_at = Column(DateTime, nullable=True)
 
@@ -144,7 +155,7 @@ class AuditLog(Base):
     event_metadata = Column(JSON, nullable=True)  # Extra contextual information
 
     # Timestamp
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # Relationships
     user = relationship("User", back_populates="audit_logs")
@@ -173,7 +184,7 @@ class BigRock(Base):
     name = Column(String(100), nullable=False)
     color = Column(String(20))  # For future UI (e.g., "#FF5733")
     active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="big_rocks")
@@ -218,8 +229,8 @@ class Task(Base):
     priority_score = Column(Float, default=0.0)  # Score calculated by algorithm
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     completed_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -232,14 +243,14 @@ class Task(Base):
     def mark_as_completed(self):
         """Mark task as completed."""
         self.status = "completed"
-        self.completed_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def reopen(self):
         """Reopen a completed task."""
         self.status = "pending"
         self.completed_at = None
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
 
 # Performance indexes (created via Alembic migrations)
@@ -282,7 +293,7 @@ class MenstrualCycle(Base):
     )
 
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="menstrual_cycles")
@@ -314,8 +325,8 @@ class CyclePatterns(Base):
     suggestions = Column(Text, nullable=True)  # Suggestions separated by ;
     samples_used = Column(Integer, default=0)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     def __repr__(self):
         return f"<CyclePatterns(phase='{self.phase}', confidence={self.confidence_score})>"
@@ -346,7 +357,7 @@ class Workload(Base):
     at_risk = Column(Boolean, default=False)
     risk_reason = Column(Text, nullable=True)
 
-    calculated_at = Column(DateTime, default=datetime.utcnow)
+    calculated_at = Column(DateTime, default=utc_now)
 
     # Relationships
     big_rock = relationship("BigRock")
@@ -399,7 +410,7 @@ class DailyLog(Base):
     special_events = Column(Text, nullable=True)  # Comma-separated
     free_notes = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     user = relationship("User", back_populates="daily_logs")
