@@ -151,11 +151,7 @@ class TaskWellnessIntegration:
         Returns:
             True if task is heavy
         """
-        # Check estimated hours
-        if task.estimated_hours and task.estimated_hours > 4:
-            return True
-
-        # Check for keywords
+        # Check for keywords indicating heavy tasks
         heavy_keywords = ["desenvolvimento", "implementar", "criar", "desenvolver", "migrar"]
         description_lower = task.description.lower()
 

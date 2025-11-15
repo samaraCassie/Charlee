@@ -91,15 +91,15 @@ def test_on_cycle_phase_changed_menstrual(db_session, task_wellness, context_man
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Regular task",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
     task2 = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Fixed appointment",
-        type="Compromisso Fixo",
-        status="Pendente",
+        type="fixed_appointment",
+        status="pending",
     )
     db_session.add_all([task1, task2])
     db_session.commit()
@@ -127,8 +127,8 @@ def test_on_cycle_phase_changed_ovulation(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Reunião com cliente",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
     db_session.add(task)
     db_session.commit()
@@ -156,8 +156,8 @@ def test_on_cycle_phase_changed_luteal(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task in progress",
-        type="Tarefa",
-        status="Em Andamento",
+        type="task",
+        status="in_progress",
     )
     db_session.add(task)
     db_session.commit()
@@ -197,9 +197,8 @@ def test_on_task_created_heavy_during_menstrual(db_session, task_wellness, conte
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver nova feature complexa",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=6,
+        type="task",
+        status="pending",
     )
     db_session.add(task)
     db_session.commit()
@@ -229,9 +228,8 @@ def test_on_task_created_light_during_menstrual(db_session, task_wellness, conte
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=1,
+        type="task",
+        status="pending",
     )
     db_session.add(task)
     db_session.commit()
@@ -266,8 +264,8 @@ def test_calculate_priority_adjustment_menstrual_low_energy(db_session, task_wel
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Regular task",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
 
     adjustment = task_wellness._calculate_priority_adjustment(task, "menstrual", 0.5)
@@ -283,8 +281,8 @@ def test_calculate_priority_adjustment_menstrual_fixed_appointment(db_session, t
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Doctor appointment",
-        type="Compromisso Fixo",
-        status="Pendente",
+        type="fixed_appointment",
+        status="pending",
     )
 
     adjustment = task_wellness._calculate_priority_adjustment(task, "menstrual", 0.5)
@@ -300,8 +298,8 @@ def test_calculate_priority_adjustment_ovulation_meeting(db_session, task_wellne
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Client reunião",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
 
     adjustment = task_wellness._calculate_priority_adjustment(task, "ovulacao", 0.9)
@@ -317,8 +315,8 @@ def test_calculate_priority_adjustment_ovulation_presentation(db_session, task_w
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Preparar apresentação",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
 
     adjustment = task_wellness._calculate_priority_adjustment(task, "ovulacao", 0.9)
@@ -326,17 +324,16 @@ def test_calculate_priority_adjustment_ovulation_presentation(db_session, task_w
 
 
 def test_is_heavy_task_by_hours(db_session, task_wellness):
-    """Test heavy task detection by estimated hours."""
+    """Test heavy task detection by keyword 'migrar'."""
     user = db_session.query(User).first()
     big_rock = db_session.query(BigRock).first()
 
     task = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
-        description="Some task",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=5,
+        description="Migrar banco de dados",
+        type="task",
+        status="pending",
     )
 
     assert task_wellness._is_heavy_task(task) is True
@@ -351,9 +348,8 @@ def test_is_heavy_task_by_keyword_desenvolvimento(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolvimento de nova API",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=2,
+        type="task",
+        status="pending",
     )
 
     assert task_wellness._is_heavy_task(task) is True
@@ -368,8 +364,8 @@ def test_is_heavy_task_by_keyword_implementar(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Implementar autenticação",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
 
     assert task_wellness._is_heavy_task(task) is True
@@ -384,9 +380,8 @@ def test_is_not_heavy_task(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=1,
+        type="task",
+        status="pending",
     )
 
     assert task_wellness._is_heavy_task(task) is False
@@ -402,17 +397,15 @@ def test_get_wellness_adjusted_tasks(db_session, task_wellness, context_manager)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Light task",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=1,
+        type="task",
+        status="pending",
     )
     task2 = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver feature",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=6,
+        type="task",
+        status="pending",
     )
     db_session.add_all([task1, task2])
     db_session.commit()
@@ -441,17 +434,15 @@ def test_get_wellness_adjusted_tasks_menstrual_low_energy(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Check emails",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=1,
+        type="task",
+        status="pending",
     )
     heavy_task = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver sistema complexo",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=8,
+        type="task",
+        status="pending",
     )
     db_session.add_all([light_task, heavy_task])
     db_session.commit()
@@ -475,8 +466,8 @@ def test_should_recommend_task_fixed_appointment(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Doctor appointment",
-        type="Compromisso Fixo",
-        status="Pendente",
+        type="fixed_appointment",
+        status="pending",
     )
 
     context = {"fase_ciclo": "menstrual", "energia_atual": 2, "nivel_stress": 9}
@@ -493,9 +484,8 @@ def test_should_recommend_task_menstrual_heavy(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver feature",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=6,
+        type="task",
+        status="pending",
     )
 
     context = {"fase_ciclo": "menstrual", "energia_atual": 3, "nivel_stress": 5}
@@ -512,9 +502,8 @@ def test_should_recommend_task_menstrual_light(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        type="Tarefa",
-        status="Pendente",
-        estimated_hours=1,
+        type="task",
+        status="pending",
     )
 
     context = {"fase_ciclo": "menstrual", "energia_atual": 3, "nivel_stress": 5}
@@ -531,8 +520,8 @@ def test_should_recommend_task_high_stress_urgent(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Urgent task",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
         deadline=datetime.now() + timedelta(days=1),
     )
 
@@ -550,8 +539,8 @@ def test_should_recommend_task_high_stress_not_urgent(db_session, task_wellness)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Non-urgent task",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
         deadline=datetime.now() + timedelta(days=5),
     )
 
@@ -569,8 +558,8 @@ def test_should_recommend_task_normal_conditions(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Any task",
-        type="Tarefa",
-        status="Pendente",
+        type="task",
+        status="pending",
     )
 
     context = {
