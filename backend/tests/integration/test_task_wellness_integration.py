@@ -91,14 +91,14 @@ def test_on_cycle_phase_changed_menstrual(db_session, task_wellness, context_man
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Regular task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
     task2 = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Fixed appointment",
-        task_type="Compromisso Fixo",
+        type="Compromisso Fixo",
         status="Pendente",
     )
     db_session.add_all([task1, task2])
@@ -127,7 +127,7 @@ def test_on_cycle_phase_changed_ovulation(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Reunião com cliente",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
     db_session.add(task)
@@ -156,7 +156,7 @@ def test_on_cycle_phase_changed_luteal(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task in progress",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Em Andamento",
     )
     db_session.add(task)
@@ -197,7 +197,7 @@ def test_on_task_created_heavy_during_menstrual(db_session, task_wellness, conte
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver nova feature complexa",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=6,
     )
@@ -229,7 +229,7 @@ def test_on_task_created_light_during_menstrual(db_session, task_wellness, conte
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=1,
     )
@@ -266,7 +266,7 @@ def test_calculate_priority_adjustment_menstrual_low_energy(db_session, task_wel
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Regular task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
 
@@ -283,7 +283,7 @@ def test_calculate_priority_adjustment_menstrual_fixed_appointment(db_session, t
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Doctor appointment",
-        task_type="Compromisso Fixo",
+        type="Compromisso Fixo",
         status="Pendente",
     )
 
@@ -300,7 +300,7 @@ def test_calculate_priority_adjustment_ovulation_meeting(db_session, task_wellne
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Client reunião",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
 
@@ -317,7 +317,7 @@ def test_calculate_priority_adjustment_ovulation_presentation(db_session, task_w
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Preparar apresentação",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
 
@@ -334,7 +334,7 @@ def test_is_heavy_task_by_hours(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Some task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=5,
     )
@@ -351,7 +351,7 @@ def test_is_heavy_task_by_keyword_desenvolvimento(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolvimento de nova API",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=2,
     )
@@ -368,7 +368,7 @@ def test_is_heavy_task_by_keyword_implementar(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Implementar autenticação",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
 
@@ -384,7 +384,7 @@ def test_is_not_heavy_task(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=1,
     )
@@ -402,7 +402,7 @@ def test_get_wellness_adjusted_tasks(db_session, task_wellness, context_manager)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Light task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=1,
     )
@@ -410,7 +410,7 @@ def test_get_wellness_adjusted_tasks(db_session, task_wellness, context_manager)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver feature",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=6,
     )
@@ -441,7 +441,7 @@ def test_get_wellness_adjusted_tasks_menstrual_low_energy(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Check emails",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=1,
     )
@@ -449,7 +449,7 @@ def test_get_wellness_adjusted_tasks_menstrual_low_energy(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver sistema complexo",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=8,
     )
@@ -475,7 +475,7 @@ def test_should_recommend_task_fixed_appointment(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Doctor appointment",
-        task_type="Compromisso Fixo",
+        type="Compromisso Fixo",
         status="Pendente",
     )
 
@@ -493,7 +493,7 @@ def test_should_recommend_task_menstrual_heavy(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Desenvolver feature",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=6,
     )
@@ -512,7 +512,7 @@ def test_should_recommend_task_menstrual_light(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Review email",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         estimated_hours=1,
     )
@@ -531,7 +531,7 @@ def test_should_recommend_task_high_stress_urgent(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Urgent task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=datetime.now() + timedelta(days=1),
     )
@@ -550,7 +550,7 @@ def test_should_recommend_task_high_stress_not_urgent(db_session, task_wellness)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Non-urgent task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=datetime.now() + timedelta(days=5),
     )
@@ -569,7 +569,7 @@ def test_should_recommend_task_normal_conditions(db_session, task_wellness):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Any task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
 

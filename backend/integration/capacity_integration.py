@@ -110,7 +110,7 @@ class CapacityIntegration:
             .filter(
                 Task.user_id == self.context.user_id,
                 Task.status == "Pendente",
-                Task.task_type != "Compromisso Fixo",
+                Task.type != "fixed_appointment",
                 Task.deadline > later_date,
             )
             .order_by(Task.deadline.desc())

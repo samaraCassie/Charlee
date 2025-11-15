@@ -91,7 +91,7 @@ def test_on_capacity_critical(db_session, capacity_integration):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Non-urgent task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=future_date,
     )
@@ -161,7 +161,7 @@ def test_suggest_task_postponements_with_tasks(db_session, capacity_integration)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task 1",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=future_date,
     )
@@ -169,7 +169,7 @@ def test_suggest_task_postponements_with_tasks(db_session, capacity_integration)
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task 2",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=future_date + timedelta(days=1),
     )
@@ -180,7 +180,7 @@ def test_suggest_task_postponements_with_tasks(db_session, capacity_integration)
 
     assert len(suggestions) >= 1
     assert all(task.status == "Pendente" for task in suggestions)
-    assert all(task.task_type != "Compromisso Fixo" for task in suggestions)
+    assert all(task.type != "fixed_appointment" for task in suggestions)
 
 
 def test_suggest_task_postponements_excludes_urgent(db_session, capacity_integration):
@@ -194,7 +194,7 @@ def test_suggest_task_postponements_excludes_urgent(db_session, capacity_integra
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Urgent task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=urgent_date,
     )
@@ -219,7 +219,7 @@ def test_suggest_task_postponements_excludes_fixed(db_session, capacity_integrat
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Fixed appointment",
-        task_type="Compromisso Fixo",
+        type="Compromisso Fixo",
         status="Pendente",
         deadline=future_date,
     )
@@ -383,7 +383,7 @@ def test_capacity_critical_with_no_postponable_tasks(db_session, capacity_integr
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Urgent task",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
         deadline=urgent_date,
     )
@@ -391,7 +391,7 @@ def test_capacity_critical_with_no_postponable_tasks(db_session, capacity_integr
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Fixed appointment",
-        task_type="Compromisso Fixo",
+        type="Compromisso Fixo",
         status="Pendente",
         deadline=datetime.now() + timedelta(days=5),
     )

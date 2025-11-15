@@ -126,7 +126,7 @@ class TaskWellnessIntegration:
         """
         # During menstrual phase with low energy, deprioritize non-urgent tasks
         if phase == "menstrual" and energia < 0.6:
-            if task.task_type != "Compromisso Fixo":
+            if task.type != "fixed_appointment":
                 return -1
 
         # During ovulation, boost communication tasks
@@ -213,7 +213,7 @@ class TaskWellnessIntegration:
             True if task should be recommended
         """
         # Always recommend fixed appointments
-        if task.task_type == "Compromisso Fixo":
+        if task.type == "fixed_appointment":
             return True
 
         # During menstrual phase with low energy, only light tasks

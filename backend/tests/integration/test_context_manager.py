@@ -324,21 +324,21 @@ def test_count_pending_tasks(db_session, context_manager):
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task 1",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Pendente",
     )
     task2 = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task 2",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Em Andamento",
     )
     task3 = Task(
         user_id=user.id,
         big_rock_id=big_rock.id,
         description="Task 3",
-        task_type="Tarefa",
+        type="Tarefa",
         status="Concluída",
     )
 
