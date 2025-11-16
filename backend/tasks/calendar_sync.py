@@ -103,9 +103,7 @@ def sync_all_connections(self) -> dict[str, int]:
     max_retries=3,
     default_retry_delay=60,
 )
-def sync_connection(
-    self, connection_id: int, direction: str = "both"
-) -> dict[str, int | str]:
+def sync_connection(self, connection_id: int, direction: str = "both") -> dict[str, int | str]:
     """
     Sync a specific calendar connection.
 
