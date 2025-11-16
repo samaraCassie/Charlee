@@ -16,6 +16,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
 
 from database.config import Base
@@ -847,3 +848,615 @@ class Invoice(Base):
 # CREATE INDEX idx_work_logs_invoiced ON work_logs(invoiced);
 # CREATE INDEX idx_invoices_status ON invoices(status);
 # CREATE INDEX idx_invoices_issue_date ON invoices(issue_date);
+
+
+# ==================== Projects Intelligence System Models ====================
+
+
+class FreelancePlatform(Base):
+    """
+    Freelance Platform - External platforms for project collection.
+
+    Represents external freelance platforms (Upwork, Freelancer.com, etc.)
+    with API credentials and monitoring configuration.
+    """
+
+    __tablename__ = "freelance_platforms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Platform information
+    name = Column(String(100), nullable=False)  # 'Upwork', 'Freelancer.com', 'Fiverr', etc.
+    platform_type = Column(String(50), nullable=True)  # 'marketplace', 'network', 'direct'
+    website_url = Column(String(255), nullable=True)
+
+    # API configuration (encrypted in production)
+    api_config = Column(JSON, nullable=True)  # API keys, OAuth tokens, webhooks, etc.
+
+    # Status
+    active = Column(Boolean, default=True, index=True)
+    last_collection_at = Column(DateTime, nullable=True)
+    last_collection_count = Column(Integer, default=0)
+
+    # Collection settings
+    collection_interval_minutes = Column(Integer, default=60)  # How often to collect
+    auto_collect = Column(Boolean, default=False)
+
+    # Statistics
+    total_projects_collected = Column(Integer, default=0)
+    total_projects_accepted = Column(Integer, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    opportunities = relationship(
+        "FreelanceOpportunity", back_populates="platform", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<FreelancePlatform(id={self.id}, name='{self.name}', active={self.active})>"
+
+
+class FreelanceOpportunity(Base):
+    """
+    Freelance Opportunity - Projects collected from platforms.
+
+    Represents project opportunities collected from external platforms
+    with semantic analysis, scoring, and AI recommendations.
+    """
+
+    __tablename__ = "freelance_opportunities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    platform_id = Column(
+        Integer, ForeignKey("freelance_platforms.id"), nullable=True, index=True
+    )
+
+    # Original data from platform
+    external_id = Column(String(100), nullable=True, index=True)  # Platform's project ID
+    title = Column(String(300), nullable=False)
+    description = Column(Text, nullable=False)
+
+    # Client information
+    client_name = Column(String(200), nullable=True)
+    client_rating = Column(Float, nullable=True)
+    client_country = Column(String(100), nullable=True)
+    client_projects_count = Column(Integer, nullable=True)
+
+    # Technical requirements
+    required_skills = Column(JSON, nullable=True)  # List of required skills/technologies
+    skill_level = Column(
+        String(20), nullable=True
+    )  # 'junior', 'mid', 'senior', 'expert'
+    category = Column(
+        String(50), nullable=True
+    )  # 'full_stack', 'backend', 'frontend', 'ai_ml', 'devops', etc.
+
+    # Commercial conditions
+    client_budget = Column(Float, nullable=True)
+    client_currency = Column(String(10), default="USD")
+    client_deadline_days = Column(Integer, nullable=True)
+    contract_type = Column(
+        String(20), nullable=True
+    )  # 'fixed_price', 'hourly', 'milestone'
+
+    # AI Analysis - Estimations
+    estimated_complexity = Column(
+        Integer, CheckConstraint("estimated_complexity BETWEEN 1 AND 10"), nullable=True
+    )
+    estimated_hours = Column(Float, nullable=True)
+    suggested_price = Column(Float, nullable=True)
+    suggested_deadline_days = Column(Integer, nullable=True)
+
+    # AI Analysis - Scoring (0.0 to 1.0)
+    viability_score = Column(Float, nullable=True)  # Financial viability
+    alignment_score = Column(Float, nullable=True)  # Skill alignment with user
+    strategic_score = Column(Float, nullable=True)  # Career value
+    final_score = Column(Float, nullable=True, index=True)  # Weighted average
+
+    # AI Analysis - Recommendation
+    recommendation = Column(
+        String(20),
+        CheckConstraint("recommendation IN ('accept', 'negotiate', 'reject', 'pending')"),
+        default="pending",
+        index=True,
+    )
+    recommendation_reason = Column(Text, nullable=True)
+
+    # Semantic Analysis
+    client_intent = Column(
+        String(50), nullable=True
+    )  # 'serious_project', 'test', 'exploration'
+    red_flags = Column(JSON, nullable=True)  # List of warning signs
+    opportunities = Column(JSON, nullable=True)  # List of positive aspects
+    extracted_context = Column(JSON, nullable=True)  # Full semantic analysis
+
+    # Embeddings for similarity search
+    description_embedding = Column(Vector(1536), nullable=True)  # OpenAI ada-002 embeddings
+
+    # Status and decision
+    status = Column(
+        String(20),
+        CheckConstraint(
+            "status IN ('new', 'analyzed', 'negotiating', 'accepted', 'rejected', 'expired')"
+        ),
+        default="new",
+        index=True,
+    )
+    final_decision = Column(
+        String(20), nullable=True
+    )  # 'accepted', 'rejected', 'no_response'
+    decision_reason = Column(Text, nullable=True)
+
+    # Timestamps
+    collected_at = Column(DateTime, default=utc_now, index=True)
+    analyzed_at = Column(DateTime, nullable=True)
+    responded_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)  # When opportunity expires on platform
+
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    platform = relationship("FreelancePlatform", back_populates="opportunities")
+    negotiations = relationship(
+        "Negotiation", back_populates="opportunity", cascade="all, delete-orphan"
+    )
+    execution = relationship("ProjectExecution", back_populates="opportunity", uselist=False)
+
+    def __repr__(self):
+        return f"<FreelanceOpportunity(id={self.id}, title='{self.title[:40]}...', score={self.final_score})>"
+
+
+class ProjectExecution(Base):
+    """
+    Project Execution - Detailed execution tracking of accepted projects.
+
+    Tracks the execution of accepted freelance opportunities with
+    detailed metrics, learnings, and career impact assessment.
+    """
+
+    __tablename__ = "project_executions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    opportunity_id = Column(
+        Integer, ForeignKey("freelance_opportunities.id"), nullable=True, index=True
+    )
+    freelance_project_id = Column(
+        Integer, ForeignKey("freelance_projects.id"), nullable=True, index=True
+    )
+
+    # Planning
+    start_date = Column(Date, nullable=False)
+    planned_end_date = Column(Date, nullable=True)
+    actual_end_date = Column(Date, nullable=True)
+
+    # Time investment
+    planned_hours = Column(Float, nullable=True)
+    actual_hours = Column(Float, default=0.0)
+    hours_variance_percentage = Column(Float, nullable=True)  # Difference from estimate
+
+    # Financial
+    negotiated_value = Column(Float, nullable=False)
+    currency = Column(String(10), default="USD")
+    received_value = Column(Float, nullable=True)
+    payment_date = Column(Date, nullable=True)
+
+    # Client evaluation
+    client_satisfaction = Column(
+        Integer, CheckConstraint("client_satisfaction BETWEEN 1 AND 5"), nullable=True
+    )
+    client_rating_received = Column(Float, nullable=True)
+    client_feedback = Column(Text, nullable=True)
+    client_testimonial = Column(Text, nullable=True)
+
+    # Personal evaluation
+    actual_difficulty = Column(
+        Integer, CheckConstraint("actual_difficulty BETWEEN 1 AND 10"), nullable=True
+    )
+    learnings = Column(JSON, nullable=True)  # List of key learnings
+    challenges_faced = Column(JSON, nullable=True)  # List of challenges
+    personal_notes = Column(Text, nullable=True)
+
+    # Career impact
+    new_skills_acquired = Column(JSON, nullable=True)  # Skills learned during project
+    technologies_used = Column(JSON, nullable=True)  # Technologies actually used
+    portfolio_worthy = Column(Boolean, default=False)
+    testimonial_obtained = Column(Boolean, default=False)
+    referral_potential = Column(Boolean, default=False)
+
+    # Status
+    status = Column(
+        String(20),
+        CheckConstraint(
+            "status IN ('planned', 'in_progress', 'completed', 'cancelled', 'on_hold')"
+        ),
+        default="planned",
+        index=True,
+    )
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    opportunity = relationship("FreelanceOpportunity", back_populates="execution")
+    freelance_project = relationship("FreelanceProject")
+    portfolio_item = relationship(
+        "PortfolioItem", back_populates="execution", uselist=False
+    )
+
+    def __repr__(self):
+        return f"<ProjectExecution(id={self.id}, status='{self.status}', value={self.negotiated_value})>"
+
+    def calculate_hourly_rate(self) -> float:
+        """Calculate actual hourly rate earned."""
+        if self.actual_hours and self.actual_hours > 0:
+            return (self.received_value or self.negotiated_value) / self.actual_hours
+        return 0.0
+
+
+class PricingParameter(Base):
+    """
+    Pricing Parameter - Dynamic pricing configuration.
+
+    Stores versioned pricing parameters that evolve through learning.
+    Defines base rates and multiplier factors for strategic pricing.
+    """
+
+    __tablename__ = "pricing_parameters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    version = Column(Integer, nullable=False)
+
+    # Base values
+    base_hourly_rate = Column(Float, nullable=False)  # Base hourly rate
+    minimum_margin = Column(Float, default=0.20)  # Minimum 20% margin
+    currency = Column(String(10), default="USD")
+
+    # Multiplier factors (stored as JSON for flexibility)
+    complexity_factors = Column(JSON, nullable=True)
+    # Example: {"1-2": 0.8, "3-4": 1.0, "5-6": 1.3, "7-8": 1.6, "9-10": 2.0}
+
+    specialization_factors = Column(JSON, nullable=True)
+    # Example: {"ai_ml": 1.5, "blockchain": 1.4, "full_stack": 1.2, "frontend": 1.0}
+
+    deadline_factors = Column(JSON, nullable=True)
+    # Example: {"urgent_<7days": 1.5, "short_7-14days": 1.2, "normal_15-30days": 1.0}
+
+    client_factors = Column(JSON, nullable=True)
+    # Example: {"new_no_rating": 1.1, "good_rating": 1.0, "excellent_rating": 0.95}
+
+    # Limits
+    minimum_project_value = Column(Float, default=500.0)
+    minimum_deadline_days = Column(Integer, default=7)
+
+    # Learning metadata
+    auto_adjusted = Column(Boolean, default=False)
+    based_on_executions_count = Column(Integer, default=0)
+    adjustment_reason = Column(Text, nullable=True)
+
+    # Status
+    active = Column(Boolean, default=True, index=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    activated_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<PricingParameter(id={self.id}, version={self.version}, base_rate={self.base_hourly_rate}, active={self.active})>"
+
+
+class Negotiation(Base):
+    """
+    Negotiation - Project negotiation history.
+
+    Tracks negotiation attempts with counter-proposals,
+    client responses, and final outcomes.
+    """
+
+    __tablename__ = "negotiations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    opportunity_id = Column(
+        Integer, ForeignKey("freelance_opportunities.id"), nullable=False, index=True
+    )
+
+    # Original proposal
+    original_budget = Column(Float, nullable=True)
+    original_deadline_days = Column(Integer, nullable=True)
+
+    # Counter-proposal
+    counter_proposal_budget = Column(Float, nullable=False)
+    counter_proposal_deadline_days = Column(Integer, nullable=True)
+    counter_proposal_justification = Column(Text, nullable=False)
+    generated_message = Column(Text, nullable=True)  # AI-generated diplomatic message
+
+    # Client response
+    client_response = Column(Text, nullable=True)
+    final_agreed_budget = Column(Float, nullable=True)
+    final_agreed_deadline_days = Column(Integer, nullable=True)
+
+    # Outcome
+    outcome = Column(
+        String(20),
+        CheckConstraint("outcome IN ('accepted', 'rejected', 'agreed', 'no_response', 'pending')"),
+        default="pending",
+        index=True,
+    )
+    outcome_notes = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    responded_at = Column(DateTime, nullable=True)
+    finalized_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    opportunity = relationship("FreelanceOpportunity", back_populates="negotiations")
+
+    def __repr__(self):
+        return f"<Negotiation(id={self.id}, opportunity_id={self.opportunity_id}, outcome='{self.outcome}')>"
+
+
+class CareerInsight(Base):
+    """
+    Career Insight - Strategic career analytics and insights.
+
+    Generates periodic reports with financial, technical, and
+    strategic insights about career evolution and positioning.
+    """
+
+    __tablename__ = "career_insights"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Report period
+    period_start = Column(Date, nullable=False, index=True)
+    period_end = Column(Date, nullable=False, index=True)
+    report_type = Column(
+        String(20), nullable=False, index=True
+    )  # 'weekly', 'monthly', 'quarterly', 'annual'
+
+    # Financial metrics
+    total_revenue = Column(Float, default=0.0)
+    average_project_value = Column(Float, nullable=True)
+    effective_hourly_rate = Column(Float, nullable=True)  # Total revenue / total hours
+    currency = Column(String(10), default="USD")
+
+    # Productivity metrics
+    projects_completed = Column(Integer, default=0)
+    success_rate = Column(Float, nullable=True)  # % of successfully completed projects
+    total_hours_worked = Column(Float, default=0.0)
+    average_hours_per_project = Column(Float, nullable=True)
+
+    # Technical evolution
+    average_complexity = Column(Float, nullable=True)
+    new_technologies = Column(JSON, nullable=True)  # Technologies learned this period
+    dominant_categories = Column(JSON, nullable=True)  # Most worked categories
+
+    # Market positioning
+    most_profitable_categories = Column(JSON, nullable=True)  # Categories with best rates
+    preferred_clients = Column(JSON, nullable=True)  # Client profiles that work best
+    identified_trends = Column(JSON, nullable=True)  # Market trends observed
+
+    # Strategic recommendations
+    recommendations = Column(JSON, nullable=True)  # List of strategic recommendations
+    next_step_suggestion = Column(Text, nullable=True)  # Primary suggestion for next period
+
+    # Skills analysis
+    top_demanded_skills = Column(JSON, nullable=True)
+    skill_gaps = Column(JSON, nullable=True)  # Skills to develop
+    competitive_advantages = Column(JSON, nullable=True)  # Unique strengths
+
+    # Generated by AI
+    ai_generated_summary = Column(Text, nullable=True)
+    ai_confidence_score = Column(Float, nullable=True)  # 0.0 to 1.0
+
+    # Timestamps
+    generated_at = Column(DateTime, default=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<CareerInsight(id={self.id}, period={self.period_start} to {self.period_end}, type='{self.report_type}')>"
+
+
+class PortfolioItem(Base):
+    """
+    Portfolio Item - Automated portfolio generation.
+
+    AI-generated portfolio items from completed projects
+    with optimized descriptions and highlighting achievements.
+    """
+
+    __tablename__ = "portfolio_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    execution_id = Column(
+        Integer, ForeignKey("project_executions.id"), nullable=True, index=True
+    )
+
+    # Portfolio content
+    title = Column(String(200), nullable=False)
+    optimized_description = Column(Text, nullable=False)  # AI-enhanced description
+    technologies_used = Column(JSON, nullable=True)
+    challenges_overcome = Column(JSON, nullable=True)
+    results_metrics = Column(JSON, nullable=True)  # Quantifiable results
+
+    # Media
+    images_urls = Column(JSON, nullable=True)
+    demo_url = Column(String(500), nullable=True)
+    case_study_url = Column(String(500), nullable=True)
+    repository_url = Column(String(500), nullable=True)
+
+    # Categorization
+    featured = Column(Boolean, default=False, index=True)
+    category = Column(String(50), nullable=True)
+    tags = Column(JSON, nullable=True)
+
+    # Visibility
+    public = Column(Boolean, default=True)
+    published_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    execution = relationship("ProjectExecution", back_populates="portfolio_item")
+
+    def __repr__(self):
+        return f"<PortfolioItem(id={self.id}, title='{self.title[:40]}...', featured={self.featured})>"
+
+
+class LearningRecord(Base):
+    """
+    Learning Record - Continuous learning and model improvement.
+
+    Records feedback and outcomes to improve AI predictions
+    for pricing, classification, and recommendations.
+    """
+
+    __tablename__ = "learning_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Learning type
+    learning_type = Column(
+        String(50), nullable=False, index=True
+    )  # 'pricing', 'classification', 'negotiation', 'time_estimation'
+
+    # Model input/output
+    input_features = Column(JSON, nullable=False)  # Features used for prediction
+    predicted_output = Column(JSON, nullable=True)  # What the model predicted
+    actual_output = Column(JSON, nullable=True)  # What actually happened
+
+    # Performance metrics
+    accuracy_score = Column(Float, nullable=True)  # How accurate was the prediction
+    error_margin = Column(Float, nullable=True)  # Margin of error
+
+    # User feedback
+    user_feedback = Column(Text, nullable=True)  # Manual feedback from user
+    user_rating = Column(
+        Integer, CheckConstraint("user_rating BETWEEN 1 AND 5"), nullable=True
+    )
+
+    # Adjustment tracking
+    adjustment_applied = Column(Boolean, default=False)
+    adjustment_impact = Column(Text, nullable=True)  # Description of adjustment made
+
+    # Context
+    related_opportunity_id = Column(
+        Integer, ForeignKey("freelance_opportunities.id"), nullable=True
+    )
+    related_execution_id = Column(
+        Integer, ForeignKey("project_executions.id"), nullable=True
+    )
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now, index=True)
+    processed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<LearningRecord(id={self.id}, type='{self.learning_type}', accuracy={self.accuracy_score})>"
+
+
+class PersonalReflection(Base):
+    """
+    Personal Reflection - Qualitative insights and observations.
+
+    Stores personal reflections, learnings, and insights that
+    complement quantitative data with qualitative context.
+    """
+
+    __tablename__ = "personal_reflections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Reflection content
+    date = Column(Date, nullable=False, index=True)
+    category = Column(
+        String(50), nullable=True, index=True
+    )  # 'learning', 'challenge', 'achievement', 'insight', 'goal'
+    content = Column(Text, nullable=False)
+
+    # Sentiment analysis
+    sentiment = Column(
+        String(20), nullable=True
+    )  # 'positive', 'neutral', 'challenging', 'frustrated'
+    tags = Column(JSON, nullable=True)
+
+    # Relations
+    related_to_type = Column(String(50), nullable=True)  # 'opportunity', 'execution', 'client'
+    related_to_id = Column(Integer, nullable=True)
+
+    # Action tracking
+    action_taken = Column(Text, nullable=True)  # What was done about this reflection
+    action_result = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<PersonalReflection(id={self.id}, date={self.date}, category='{self.category}')>"
+
+
+# Additional indexes for Projects Intelligence System
+# CREATE INDEX idx_platforms_active ON freelance_platforms(active, user_id);
+# CREATE INDEX idx_opportunities_score ON freelance_opportunities(final_score DESC);
+# CREATE INDEX idx_opportunities_status_recommendation ON freelance_opportunities(status, recommendation);
+# CREATE INDEX idx_opportunities_collected ON freelance_opportunities(collected_at DESC);
+# CREATE INDEX idx_opportunities_embedding ON freelance_opportunities USING ivfflat(description_embedding vector_cosine_ops);
+# CREATE INDEX idx_executions_dates ON project_executions(start_date, actual_end_date);
+# CREATE INDEX idx_executions_status ON project_executions(status);
+# CREATE INDEX idx_pricing_active ON pricing_parameters(active, user_id, version DESC);
+# CREATE INDEX idx_negotiations_outcome ON negotiations(outcome);
+# CREATE INDEX idx_insights_period ON career_insights(period_start, period_end);
+# CREATE INDEX idx_portfolio_featured ON portfolio_items(featured, public);
+# CREATE INDEX idx_learning_type ON learning_records(learning_type, created_at DESC);
+# CREATE INDEX idx_reflections_date ON personal_reflections(date DESC);
