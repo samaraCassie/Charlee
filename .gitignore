@@ -72,7 +72,6 @@ test_results.txt
 
 node_modules
 package-lock.json
-package.json
 
 test_data.sql
 
@@ -80,6 +79,4 @@ test_data.sql
 backend/test_output.txt
 backend/test_results.txt
 backend/.ipython/
-package-lock.json
-package.json
 backend/FIXING_TESTS.md
