@@ -1494,3 +1494,352 @@ class UserNotification(Base):
 # CREATE INDEX idx_portfolio_featured ON portfolio_items(featured, public);
 # CREATE INDEX idx_learning_type ON learning_records(learning_type, created_at DESC);
 # CREATE INDEX idx_reflections_date ON personal_reflections(date DESC);
+
+
+# ==================== Calendar Integration Models ====================
+
+
+class CalendarConnection(Base):
+    """
+    Calendar Connection - External calendar provider connections.
+
+    Represents connections to external calendar providers (Google Calendar, Microsoft Outlook)
+    with OAuth credentials and sync configuration.
+    """
+
+    __tablename__ = "calendar_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Provider information
+    provider = Column(
+        String(20),
+        CheckConstraint("provider IN ('google', 'microsoft')"),
+        nullable=False,
+        index=True,
+    )
+    calendar_id = Column(String(255), nullable=False)
+    calendar_name = Column(String(255), nullable=True)
+
+    # OAuth credentials
+    access_token = Column(Text, nullable=False)
+    refresh_token = Column(Text, nullable=True)
+    token_expires_at = Column(DateTime, nullable=True)
+
+    # Sync configuration
+    sync_enabled = Column(Boolean, default=True, index=True)
+    sync_direction = Column(
+        String(20),
+        CheckConstraint("sync_direction IN ('both', 'to_calendar', 'from_calendar')"),
+        default="both",
+    )
+    last_sync_at = Column(DateTime, nullable=True)
+    sync_token = Column(String(500), nullable=True)
+
+    # Webhook configuration
+    webhook_id = Column(String(255), nullable=True)
+    webhook_expires_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    events = relationship(
+        "CalendarEvent", back_populates="connection", cascade="all, delete-orphan"
+    )
+    sync_logs = relationship(
+        "CalendarSyncLog", back_populates="connection", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<CalendarConnection(id={self.id}, provider='{self.provider}', user_id={self.user_id}, sync_enabled={self.sync_enabled})>"
+
+    def is_token_expired(self) -> bool:
+        """Check if access token is expired."""
+        if self.token_expires_at is None:
+            return False
+        expires_at = self.token_expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) >= expires_at
+
+    def needs_sync(self, sync_interval_minutes: int = 15) -> bool:
+        """Check if connection needs synchronization."""
+        if not self.sync_enabled:
+            return False
+        if self.last_sync_at is None:
+            return True
+        last_sync = self.last_sync_at
+        if last_sync.tzinfo is None:
+            last_sync = last_sync.replace(tzinfo=timezone.utc)
+        elapsed = datetime.now(timezone.utc) - last_sync
+        return elapsed.total_seconds() > (sync_interval_minutes * 60)
+
+
+class CalendarEvent(Base):
+    """
+    Calendar Event - Events synchronized with external calendars.
+
+    Represents calendar events that are synchronized between Charlee tasks
+    and external calendar providers.
+    """
+
+    __tablename__ = "calendar_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    connection_id = Column(
+        Integer,
+        ForeignKey("calendar_connections.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # External event reference
+    external_event_id = Column(String(255), nullable=False)
+
+    # Charlee task reference
+    task_id = Column(
+        Integer, ForeignKey("tarefas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    # Event details
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=False)
+    all_day = Column(Boolean, default=False)
+
+    # Location and attendees
+    location = Column(String(500), nullable=True)
+    attendees = Column(Text, nullable=True)  # JSON string
+
+    # Recurrence
+    is_recurring = Column(Boolean, default=False)
+    recurrence_rule = Column(Text, nullable=True)
+
+    # Status
+    status = Column(
+        String(20),
+        CheckConstraint("status IN ('confirmed', 'tentative', 'cancelled')"),
+        default="confirmed",
+        index=True,
+    )
+
+    # Source tracking
+    source = Column(
+        String(20),
+        CheckConstraint("source IN ('charlee', 'external')"),
+        nullable=False,
+    )
+
+    # Modification tracking for conflict detection
+    last_modified_at = Column(DateTime, nullable=True)
+    charlee_modified_at = Column(DateTime, nullable=True)
+    external_modified_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    connection = relationship("CalendarConnection", back_populates="events")
+    user = relationship("User")
+    task = relationship("Task")
+    conflicts = relationship(
+        "CalendarConflict", back_populates="event", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<CalendarEvent(id={self.id}, title='{self.title}', start={self.start_time}, source='{self.source}')>"
+
+    def has_conflict(self) -> bool:
+        """Check if event has unresolved conflicts."""
+        if not self.conflicts:
+            return False
+        return any(c.status != "resolved" for c in self.conflicts)
+
+    def to_dict(self) -> dict:
+        """Convert event to dictionary for comparison."""
+        return {
+            "title": self.title,
+            "description": self.description,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "all_day": self.all_day,
+            "location": self.location,
+            "attendees": self.attendees,
+            "status": self.status,
+        }
+
+
+class CalendarSyncLog(Base):
+    """
+    Calendar Sync Log - Track calendar synchronization history.
+
+    Records synchronization attempts, results, and statistics for monitoring
+    and debugging calendar integration.
+    """
+
+    __tablename__ = "calendar_sync_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    connection_id = Column(
+        Integer,
+        ForeignKey("calendar_connections.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Sync metadata
+    sync_type = Column(
+        String(20),
+        CheckConstraint("sync_type IN ('manual', 'scheduled', 'webhook')"),
+        nullable=False,
+    )
+    direction = Column(
+        String(20),
+        CheckConstraint("direction IN ('to_calendar', 'from_calendar', 'both')"),
+        nullable=False,
+    )
+    status = Column(
+        String(20),
+        CheckConstraint("status IN ('started', 'success', 'failed', 'partial')"),
+        nullable=False,
+        index=True,
+    )
+
+    # Statistics
+    events_created = Column(Integer, default=0)
+    events_updated = Column(Integer, default=0)
+    events_deleted = Column(Integer, default=0)
+    conflicts_detected = Column(Integer, default=0)
+    conflicts_resolved = Column(Integer, default=0)
+
+    # Error tracking
+    error_message = Column(Text, nullable=True)
+
+    # Timing
+    started_at = Column(DateTime, nullable=False, index=True)
+    completed_at = Column(DateTime, nullable=True)
+    duration_seconds = Column(Float, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+
+    # Relationships
+    connection = relationship("CalendarConnection", back_populates="sync_logs")
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<CalendarSyncLog(id={self.id}, type='{self.sync_type}', status='{self.status}', duration={self.duration_seconds}s)>"
+
+    def mark_completed(self, status: str):
+        """Mark sync as completed with given status."""
+        self.completed_at = datetime.now(timezone.utc)
+        self.status = status
+        if self.started_at:
+            started = self.started_at
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=timezone.utc)
+            self.duration_seconds = (self.completed_at - started).total_seconds()
+
+    def is_successful(self) -> bool:
+        """Check if sync was successful."""
+        return self.status in ("success", "partial")
+
+
+class CalendarConflict(Base):
+    """
+    Calendar Conflict - Track and resolve synchronization conflicts.
+
+    Records conflicts that occur when an event is modified in both Charlee
+    and the external calendar, requiring resolution.
+    """
+
+    __tablename__ = "calendar_conflicts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(
+        Integer,
+        ForeignKey("calendar_events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Conflict information
+    conflict_type = Column(
+        String(50),
+        CheckConstraint(
+            "conflict_type IN ('both_modified', 'time_conflict', 'duplicate', 'deletion_conflict')"
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    # Conflicting versions
+    charlee_version = Column(JSON, nullable=True)
+    external_version = Column(JSON, nullable=True)
+
+    # Resolution
+    resolution_strategy = Column(
+        String(50),
+        CheckConstraint(
+            "resolution_strategy IN ('last_modified_wins', 'manual', 'charlee_wins', 'external_wins', 'merge')"
+        ),
+        default="last_modified_wins",
+    )
+    status = Column(
+        String(20),
+        CheckConstraint("status IN ('detected', 'resolved', 'manual_review')"),
+        default="detected",
+        index=True,
+    )
+    resolved_version = Column(JSON, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    resolved_by = Column(String(50), nullable=True)  # 'system' or 'user'
+    notes = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    event = relationship("CalendarEvent", back_populates="conflicts")
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<CalendarConflict(id={self.id}, type='{self.conflict_type}', status='{self.status}', event_id={self.event_id})>"
+
+    def resolve(self, resolution: dict, resolved_by: str = "system"):
+        """Mark conflict as resolved with given resolution."""
+        self.status = "resolved"
+        self.resolved_version = resolution
+        self.resolved_at = datetime.now(timezone.utc)
+        self.resolved_by = resolved_by
+        self.updated_at = datetime.now(timezone.utc)
+
+    def needs_manual_review(self) -> bool:
+        """Check if conflict needs manual review."""
+        return self.status == "manual_review" or self.resolution_strategy == "manual"
+
+
+# Additional indexes for Calendar Integration
+# CREATE INDEX idx_calendar_connections_user_provider ON calendar_connections(user_id, provider);
+# CREATE INDEX idx_calendar_events_user_start ON calendar_events(user_id, start_time);
+# CREATE INDEX idx_calendar_events_connection_external ON calendar_events(connection_id, external_event_id);
+# CREATE INDEX idx_calendar_sync_logs_user_started ON calendar_sync_logs(user_id, started_at DESC);
+# CREATE INDEX idx_calendar_conflicts_event_status ON calendar_conflicts(event_id, status);

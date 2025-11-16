@@ -736,3 +736,299 @@ class NegotiationListResponse(BaseModel):
 
     total: int
     negotiations: list[NegotiationResponse]
+
+
+# ==================== Calendar Integration Schemas ====================
+
+
+class CalendarConnectionBase(BaseModel):
+    """Base schema for CalendarConnection."""
+
+    provider: Literal["google", "microsoft"]
+    calendar_id: str = Field(..., min_length=1, max_length=255)
+    calendar_name: Optional[str] = Field(None, max_length=255)
+    sync_enabled: bool = True
+    sync_direction: Literal["both", "to_calendar", "from_calendar"] = "both"
+
+
+class CalendarConnectionCreate(BaseModel):
+    """Schema for creating a CalendarConnection."""
+
+    provider: Literal["google", "microsoft"]
+    calendar_id: str = Field(..., min_length=1, max_length=255)
+    calendar_name: Optional[str] = Field(None, max_length=255)
+    access_token: str = Field(..., min_length=1)
+    refresh_token: Optional[str] = None
+    token_expires_at: Optional[datetime] = None
+    sync_enabled: bool = True
+    sync_direction: Literal["both", "to_calendar", "from_calendar"] = "both"
+
+
+class CalendarConnectionUpdate(BaseModel):
+    """Schema for updating a CalendarConnection."""
+
+    calendar_name: Optional[str] = Field(None, max_length=255)
+    sync_enabled: Optional[bool] = None
+    sync_direction: Optional[Literal["both", "to_calendar", "from_calendar"]] = None
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_expires_at: Optional[datetime] = None
+
+
+class CalendarConnectionResponse(CalendarConnectionBase):
+    """Schema for CalendarConnection response."""
+
+    id: int
+    user_id: int
+    last_sync_at: Optional[datetime] = None
+    webhook_id: Optional[str] = None
+    webhook_expires_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CalendarEventBase(BaseModel):
+    """Base schema for CalendarEvent."""
+
+    title: str = Field(..., min_length=1, max_length=500)
+    description: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    all_day: bool = False
+    location: Optional[str] = Field(None, max_length=500)
+    status: Literal["confirmed", "tentative", "cancelled"] = "confirmed"
+
+    @field_validator("title", "description", "location")
+    @classmethod
+    def sanitize_text(cls, v: Optional[str]) -> Optional[str]:
+        """Sanitize text fields to prevent XSS."""
+        if v is None:
+            return v
+        sanitized = sanitize_string(v, max_length=5000, allow_newlines=True)
+        return sanitized if sanitized.strip() else None
+
+    @field_validator("end_time")
+    @classmethod
+    def validate_end_after_start(cls, v: datetime, values) -> datetime:
+        """Validate that end_time is after start_time."""
+        # Access start_time from the model data using info.data
+        if "start_time" in values.data and v <= values.data["start_time"]:
+            raise ValueError("end_time must be after start_time")
+        return v
+
+
+class CalendarEventCreate(BaseModel):
+    """Schema for creating a CalendarEvent."""
+
+    connection_id: int = Field(..., gt=0)
+    external_event_id: str = Field(..., min_length=1, max_length=255)
+    task_id: Optional[int] = Field(None, gt=0)
+    title: str = Field(..., min_length=1, max_length=500)
+    description: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    all_day: bool = False
+    location: Optional[str] = Field(None, max_length=500)
+    attendees: Optional[str] = None
+    is_recurring: bool = False
+    recurrence_rule: Optional[str] = None
+    status: Literal["confirmed", "tentative", "cancelled"] = "confirmed"
+    source: Literal["charlee", "external"]
+
+
+class CalendarEventUpdate(BaseModel):
+    """Schema for updating a CalendarEvent."""
+
+    title: Optional[str] = Field(None, min_length=1, max_length=500)
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    all_day: Optional[bool] = None
+    location: Optional[str] = Field(None, max_length=500)
+    attendees: Optional[str] = None
+    is_recurring: Optional[bool] = None
+    recurrence_rule: Optional[str] = None
+    status: Optional[Literal["confirmed", "tentative", "cancelled"]] = None
+
+
+class CalendarEventResponse(CalendarEventBase):
+    """Schema for CalendarEvent response."""
+
+    id: int
+    connection_id: int
+    user_id: int
+    external_event_id: str
+    task_id: Optional[int] = None
+    attendees: Optional[str] = None
+    is_recurring: bool
+    recurrence_rule: Optional[str] = None
+    source: str
+    last_modified_at: Optional[datetime] = None
+    charlee_modified_at: Optional[datetime] = None
+    external_modified_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CalendarSyncLogBase(BaseModel):
+    """Base schema for CalendarSyncLog."""
+
+    sync_type: Literal["manual", "scheduled", "webhook"]
+    direction: Literal["to_calendar", "from_calendar", "both"]
+    status: Literal["started", "success", "failed", "partial"]
+
+
+class CalendarSyncLogCreate(CalendarSyncLogBase):
+    """Schema for creating a CalendarSyncLog."""
+
+    connection_id: int = Field(..., gt=0)
+    started_at: datetime
+
+
+class CalendarSyncLogUpdate(BaseModel):
+    """Schema for updating a CalendarSyncLog."""
+
+    status: Literal["started", "success", "failed", "partial"]
+    events_created: Optional[int] = Field(None, ge=0)
+    events_updated: Optional[int] = Field(None, ge=0)
+    events_deleted: Optional[int] = Field(None, ge=0)
+    conflicts_detected: Optional[int] = Field(None, ge=0)
+    conflicts_resolved: Optional[int] = Field(None, ge=0)
+    error_message: Optional[str] = None
+    completed_at: Optional[datetime] = None
+    duration_seconds: Optional[float] = Field(None, ge=0)
+
+
+class CalendarSyncLogResponse(CalendarSyncLogBase):
+    """Schema for CalendarSyncLog response."""
+
+    id: int
+    connection_id: int
+    user_id: int
+    events_created: int
+    events_updated: int
+    events_deleted: int
+    conflicts_detected: int
+    conflicts_resolved: int
+    error_message: Optional[str] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    duration_seconds: Optional[float] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CalendarConflictBase(BaseModel):
+    """Base schema for CalendarConflict."""
+
+    conflict_type: Literal["both_modified", "time_conflict", "duplicate", "deletion_conflict"]
+    resolution_strategy: Literal[
+        "last_modified_wins", "manual", "charlee_wins", "external_wins", "merge"
+    ] = "last_modified_wins"
+    status: Literal["detected", "resolved", "manual_review"] = "detected"
+
+
+class CalendarConflictCreate(CalendarConflictBase):
+    """Schema for creating a CalendarConflict."""
+
+    event_id: int = Field(..., gt=0)
+    charlee_version: Optional[dict] = None
+    external_version: Optional[dict] = None
+
+
+class CalendarConflictUpdate(BaseModel):
+    """Schema for updating a CalendarConflict."""
+
+    resolution_strategy: Optional[
+        Literal["last_modified_wins", "manual", "charlee_wins", "external_wins", "merge"]
+    ] = None
+    status: Optional[Literal["detected", "resolved", "manual_review"]] = None
+    resolved_version: Optional[dict] = None
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[str] = Field(None, max_length=50)
+    notes: Optional[str] = None
+
+
+class CalendarConflictResponse(CalendarConflictBase):
+    """Schema for CalendarConflict response."""
+
+    id: int
+    event_id: int
+    user_id: int
+    charlee_version: Optional[dict] = None
+    external_version: Optional[dict] = None
+    resolved_version: Optional[dict] = None
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==================== Calendar Integration List Responses ====================
+
+
+class CalendarConnectionListResponse(BaseModel):
+    """Schema for list of calendar connections."""
+
+    total: int
+    connections: list[CalendarConnectionResponse]
+
+
+class CalendarEventListResponse(BaseModel):
+    """Schema for list of calendar events."""
+
+    total: int
+    events: list[CalendarEventResponse]
+
+
+class CalendarSyncLogListResponse(BaseModel):
+    """Schema for list of calendar sync logs."""
+
+    total: int
+    logs: list[CalendarSyncLogResponse]
+
+
+class CalendarConflictListResponse(BaseModel):
+    """Schema for list of calendar conflicts."""
+
+    total: int
+    conflicts: list[CalendarConflictResponse]
+
+
+# ==================== Calendar OAuth Schemas ====================
+
+
+class GoogleCalendarAuthUrl(BaseModel):
+    """Schema for Google Calendar OAuth authorization URL."""
+
+    auth_url: str
+    state: str
+
+
+class MicrosoftCalendarAuthUrl(BaseModel):
+    """Schema for Microsoft Calendar OAuth authorization URL."""
+
+    auth_url: str
+    state: str
+
+
+class CalendarOAuthCallback(BaseModel):
+    """Schema for OAuth callback data."""
+
+    code: str
+    state: str
+
+
+class CalendarSyncRequest(BaseModel):
+    """Schema for manual calendar sync request."""
+
+    connection_id: int = Field(..., gt=0)
+    direction: Optional[Literal["to_calendar", "from_calendar", "both"]] = "both"
