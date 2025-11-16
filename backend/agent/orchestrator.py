@@ -9,6 +9,10 @@ from agent.specialized_agents.capacity_guard_agent import CapacityGuardAgent
 from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
 from agent.specialized_agents.daily_tracking_agent import DailyTrackingAgent
 from agent.specialized_agents.freelancer_agent import FreelancerAgent
+from agent.specialized_agents.projects import (
+    CareerInsightsAgent,
+    PortfolioBuilderAgent,
+)
 
 
 class AgentOrchestrator:
@@ -45,6 +49,16 @@ class AgentOrchestrator:
         self.daily_tracking_agent = DailyTrackingAgent(db=db)
         self.freelancer_agent = FreelancerAgent(db=db)
 
+        # Initialize MVP 3 Projects Intelligence agents
+        # Convert user_id to int for projects agents (they use numeric user_id)
+        try:
+            numeric_user_id = int(user_id) if isinstance(user_id, str) and user_id.isdigit() else 1
+        except (ValueError, AttributeError):
+            numeric_user_id = 1  # Default to user 1
+
+        self.career_insights_agent = CareerInsightsAgent(db=db, user_id=numeric_user_id)
+        self.portfolio_builder_agent = PortfolioBuilderAgent(db=db, user_id=numeric_user_id)
+
         # Track current context
         self.context: Dict[str, Any] = {
             "last_agent_used": None,
@@ -70,6 +84,10 @@ class AgentOrchestrator:
             response = self._handle_daily_tracking(message)
         elif intent == "freelancer":
             response = self._handle_freelancer(message)
+        elif intent == "career_insights":
+            response = self._handle_career_insights(message)
+        elif intent == "portfolio":
+            response = self._handle_portfolio(message)
         elif intent == "wellness" or intent == "cycle":
             response = self._handle_wellness(message)
         elif intent == "capacity" or intent == "workload":
@@ -197,7 +215,61 @@ class AgentOrchestrator:
             "contrato",
         ]
 
-        # Check for freelancer intent (check first as it's more specific)
+        # Career insights keywords
+        career_insights_keywords = [
+            "carreira",
+            "evolução profissional",
+            "progresso",
+            "crescimento profissional",
+            "análise de carreira",
+            "resumo de carreira",
+            "habilidades que usei",
+            "skills progression",
+            "minhas estatísticas",
+            "meu desempenho",
+            "projetos completados",
+            "receita total",
+            "valor médio",
+            "satisfação do cliente",
+            "tendências",
+            "recomendações",
+            "como está minha carreira",
+            "últimos 90 dias",
+            "últimos meses",
+            "top projetos",
+            "melhores projetos",
+            "income trends",
+        ]
+
+        # Portfolio keywords
+        portfolio_keywords = [
+            "portfólio",
+            "portfolio",
+            "meu trabalho",
+            "showcas",
+            "projetos por skill",
+            "categorizar projetos",
+            "achievements",
+            "conquistas",
+            "realizações",
+            "descrição do projeto",
+            "mostrar meu portfolio",
+            "visualizar portfolio",
+            "exportar portfolio",
+            "projetos python",
+            "projetos react",
+            "top achievements",
+        ]
+
+        # Check for career insights intent (check before freelancer as it's more specific)
+        if any(keyword in message_lower for keyword in career_insights_keywords):
+            return "career_insights"
+
+        # Check for portfolio intent
+        if any(keyword in message_lower for keyword in portfolio_keywords):
+            return "portfolio"
+
+        # Check for freelancer intent
         if any(keyword in message_lower for keyword in freelancer_keywords):
             return "freelancer"
 
@@ -266,6 +338,32 @@ class AgentOrchestrator:
 
         # Get response from freelancer agent
         response = self.freelancer_agent.print_response(message)  # type: ignore[func-returns-value]
+
+        # Extract text from response if it's a RunResponse object
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
+
+    def _handle_career_insights(self, message: str) -> str:
+        """Handle career insights and analytics queries."""
+        self.context["last_agent_used"] = "career_insights"
+        self.context["conversation_topic"] = "career_insights"
+
+        # Get response from career insights agent
+        response = self.career_insights_agent.print_response(message)  # type: ignore[func-returns-value]
+
+        # Extract text from response if it's a RunResponse object
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
+
+    def _handle_portfolio(self, message: str) -> str:
+        """Handle portfolio building and showcasing queries."""
+        self.context["last_agent_used"] = "portfolio"
+        self.context["conversation_topic"] = "portfolio"
+
+        # Get response from portfolio builder agent
+        response = self.portfolio_builder_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
         if hasattr(response, "content"):
@@ -422,6 +520,9 @@ class AgentOrchestrator:
                 "cycle_aware": True,
                 "capacity_guard": True,
                 "daily_tracking": True,
+                "freelancer": True,
+                "career_insights": True,
+                "portfolio_builder": True,
             },
             "orchestration_features": {
                 "intelligent_routing": True,
@@ -429,6 +530,8 @@ class AgentOrchestrator:
                 "capacity_aware_task_creation": True,
                 "wellness_context_injection": True,
                 "daily_tracking_and_patterns": True,
+                "career_analytics": True,
+                "portfolio_generation": True,
             },
         }
 
@@ -451,6 +554,19 @@ class AgentOrchestrator:
         if intent == "daily_tracking":
             agent = "DailyTrackingAgent"
             reason = "Mensagem contém palavras-chave relacionadas a registro diário e padrões"
+        elif intent == "career_insights":
+            agent = "CareerInsightsAgent"
+            reason = (
+                "Mensagem contém palavras-chave relacionadas a análise de carreira e estatísticas"
+            )
+        elif intent == "portfolio":
+            agent = "PortfolioBuilderAgent"
+            reason = (
+                "Mensagem contém palavras-chave relacionadas a portfólio e showcasing de projetos"
+            )
+        elif intent == "freelancer":
+            agent = "FreelancerAgent"
+            reason = "Mensagem contém palavras-chave relacionadas a gestão freelancer e faturamento"
         elif intent == "wellness":
             agent = "CycleAwareAgent"
             reason = "Mensagem contém palavras-chave relacionadas a bem-estar/ciclo menstrual"
@@ -482,7 +598,79 @@ class AgentOrchestrator:
         message_lower = message.lower()
         matched = []
 
-        if intent == "daily_tracking":
+        if intent == "career_insights":
+            career_insights_keywords = [
+                "carreira",
+                "evolução profissional",
+                "progresso",
+                "crescimento profissional",
+                "análise de carreira",
+                "resumo de carreira",
+                "habilidades que usei",
+                "skills progression",
+                "minhas estatísticas",
+                "meu desempenho",
+                "projetos completados",
+                "receita total",
+                "valor médio",
+                "satisfação do cliente",
+                "tendências",
+                "recomendações",
+                "como está minha carreira",
+                "últimos 90 dias",
+                "últimos meses",
+                "top projetos",
+                "melhores projetos",
+                "income trends",
+            ]
+            matched = [kw for kw in career_insights_keywords if kw in message_lower]
+
+        elif intent == "portfolio":
+            portfolio_keywords = [
+                "portfólio",
+                "portfolio",
+                "meu trabalho",
+                "showcas",
+                "projetos por skill",
+                "categorizar projetos",
+                "achievements",
+                "conquistas",
+                "realizações",
+                "descrição do projeto",
+                "mostrar meu portfolio",
+                "visualizar portfolio",
+                "exportar portfolio",
+                "projetos python",
+                "projetos react",
+                "top achievements",
+            ]
+            matched = [kw for kw in portfolio_keywords if kw in message_lower]
+
+        elif intent == "freelancer":
+            freelancer_keywords = [
+                "freelance",
+                "cliente",
+                "projeto freelance",
+                "orçamento",
+                "invoice",
+                "fatura",
+                "horas trabalhadas",
+                "registrar horas",
+                "timetracking",
+                "taxa hora",
+                "projeto cliente",
+                "faturamento",
+                "receita mensal",
+                "pagamento cliente",
+                "trabalho freelance",
+                "aceitar projeto",
+                "proposta",
+                "trabalho remoto",
+                "contrato",
+            ]
+            matched = [kw for kw in freelancer_keywords if kw in message_lower]
+
+        elif intent == "daily_tracking":
             daily_tracking_keywords = [
                 "registrar dia",
                 "registro diário",
