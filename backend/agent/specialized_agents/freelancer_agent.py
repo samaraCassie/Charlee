@@ -1,4 +1,4 @@
-"""FreelancerAgent - Agente para gerenciamento de projetos freelance."""
+"""FreelancerAgent - Agent for freelance project management."""
 
 from datetime import date, datetime, timedelta
 from typing import List, Optional
@@ -13,14 +13,14 @@ from database.models import FreelanceProject, Invoice, WorkLog
 
 class FreelancerAgent(Agent):
     """
-    Agente para gerenciamento de projetos freelance.
+    Agent for freelance project management.
 
-    Funções:
-    - Gerencia projetos e clientes
-    - Faz timetracking de horas trabalhadas
-    - Gera invoices baseados em horas
-    - Verifica disponibilidade antes de aceitar projetos
-    - Sugere aceite/rejeição considerando capacidade e ciclo
+    Functions:
+    - Manage projects and clients
+    - Track time worked on projects
+    - Generate invoices based on hours
+    - Check availability before accepting projects
+    - Suggest project acceptance considering capacity and cycle
     """
 
     def __init__(self, db: Session):
@@ -31,26 +31,26 @@ class FreelancerAgent(Agent):
             name="Freelancer Manager",
             model=OpenAIChat(id="gpt-4o-mini"),
             instructions=[
-                "Você é o gerente de projetos freelance.",
-                "Ajude a organizar projetos, clientes e faturamento.",
-                "Faça timetracking preciso de horas trabalhadas.",
-                "Gere invoices profissionais.",
-                "Proteja contra sobrecarga ao aceitar novos projetos.",
-                "Considere o ciclo menstrual ao sugerir timing de projetos.",
+                "You are the freelance project manager.",
+                "Help organize projects, clients, and billing.",
+                "Track time worked accurately.",
+                "Generate professional invoices.",
+                "Protect against overload when accepting new projects.",
+                "Consider menstrual cycle when suggesting project timing.",
             ],
             tools=[
-                self.criar_projeto_freelance,
-                self.listar_projetos,
-                self.registrar_horas_trabalhadas,
-                self.calcular_invoice,
-                self.verificar_disponibilidade,
-                self.sugerir_aceite_projeto,
-                self.atualizar_status_projeto,
-                self.gerar_relatorio_mensal,
+                self.create_freelance_project,
+                self.list_projects,
+                self.log_work_hours,
+                self.calculate_invoice,
+                self.check_availability,
+                self.suggest_project_acceptance,
+                self.update_project_status,
+                self.generate_monthly_report,
             ],
         )
 
-    def criar_projeto_freelance(
+    def create_freelance_project(
         self,
         user_id: int,
         client_name: str,
@@ -63,21 +63,21 @@ class FreelancerAgent(Agent):
         tags: Optional[str] = None,
     ) -> str:
         """
-        Cria um novo projeto freelance.
+        Create a new freelance project.
 
         Args:
-            user_id: ID do usuário
-            client_name: Nome do cliente
-            project_name: Nome do projeto
-            hourly_rate: Taxa por hora (R$)
-            estimated_hours: Horas estimadas
-            description: Descrição do projeto (opcional)
-            deadline: Data de entrega no formato YYYY-MM-DD (opcional)
-            start_date: Data de início no formato YYYY-MM-DD (opcional)
-            tags: Tags separadas por vírgula (opcional)
+            user_id: User ID
+            client_name: Client name
+            project_name: Project name
+            hourly_rate: Hourly rate (R$)
+            estimated_hours: Estimated hours
+            description: Project description (optional)
+            deadline: Deadline in YYYY-MM-DD format (optional)
+            start_date: Start date in YYYY-MM-DD format (optional)
+            tags: Comma-separated tags (optional)
 
         Returns:
-            str: Mensagem de confirmação com detalhes do projeto
+            str: Confirmation message with project details
         """
         try:
             # Parse dates if provided
@@ -109,43 +109,43 @@ class FreelancerAgent(Agent):
 
             estimated_value = project.calculate_estimated_value()
 
-            result = f"✅ **Projeto Criado com Sucesso!**\n\n"
-            result += f"📁 **Projeto**: {project_name}\n"
-            result += f"👤 **Cliente**: {client_name}\n"
-            result += f"💰 **Taxa/hora**: R$ {hourly_rate:.2f}\n"
-            result += f"⏱️ **Horas estimadas**: {estimated_hours}h\n"
-            result += f"💵 **Valor estimado**: R$ {estimated_value:.2f}\n"
+            result = f"✅ **Project Created Successfully!**\n\n"
+            result += f"📁 **Project**: {project_name}\n"
+            result += f"👤 **Client**: {client_name}\n"
+            result += f"💰 **Hourly Rate**: R$ {hourly_rate:.2f}\n"
+            result += f"⏱️ **Estimated Hours**: {estimated_hours}h\n"
+            result += f"💵 **Estimated Value**: R$ {estimated_value:.2f}\n"
 
             if deadline_date:
                 result += f"📅 **Deadline**: {deadline_date.strftime('%d/%m/%Y')}\n"
 
             if start_date_obj:
-                result += f"🚀 **Início**: {start_date_obj.strftime('%d/%m/%Y')}\n"
+                result += f"🚀 **Start Date**: {start_date_obj.strftime('%d/%m/%Y')}\n"
 
-            result += f"\n🆔 **ID do Projeto**: {project.id}\n"
-            result += f"📊 **Status**: Proposta\n"
+            result += f"\n🆔 **Project ID**: {project.id}\n"
+            result += f"📊 **Status**: Proposal\n"
 
             return result
 
         except ValueError as e:
-            return f"❌ Erro no formato da data: {str(e)}. Use YYYY-MM-DD (ex: 2025-12-31)"
+            return f"❌ Date format error: {str(e)}. Use YYYY-MM-DD (e.g., 2025-12-31)"
         except Exception as e:
             self.database.rollback()
-            return f"❌ Erro ao criar projeto: {str(e)}"
+            return f"❌ Error creating project: {str(e)}"
 
-    def listar_projetos(
+    def list_projects(
         self, user_id: int, status: Optional[str] = None, limit: int = 20
     ) -> str:
         """
-        Lista projetos freelance com filtros opcionais.
+        List freelance projects with optional filters.
 
         Args:
-            user_id: ID do usuário
-            status: Filtrar por status (proposal, active, completed, cancelled)
-            limit: Número máximo de projetos a retornar
+            user_id: User ID
+            status: Filter by status (proposal, active, completed, cancelled)
+            limit: Maximum number of projects to return
 
         Returns:
-            str: Lista formatada de projetos
+            str: Formatted list of projects
         """
         try:
             query = self.database.query(FreelanceProject).filter(
@@ -158,10 +158,10 @@ class FreelancerAgent(Agent):
             projects = query.order_by(FreelanceProject.created_at.desc()).limit(limit).all()
 
             if not projects:
-                filter_msg = f" com status '{status}'" if status else ""
-                return f"📂 Nenhum projeto encontrado{filter_msg}."
+                filter_msg = f" with status '{status}'" if status else ""
+                return f"📂 No projects found{filter_msg}."
 
-            result = f"📋 **Projetos Freelance**"
+            result = f"📋 **Freelance Projects**"
             if status:
                 result += f" (Status: {status})"
             result += f"\n\n"
@@ -181,16 +181,16 @@ class FreelancerAgent(Agent):
                 estimated_value = project.calculate_estimated_value()
 
                 result += f"{status_emoji} **{project.project_name}**\n"
-                result += f"   👤 Cliente: {project.client_name}\n"
-                result += f"   ⏱️ Horas: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
-                result += f"   💰 Valor: R$ {current_value:.2f} / R$ {estimated_value:.2f}\n"
+                result += f"   👤 Client: {project.client_name}\n"
+                result += f"   ⏱️ Hours: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+                result += f"   💰 Value: R$ {current_value:.2f} / R$ {estimated_value:.2f}\n"
 
                 if project.deadline:
                     days_until = (project.deadline - date.today()).days
                     if days_until < 0:
-                        result += f"   ⚠️ Deadline: {project.deadline.strftime('%d/%m/%Y')} (atrasado {abs(days_until)} dias)\n"
+                        result += f"   ⚠️ Deadline: {project.deadline.strftime('%d/%m/%Y')} (overdue {abs(days_until)} days)\n"
                     elif days_until <= 7:
-                        result += f"   🔥 Deadline: {project.deadline.strftime('%d/%m/%Y')} ({days_until} dias)\n"
+                        result += f"   🔥 Deadline: {project.deadline.strftime('%d/%m/%Y')} ({days_until} days)\n"
                     else:
                         result += f"   📅 Deadline: {project.deadline.strftime('%d/%m/%Y')}\n"
 
@@ -200,18 +200,18 @@ class FreelancerAgent(Agent):
                     total_value += current_value
                     total_hours += project.actual_hours
 
-            result += f"📊 **Resumo**:\n"
-            result += f"• Total de projetos: {len(projects)}\n"
+            result += f"📊 **Summary**:\n"
+            result += f"• Total projects: {len(projects)}\n"
             if total_hours > 0:
-                result += f"• Horas trabalhadas: {total_hours:.1f}h\n"
-                result += f"• Valor total: R$ {total_value:.2f}\n"
+                result += f"• Hours worked: {total_hours:.1f}h\n"
+                result += f"• Total value: R$ {total_value:.2f}\n"
 
             return result
 
         except Exception as e:
-            return f"❌ Erro ao listar projetos: {str(e)}"
+            return f"❌ Error listing projects: {str(e)}"
 
-    def registrar_horas_trabalhadas(
+    def log_work_hours(
         self,
         user_id: int,
         project_id: int,
@@ -222,19 +222,19 @@ class FreelancerAgent(Agent):
         billable: bool = True,
     ) -> str:
         """
-        Registra horas trabalhadas em um projeto.
+        Log hours worked on a project.
 
         Args:
-            user_id: ID do usuário
-            project_id: ID do projeto
-            hours: Número de horas trabalhadas
-            description: Descrição do trabalho realizado
-            work_date: Data do trabalho (YYYY-MM-DD, padrão: hoje)
-            task_type: Tipo de tarefa (development, design, meeting, etc.)
-            billable: Se as horas são cobráveis (padrão: True)
+            user_id: User ID
+            project_id: Project ID
+            hours: Number of hours worked
+            description: Description of work performed
+            work_date: Work date (YYYY-MM-DD, default: today)
+            task_type: Type of task (development, design, meeting, etc.)
+            billable: Whether hours are billable (default: True)
 
         Returns:
-            str: Confirmação com resumo das horas
+            str: Confirmation with work summary
         """
         try:
             # Verify project exists and belongs to user
@@ -247,7 +247,7 @@ class FreelancerAgent(Agent):
             )
 
             if not project:
-                return f"❌ Projeto {project_id} não encontrado."
+                return f"❌ Project {project_id} not found."
 
             # Parse work date
             if work_date:
@@ -278,41 +278,41 @@ class FreelancerAgent(Agent):
             # Calculate amount
             amount = work_log.calculate_amount()
 
-            result = f"✅ **Horas Registradas!**\n\n"
-            result += f"📁 **Projeto**: {project.project_name}\n"
-            result += f"👤 **Cliente**: {project.client_name}\n"
-            result += f"📅 **Data**: {work_date_obj.strftime('%d/%m/%Y')}\n"
-            result += f"⏱️ **Horas**: {hours}h\n"
+            result = f"✅ **Hours Logged!**\n\n"
+            result += f"📁 **Project**: {project.project_name}\n"
+            result += f"👤 **Client**: {project.client_name}\n"
+            result += f"📅 **Date**: {work_date_obj.strftime('%d/%m/%Y')}\n"
+            result += f"⏱️ **Hours**: {hours}h\n"
 
             if task_type:
-                result += f"🏷️ **Tipo**: {task_type}\n"
+                result += f"🏷️ **Type**: {task_type}\n"
 
-            result += f"💰 **Valor**: R$ {amount:.2f}\n"
-            result += f"💵 **Cobrável**: {'Sim' if billable else 'Não'}\n"
-            result += f"\n📝 **Descrição**: {description}\n"
+            result += f"💰 **Value**: R$ {amount:.2f}\n"
+            result += f"💵 **Billable**: {'Yes' if billable else 'No'}\n"
+            result += f"\n📝 **Description**: {description}\n"
 
-            result += f"\n📊 **Total do Projeto**:\n"
-            result += f"• Horas trabalhadas: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+            result += f"\n📊 **Project Total**:\n"
+            result += f"• Hours worked: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
 
             progress_pct = (project.actual_hours / project.estimated_hours * 100) if project.estimated_hours > 0 else 0
-            result += f"• Progresso: {progress_pct:.1f}%\n"
+            result += f"• Progress: {progress_pct:.1f}%\n"
 
             total_value = project.calculate_total_value()
             estimated_value = project.calculate_estimated_value()
-            result += f"• Valor acumulado: R$ {total_value:.2f} / R$ {estimated_value:.2f}\n"
+            result += f"• Accumulated value: R$ {total_value:.2f} / R$ {estimated_value:.2f}\n"
 
             if project.actual_hours > project.estimated_hours:
-                result += f"\n⚠️ **Atenção**: Projeto ultrapassou as horas estimadas!\n"
+                result += f"\n⚠️ **Warning**: Project exceeded estimated hours!\n"
 
             return result
 
         except ValueError as e:
-            return f"❌ Erro no formato da data: {str(e)}. Use YYYY-MM-DD"
+            return f"❌ Date format error: {str(e)}. Use YYYY-MM-DD"
         except Exception as e:
             self.database.rollback()
-            return f"❌ Erro ao registrar horas: {str(e)}"
+            return f"❌ Error logging hours: {str(e)}"
 
-    def calcular_invoice(
+    def calculate_invoice(
         self,
         user_id: int,
         project_id: int,
@@ -321,17 +321,17 @@ class FreelancerAgent(Agent):
         include_unbilled_only: bool = True,
     ) -> str:
         """
-        Gera um invoice para um projeto baseado nas horas trabalhadas.
+        Generate an invoice for a project based on hours worked.
 
         Args:
-            user_id: ID do usuário
-            project_id: ID do projeto
-            invoice_number: Número da invoice (gerado automaticamente se não fornecido)
-            payment_terms: Termos de pagamento (padrão: Net 30)
-            include_unbilled_only: Incluir apenas horas não faturadas (padrão: True)
+            user_id: User ID
+            project_id: Project ID
+            invoice_number: Invoice number (auto-generated if not provided)
+            payment_terms: Payment terms (default: Net 30)
+            include_unbilled_only: Include only unbilled hours (default: True)
 
         Returns:
-            str: Detalhes da invoice gerada
+            str: Invoice details
         """
         try:
             # Verify project
@@ -344,7 +344,7 @@ class FreelancerAgent(Agent):
             )
 
             if not project:
-                return f"❌ Projeto {project_id} não encontrado."
+                return f"❌ Project {project_id} not found."
 
             # Get work logs
             query = self.database.query(WorkLog).filter(
@@ -358,7 +358,7 @@ class FreelancerAgent(Agent):
             work_logs = query.all()
 
             if not work_logs:
-                return f"❌ Nenhuma hora cobrável encontrada para este projeto."
+                return f"❌ No billable hours found for this project."
 
             # Calculate totals
             total_hours = sum(log.hours for log in work_logs)
@@ -399,39 +399,39 @@ class FreelancerAgent(Agent):
 
             self.database.commit()
 
-            result = f"📄 **Invoice Gerada!**\n\n"
-            result += f"🔢 **Número**: {invoice_number}\n"
-            result += f"📅 **Data de emissão**: {invoice.issue_date.strftime('%d/%m/%Y')}\n"
-            result += f"📅 **Vencimento**: {invoice.due_date.strftime('%d/%m/%Y')}\n\n"
+            result = f"📄 **Invoice Generated!**\n\n"
+            result += f"🔢 **Number**: {invoice_number}\n"
+            result += f"📅 **Issue Date**: {invoice.issue_date.strftime('%d/%m/%Y')}\n"
+            result += f"📅 **Due Date**: {invoice.due_date.strftime('%d/%m/%Y')}\n\n"
 
-            result += f"📁 **Projeto**: {project.project_name}\n"
-            result += f"👤 **Cliente**: {project.client_name}\n\n"
+            result += f"📁 **Project**: {project.project_name}\n"
+            result += f"👤 **Client**: {project.client_name}\n\n"
 
-            result += f"⏱️ **Total de horas**: {total_hours:.1f}h\n"
-            result += f"💰 **Taxa/hora**: R$ {project.hourly_rate:.2f}\n"
-            result += f"💵 **Valor total**: R$ {total_amount:.2f}\n\n"
+            result += f"⏱️ **Total Hours**: {total_hours:.1f}h\n"
+            result += f"💰 **Hourly Rate**: R$ {project.hourly_rate:.2f}\n"
+            result += f"💵 **Total Amount**: R$ {total_amount:.2f}\n\n"
 
-            result += f"📋 **Termos de pagamento**: {payment_terms}\n"
+            result += f"📋 **Payment Terms**: {payment_terms}\n"
             result += f"📊 **Status**: {invoice.status}\n\n"
 
-            result += f"🔖 **Itens incluídos**: {len(work_logs)} registros de trabalho\n"
+            result += f"🔖 **Items Included**: {len(work_logs)} work records\n"
 
             return result
 
         except Exception as e:
             self.database.rollback()
-            return f"❌ Erro ao gerar invoice: {str(e)}"
+            return f"❌ Error generating invoice: {str(e)}"
 
-    def verificar_disponibilidade(self, user_id: int, estimated_hours: float) -> str:
+    def check_availability(self, user_id: int, estimated_hours: float) -> str:
         """
-        Verifica a disponibilidade atual para aceitar um novo projeto.
+        Check current availability to accept a new project.
 
         Args:
-            user_id: ID do usuário
-            estimated_hours: Horas estimadas do novo projeto
+            user_id: User ID
+            estimated_hours: Estimated hours for new project
 
         Returns:
-            str: Análise de disponibilidade
+            str: Availability analysis
         """
         try:
             # Count active projects
@@ -455,46 +455,46 @@ class FreelancerAgent(Agent):
             weeks_needed_current = total_remaining_hours / weekly_capacity if weekly_capacity > 0 else 0
             weeks_needed_with_new = (total_remaining_hours + estimated_hours) / weekly_capacity if weekly_capacity > 0 else 0
 
-            result = f"📊 **Análise de Disponibilidade**\n\n"
-            result += f"🔄 **Projetos ativos**: {len(active_projects)}\n"
-            result += f"⏱️ **Horas restantes em projetos ativos**: {total_remaining_hours:.1f}h\n"
-            result += f"⏱️ **Novo projeto**: +{estimated_hours:.1f}h\n"
-            result += f"⏱️ **Total projetado**: {total_remaining_hours + estimated_hours:.1f}h\n\n"
+            result = f"📊 **Availability Analysis**\n\n"
+            result += f"🔄 **Active Projects**: {len(active_projects)}\n"
+            result += f"⏱️ **Remaining Hours in Active Projects**: {total_remaining_hours:.1f}h\n"
+            result += f"⏱️ **New Project**: +{estimated_hours:.1f}h\n"
+            result += f"⏱️ **Projected Total**: {total_remaining_hours + estimated_hours:.1f}h\n\n"
 
-            result += f"📅 **Tempo necessário**:\n"
-            result += f"• Projetos atuais: ~{weeks_needed_current:.1f} semanas\n"
-            result += f"• Com novo projeto: ~{weeks_needed_with_new:.1f} semanas\n\n"
+            result += f"📅 **Time Required**:\n"
+            result += f"• Current projects: ~{weeks_needed_current:.1f} weeks\n"
+            result += f"• With new project: ~{weeks_needed_with_new:.1f} weeks\n\n"
 
             # Decision logic
             if total_remaining_hours + estimated_hours <= weekly_capacity * 2:
-                result += "✅ **RECOMENDAÇÃO: ACEITAR**\n\n"
-                result += "Você tem boa disponibilidade para este projeto.\n"
+                result += "✅ **RECOMMENDATION: ACCEPT**\n\n"
+                result += "You have good availability for this project.\n"
             elif total_remaining_hours + estimated_hours <= weekly_capacity * 4:
-                result += "⚠️ **RECOMENDAÇÃO: AVALIAR COM CUIDADO**\n\n"
-                result += "Você tem disponibilidade, mas:\n"
-                result += "• A carga ficará moderada\n"
-                result += "• Considere negociar prazos flexíveis\n"
-                result += "• Certifique-se de que consegue cumprir os deadlines\n"
+                result += "⚠️ **RECOMMENDATION: EVALUATE CAREFULLY**\n\n"
+                result += "You have availability, but:\n"
+                result += "• Workload will be moderate\n"
+                result += "• Consider negotiating flexible deadlines\n"
+                result += "• Make sure you can meet deadlines\n"
             else:
-                result += "🚨 **RECOMENDAÇÃO: NÃO ACEITAR (sem ajustes)**\n\n"
-                result += "Você está com alta carga de trabalho:\n"
-                result += "• Considere finalizar projetos atuais primeiro\n"
-                result += "• Ou negocie redução de escopo/prazo estendido\n"
-                result += "• Risco de sobrecarga e qualidade comprometida\n"
+                result += "🚨 **RECOMMENDATION: DO NOT ACCEPT (without adjustments)**\n\n"
+                result += "You have high workload:\n"
+                result += "• Consider finishing current projects first\n"
+                result += "• Or negotiate reduced scope/extended deadline\n"
+                result += "• Risk of overload and compromised quality\n"
 
             # List active projects
             if active_projects:
-                result += f"\n📁 **Projetos ativos**:\n"
+                result += f"\n📁 **Active Projects**:\n"
                 for p in active_projects:
                     remaining = max(0, p.estimated_hours - p.actual_hours)
-                    result += f"• {p.project_name} ({p.client_name}): {remaining:.1f}h restantes\n"
+                    result += f"• {p.project_name} ({p.client_name}): {remaining:.1f}h remaining\n"
 
             return result
 
         except Exception as e:
-            return f"❌ Erro ao verificar disponibilidade: {str(e)}"
+            return f"❌ Error checking availability: {str(e)}"
 
-    def sugerir_aceite_projeto(
+    def suggest_project_acceptance(
         self,
         user_id: int,
         project_name: str,
@@ -502,22 +502,22 @@ class FreelancerAgent(Agent):
         deadline_days: Optional[int] = None,
     ) -> str:
         """
-        Sugere se deve aceitar um projeto considerando capacidade e ciclo menstrual.
+        Suggest whether to accept a project considering capacity and menstrual cycle.
 
         Args:
-            user_id: ID do usuário
-            project_name: Nome do projeto
-            estimated_hours: Horas estimadas
-            deadline_days: Dias até o deadline (opcional)
+            user_id: User ID
+            project_name: Project name
+            estimated_hours: Estimated hours
+            deadline_days: Days until deadline (optional)
 
         Returns:
-            str: Análise completa com sugestão
+            str: Complete analysis with suggestion
         """
         try:
-            result = f"🤔 **Análise de Aceite: '{project_name}'**\n\n"
+            result = f"🤔 **Acceptance Analysis: '{project_name}'**\n\n"
 
             # 1. Check capacity
-            availability = self.verificar_disponibilidade(user_id, estimated_hours)
+            availability = self.check_availability(user_id, estimated_hours)
             result += availability
             result += "\n" + "=" * 50 + "\n\n"
 
@@ -534,88 +534,88 @@ class FreelancerAgent(Agent):
                 )
 
                 if latest_cycle:
-                    result += f"🌸 **Contexto de Ciclo**:\n"
-                    result += f"• Fase atual: {latest_cycle.phase}\n"
+                    result += f"🌸 **Cycle Context**:\n"
+                    result += f"• Current phase: {latest_cycle.phase}\n"
 
                     if latest_cycle.energy_level:
-                        result += f"• Energia: {latest_cycle.energy_level}/10\n"
+                        result += f"• Energy: {latest_cycle.energy_level}/10\n"
                     if latest_cycle.focus_level:
-                        result += f"• Foco: {latest_cycle.focus_level}/10\n"
+                        result += f"• Focus: {latest_cycle.focus_level}/10\n"
 
                     # Phase-specific recommendations
                     if latest_cycle.phase == "menstrual":
-                        result += f"\n💭 **Consideração**: Você está na fase menstrual.\n"
-                        result += "• Energia pode estar mais baixa\n"
-                        result += "• Considere negociar prazos mais flexíveis\n"
-                        result += "• Evite projetos muito intensos agora\n"
+                        result += f"\n💭 **Consideration**: You are in menstrual phase.\n"
+                        result += "• Energy may be lower\n"
+                        result += "• Consider negotiating more flexible deadlines\n"
+                        result += "• Avoid very intense projects now\n"
                     elif latest_cycle.phase == "follicular":
-                        result += f"\n💭 **Consideração**: Fase folicular - energia crescente!\n"
-                        result += "• Ótima fase para começar novos projetos\n"
-                        result += "• Energia e criatividade em alta\n"
+                        result += f"\n💭 **Consideration**: Follicular phase - rising energy!\n"
+                        result += "• Great phase to start new projects\n"
+                        result += "• Energy and creativity rising\n"
                     elif latest_cycle.phase == "ovulation":
-                        result += f"\n💭 **Consideração**: Fase de ovulação - pico de energia!\n"
-                        result += "• Melhor momento do ciclo\n"
-                        result += "• Alta energia, foco e comunicação\n"
-                        result += "• Aproveite para projetos desafiadores\n"
+                        result += f"\n💭 **Consideration**: Ovulation phase - peak energy!\n"
+                        result += "• Best time of cycle\n"
+                        result += "• High energy, focus, and communication\n"
+                        result += "• Take advantage for challenging projects\n"
                     elif latest_cycle.phase == "luteal":
-                        result += f"\n💭 **Consideração**: Fase lútea.\n"
-                        result += "• Energia começa a diminuir\n"
-                        result += "• Boa para projetos de finalização\n"
-                        result += "• Evite deadlines muito apertados\n"
+                        result += f"\n💭 **Consideration**: Luteal phase.\n"
+                        result += "• Energy starts to decrease\n"
+                        result += "• Good for completion projects\n"
+                        result += "• Avoid very tight deadlines\n"
 
                     result += "\n" + "=" * 50 + "\n\n"
             except ImportError:
                 pass  # Cycle tracking not available
 
             # 3. Final recommendation
-            result += f"🎯 **Recomendação Final**:\n\n"
+            result += f"🎯 **Final Recommendation**:\n\n"
 
             # Extract decision from availability check
-            if "ACEITAR**" in availability and "NÃO" not in availability:
-                result += "✅ **SUGESTÃO: ACEITAR o projeto**\n\n"
-                result += "Condições favoráveis:\n"
-                result += "✓ Boa disponibilidade de tempo\n"
-                result += "✓ Carga de trabalho gerenciável\n"
-            elif "AVALIAR COM CUIDADO" in availability:
-                result += "⚠️ **SUGESTÃO: ACEITAR COM RESSALVAS**\n\n"
-                result += "Considere:\n"
-                result += "• Negociar prazo mais longo\n"
-                result += "• Solicitar adiantamento\n"
-                result += "• Deixar claro os limites de disponibilidade\n"
+            if "ACCEPT**" in availability and "NOT" not in availability:
+                result += "✅ **SUGGESTION: ACCEPT the project**\n\n"
+                result += "Favorable conditions:\n"
+                result += "✓ Good time availability\n"
+                result += "✓ Manageable workload\n"
+            elif "EVALUATE CAREFULLY" in availability:
+                result += "⚠️ **SUGGESTION: ACCEPT WITH CAVEATS**\n\n"
+                result += "Consider:\n"
+                result += "• Negotiate longer deadline\n"
+                result += "• Request advance payment\n"
+                result += "• Make availability limits clear\n"
             else:
-                result += "🚨 **SUGESTÃO: RECUSAR ou NEGOCIAR**\n\n"
-                result += "Recomendações:\n"
-                result += "• Termine projetos atuais primeiro\n"
-                result += "• Ou negocie escopo reduzido\n"
-                result += "• Ou prazo muito mais longo\n"
+                result += "🚨 **SUGGESTION: DECLINE or NEGOTIATE**\n\n"
+                result += "Recommendations:\n"
+                result += "• Finish current projects first\n"
+                result += "• Or negotiate reduced scope\n"
+                result += "• Or much longer deadline\n"
 
             if deadline_days and deadline_days < 7:
-                result += f"\n⚠️ **Alerta**: Deadline muito curto ({deadline_days} dias)!\n"
-                result += "Avalie se é realista entregar com qualidade.\n"
+                result += f"\n⚠️ **Alert**: Very short deadline ({deadline_days} days)!\n"
+                result += "Evaluate if realistic to deliver with quality.\n"
 
             return result
 
         except Exception as e:
-            return f"❌ Erro ao sugerir aceite: {str(e)}"
+            return f"❌ Error suggesting acceptance: {str(e)}"
 
-    def atualizar_status_projeto(
+    def update_project_status(
         self, user_id: int, project_id: int, new_status: str
     ) -> str:
         """
-        Atualiza o status de um projeto.
+        Update project status.
 
         Args:
-            user_id: ID do usuário
-            project_id: ID do projeto
-            new_status: Novo status (proposal, active, completed, cancelled)
+            user_id: User ID
+            project_id: Project ID
+            new_status: New status (proposal, active, completed, cancelled)
 
         Returns:
-            str: Confirmação da atualização
+            str: Confirmation of update
         """
         try:
             valid_statuses = ["proposal", "active", "completed", "cancelled"]
             if new_status not in valid_statuses:
-                return f"❌ Status inválido. Use: {', '.join(valid_statuses)}"
+                return f"❌ Invalid status. Use: {', '.join(valid_statuses)}"
 
             project = (
                 self.database.query(FreelanceProject)
@@ -626,7 +626,7 @@ class FreelancerAgent(Agent):
             )
 
             if not project:
-                return f"❌ Projeto {project_id} não encontrado."
+                return f"❌ Project {project_id} not found."
 
             old_status = project.status
             project.status = new_status
@@ -644,34 +644,34 @@ class FreelancerAgent(Agent):
                 "cancelled": "❌",
             }.get(new_status, "❓")
 
-            result = f"✅ **Status Atualizado!**\n\n"
-            result += f"📁 **Projeto**: {project.project_name}\n"
-            result += f"👤 **Cliente**: {project.client_name}\n"
-            result += f"📊 **Status anterior**: {old_status}\n"
-            result += f"{status_emoji} **Novo status**: {new_status}\n"
+            result = f"✅ **Status Updated!**\n\n"
+            result += f"📁 **Project**: {project.project_name}\n"
+            result += f"👤 **Client**: {project.client_name}\n"
+            result += f"📊 **Previous Status**: {old_status}\n"
+            result += f"{status_emoji} **New Status**: {new_status}\n"
 
             if new_status == "completed":
-                result += f"\n🎉 **Projeto concluído!**\n"
-                result += f"• Horas trabalhadas: {project.actual_hours:.1f}h\n"
-                result += f"• Valor total: R$ {project.calculate_total_value():.2f}\n"
+                result += f"\n🎉 **Project Completed!**\n"
+                result += f"• Hours worked: {project.actual_hours:.1f}h\n"
+                result += f"• Total value: R$ {project.calculate_total_value():.2f}\n"
 
             return result
 
         except Exception as e:
             self.database.rollback()
-            return f"❌ Erro ao atualizar status: {str(e)}"
+            return f"❌ Error updating status: {str(e)}"
 
-    def gerar_relatorio_mensal(self, user_id: int, month: Optional[int] = None, year: Optional[int] = None) -> str:
+    def generate_monthly_report(self, user_id: int, month: Optional[int] = None, year: Optional[int] = None) -> str:
         """
-        Gera relatório mensal de projetos e faturamento.
+        Generate monthly report of projects and revenue.
 
         Args:
-            user_id: ID do usuário
-            month: Mês (1-12, padrão: mês atual)
-            year: Ano (padrão: ano atual)
+            user_id: User ID
+            month: Month (1-12, default: current month)
+            year: Year (default: current year)
 
         Returns:
-            str: Relatório mensal detalhado
+            str: Detailed monthly report
         """
         try:
             today = date.today()
@@ -709,17 +709,17 @@ class FreelancerAgent(Agent):
 
             month_name = start_date.strftime("%B %Y")
 
-            result = f"📊 **Relatório Mensal - {month_name}**\n\n"
+            result = f"📊 **Monthly Report - {month_name}**\n\n"
 
             # Work logs summary
             total_hours = sum(log.hours for log in work_logs)
             billable_hours = sum(log.hours for log in work_logs if log.billable)
             total_earned = sum(log.calculate_amount() for log in work_logs if log.billable)
 
-            result += f"⏱️ **Horas Trabalhadas**:\n"
+            result += f"⏱️ **Hours Worked**:\n"
             result += f"• Total: {total_hours:.1f}h\n"
-            result += f"• Cobráveis: {billable_hours:.1f}h\n"
-            result += f"• Não cobráveis: {total_hours - billable_hours:.1f}h\n\n"
+            result += f"• Billable: {billable_hours:.1f}h\n"
+            result += f"• Non-billable: {total_hours - billable_hours:.1f}h\n\n"
 
             # Group by project
             project_hours = {}
@@ -729,7 +729,7 @@ class FreelancerAgent(Agent):
                 project_hours[log.project_id]["hours"] += log.hours
 
             if project_hours:
-                result += f"📁 **Por Projeto**:\n"
+                result += f"📁 **By Project**:\n"
                 for proj_data in sorted(
                     project_hours.values(), key=lambda x: x["hours"], reverse=True
                 ):
@@ -739,18 +739,18 @@ class FreelancerAgent(Agent):
                 result += "\n"
 
             # Invoices summary
-            result += f"💰 **Faturamento**:\n"
-            result += f"• Valor ganho: R$ {total_earned:.2f}\n"
-            result += f"• Invoices emitidas: {len(invoices)}\n"
+            result += f"💰 **Revenue**:\n"
+            result += f"• Value earned: R$ {total_earned:.2f}\n"
+            result += f"• Invoices issued: {len(invoices)}\n"
 
             if invoices:
                 total_invoiced = sum(inv.total_amount for inv in invoices)
                 paid_invoices = [inv for inv in invoices if inv.status == "paid"]
                 total_paid = sum(inv.total_amount for inv in paid_invoices)
 
-                result += f"• Total faturado: R$ {total_invoiced:.2f}\n"
-                result += f"• Total pago: R$ {total_paid:.2f}\n"
-                result += f"• Pendente: R$ {total_invoiced - total_paid:.2f}\n\n"
+                result += f"• Total invoiced: R$ {total_invoiced:.2f}\n"
+                result += f"• Total paid: R$ {total_paid:.2f}\n"
+                result += f"• Pending: R$ {total_invoiced - total_paid:.2f}\n\n"
 
                 result += f"📄 **Invoices**:\n"
                 for inv in invoices:
@@ -767,17 +767,17 @@ class FreelancerAgent(Agent):
             # Stats
             if billable_hours > 0:
                 avg_rate = total_earned / billable_hours
-                result += f"\n📈 **Estatísticas**:\n"
-                result += f"• Taxa média: R$ {avg_rate:.2f}/h\n"
+                result += f"\n📈 **Statistics**:\n"
+                result += f"• Average rate: R$ {avg_rate:.2f}/h\n"
 
                 working_days = 20  # Assume ~20 working days per month
                 hours_per_day = billable_hours / working_days
-                result += f"• Média diária: {hours_per_day:.1f}h/dia\n"
+                result += f"• Daily average: {hours_per_day:.1f}h/day\n"
 
             return result
 
         except Exception as e:
-            return f"❌ Erro ao gerar relatório: {str(e)}"
+            return f"❌ Error generating report: {str(e)}"
 
 
 def create_freelancer_agent(db: Session) -> FreelancerAgent:
