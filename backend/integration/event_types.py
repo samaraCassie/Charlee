@@ -58,6 +58,17 @@ class EventType(Enum):
     USER_LOGGED_OUT = "user_logged_out"
     USER_REGISTERED = "user_registered"
 
+    # ==================== Calendar Integration Events ====================
+    CALENDAR_CONNECTED = "calendar_connected"
+    CALENDAR_DISCONNECTED = "calendar_disconnected"
+    CALENDAR_SYNCED = "calendar_synced"
+    CALENDAR_SYNC_FAILED = "calendar_sync_failed"
+    CALENDAR_EVENT_CREATED = "calendar_event_created"
+    CALENDAR_EVENT_UPDATED = "calendar_event_updated"
+    CALENDAR_EVENT_DELETED = "calendar_event_deleted"
+    CALENDAR_CONFLICT_DETECTED = "calendar_conflict_detected"
+    CALENDAR_CONFLICT_RESOLVED = "calendar_conflict_resolved"
+
     # ==================== System Events ====================
     CONTEXT_UPDATED = "context_updated"
     DECISION_REQUIRED = "decision_required"
@@ -76,6 +87,7 @@ class ModuleName(Enum):
     FOCUS_MODULE = "focus_module"
     PROJECTS = "projects"
     OKR_DASHBOARD = "okr_dashboard"
+    CALENDAR = "calendar"
     NOTIFICATIONS = "notifications"
     ANALYTICS = "analytics"
     CONTEXT_MANAGER = "context_manager"
