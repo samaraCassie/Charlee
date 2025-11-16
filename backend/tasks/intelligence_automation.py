@@ -5,7 +5,7 @@ and generate insights automatically.
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime, timedelta
 
 from celery import Task
@@ -65,7 +65,7 @@ def analyze_new_opportunities(self) -> Dict[str, Any]:
             self.db.query(FreelanceOpportunity)
             .filter(
                 FreelanceOpportunity.created_at >= one_hour_ago,
-                FreelanceOpportunity.semantic_score == None,  # Not yet analyzed
+                FreelanceOpportunity.semantic_score is None,  # Not yet analyzed
             )
             .limit(50)  # Process max 50 at a time
             .all()
@@ -245,7 +245,7 @@ def generate_daily_report(self, user_id: int = None) -> Dict[str, Any]:
         Dict with report generation status
     """
     try:
-        from database.models import FreelanceOpportunity, ProjectExecution, UserNotification
+        from database.models import FreelanceOpportunity, UserNotification
         from agent.specialized_agents.projects import (
             create_career_insights_agent,
             create_portfolio_builder_agent,

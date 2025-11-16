@@ -8,18 +8,14 @@ This script tests:
 """
 
 import sys
-import time
 from pathlib import Path
 
 # Add backend to path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from celery_app import celery_app
-from tasks.opportunity_collector import (
-    collect_all_opportunities,
-    collect_user_opportunities,
-)
+from celery_app import celery_app  # noqa: E402
+from tasks.opportunity_collector import collect_all_opportunities  # noqa: E402
 
 
 def test_celery_connection():
@@ -89,9 +85,6 @@ def test_scheduled_tasks():
     """Check if scheduled tasks are configured."""
     print("\nChecking scheduled tasks...")
     try:
-        inspect = celery_app.control.inspect()
-        scheduled = inspect.scheduled()
-
         print("✅ Beat schedule configured:")
         for task_name, config in celery_app.conf.beat_schedule.items():
             print(f"  - {task_name}")

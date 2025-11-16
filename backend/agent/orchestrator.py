@@ -540,7 +540,7 @@ class AgentOrchestrator:
 
             return "\n".join(f"• {alert}" for alert in alerts) if alerts else ""
 
-        except Exception as e:
+        except Exception:
             return ""
 
     def _get_career_insights_context(self) -> str:

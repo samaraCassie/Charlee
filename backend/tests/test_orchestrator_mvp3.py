@@ -1,6 +1,5 @@
 """Tests for MVP 3 orchestrator integration."""
 
-import pytest
 
 from agent.orchestrator import create_orchestrator
 
