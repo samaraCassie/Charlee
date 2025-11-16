@@ -708,6 +708,8 @@ def create_pricing_parameter(db: Session, pricing_data, user_id: int):
 
 def update_pricing_parameter(db: Session, param_id: int, pricing_update, user_id: int):
     """Update a pricing parameter for a user."""
+    from database.models import PricingParameter
+
     db_pricing = get_pricing_parameter(db, param_id, user_id)
     if not db_pricing:
         return None

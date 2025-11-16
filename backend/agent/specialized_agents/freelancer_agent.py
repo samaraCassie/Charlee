@@ -1,11 +1,10 @@
 """FreelancerAgent - Agent for freelance project management."""
 
 from datetime import date, datetime, timedelta
-from typing import List, Optional
+from typing import Optional
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database.models import FreelanceProject, Invoice, WorkLog
@@ -109,7 +108,7 @@ class FreelancerAgent(Agent):
 
             estimated_value = project.calculate_estimated_value()
 
-            result = f"✅ **Project Created Successfully!**\n\n"
+            result = "✅ **Project Created Successfully!**\n\n"
             result += f"📁 **Project**: {project_name}\n"
             result += f"👤 **Client**: {client_name}\n"
             result += f"💰 **Hourly Rate**: R$ {hourly_rate:.2f}\n"
@@ -123,7 +122,7 @@ class FreelancerAgent(Agent):
                 result += f"🚀 **Start Date**: {start_date_obj.strftime('%d/%m/%Y')}\n"
 
             result += f"\n🆔 **Project ID**: {project.id}\n"
-            result += f"📊 **Status**: Proposal\n"
+            result += "📊 **Status**: Proposal\n"
 
             return result
 
@@ -159,10 +158,10 @@ class FreelancerAgent(Agent):
                 filter_msg = f" with status '{status}'" if status else ""
                 return f"📂 No projects found{filter_msg}."
 
-            result = f"📋 **Freelance Projects**"
+            result = "📋 **Freelance Projects**"
             if status:
                 result += f" (Status: {status})"
-            result += f"\n\n"
+            result += "\n\n"
 
             total_value = 0
             total_hours = 0
@@ -200,7 +199,7 @@ class FreelancerAgent(Agent):
                     total_value += current_value
                     total_hours += project.actual_hours
 
-            result += f"📊 **Summary**:\n"
+            result += "📊 **Summary**:\n"
             result += f"• Total projects: {len(projects)}\n"
             if total_hours > 0:
                 result += f"• Hours worked: {total_hours:.1f}h\n"
@@ -276,7 +275,7 @@ class FreelancerAgent(Agent):
             # Calculate amount
             amount = work_log.calculate_amount()
 
-            result = f"✅ **Hours Logged!**\n\n"
+            result = "✅ **Hours Logged!**\n\n"
             result += f"📁 **Project**: {project.project_name}\n"
             result += f"👤 **Client**: {project.client_name}\n"
             result += f"📅 **Date**: {work_date_obj.strftime('%d/%m/%Y')}\n"
@@ -289,7 +288,7 @@ class FreelancerAgent(Agent):
             result += f"💵 **Billable**: {'Yes' if billable else 'No'}\n"
             result += f"\n📝 **Description**: {description}\n"
 
-            result += f"\n📊 **Project Total**:\n"
+            result += "\n📊 **Project Total**:\n"
             result += (
                 f"• Hours worked: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
             )
@@ -306,7 +305,7 @@ class FreelancerAgent(Agent):
             result += f"• Accumulated value: R$ {total_value:.2f} / R$ {estimated_value:.2f}\n"
 
             if project.actual_hours > project.estimated_hours:
-                result += f"\n⚠️ **Warning**: Project exceeded estimated hours!\n"
+                result += "\n⚠️ **Warning**: Project exceeded estimated hours!\n"
 
             return result
 
@@ -360,7 +359,7 @@ class FreelancerAgent(Agent):
             work_logs = query.all()
 
             if not work_logs:
-                return f"❌ No billable hours found for this project."
+                return "❌ No billable hours found for this project."
 
             # Calculate totals
             total_hours = sum(log.hours for log in work_logs)
@@ -397,7 +396,7 @@ class FreelancerAgent(Agent):
 
             self.database.commit()
 
-            result = f"📄 **Invoice Generated!**\n\n"
+            result = "📄 **Invoice Generated!**\n\n"
             result += f"🔢 **Number**: {invoice_number}\n"
             result += f"📅 **Issue Date**: {invoice.issue_date.strftime('%d/%m/%Y')}\n"
             result += f"📅 **Due Date**: {invoice.due_date.strftime('%d/%m/%Y')}\n\n"
@@ -459,13 +458,13 @@ class FreelancerAgent(Agent):
                 else 0
             )
 
-            result = f"📊 **Availability Analysis**\n\n"
+            result = "📊 **Availability Analysis**\n\n"
             result += f"🔄 **Active Projects**: {len(active_projects)}\n"
             result += f"⏱️ **Remaining Hours in Active Projects**: {total_remaining_hours:.1f}h\n"
             result += f"⏱️ **New Project**: +{estimated_hours:.1f}h\n"
             result += f"⏱️ **Projected Total**: {total_remaining_hours + estimated_hours:.1f}h\n\n"
 
-            result += f"📅 **Time Required**:\n"
+            result += "📅 **Time Required**:\n"
             result += f"• Current projects: ~{weeks_needed_current:.1f} weeks\n"
             result += f"• With new project: ~{weeks_needed_with_new:.1f} weeks\n\n"
 
@@ -488,7 +487,7 @@ class FreelancerAgent(Agent):
 
             # List active projects
             if active_projects:
-                result += f"\n📁 **Active Projects**:\n"
+                result += "\n📁 **Active Projects**:\n"
                 for p in active_projects:
                     remaining = max(0, p.estimated_hours - p.actual_hours)
                     result += f"• {p.project_name} ({p.client_name}): {remaining:.1f}h remaining\n"
@@ -538,7 +537,7 @@ class FreelancerAgent(Agent):
                 )
 
                 if latest_cycle:
-                    result += f"🌸 **Cycle Context**:\n"
+                    result += "🌸 **Cycle Context**:\n"
                     result += f"• Current phase: {latest_cycle.phase}\n"
 
                     if latest_cycle.energy_level:
@@ -548,21 +547,21 @@ class FreelancerAgent(Agent):
 
                     # Phase-specific recommendations
                     if latest_cycle.phase == "menstrual":
-                        result += f"\n💭 **Consideration**: You are in menstrual phase.\n"
+                        result += "\n💭 **Consideration**: You are in menstrual phase.\n"
                         result += "• Energy may be lower\n"
                         result += "• Consider negotiating more flexible deadlines\n"
                         result += "• Avoid very intense projects now\n"
                     elif latest_cycle.phase == "follicular":
-                        result += f"\n💭 **Consideration**: Follicular phase - rising energy!\n"
+                        result += "\n💭 **Consideration**: Follicular phase - rising energy!\n"
                         result += "• Great phase to start new projects\n"
                         result += "• Energy and creativity rising\n"
                     elif latest_cycle.phase == "ovulation":
-                        result += f"\n💭 **Consideration**: Ovulation phase - peak energy!\n"
+                        result += "\n💭 **Consideration**: Ovulation phase - peak energy!\n"
                         result += "• Best time of cycle\n"
                         result += "• High energy, focus, and communication\n"
                         result += "• Take advantage for challenging projects\n"
                     elif latest_cycle.phase == "luteal":
-                        result += f"\n💭 **Consideration**: Luteal phase.\n"
+                        result += "\n💭 **Consideration**: Luteal phase.\n"
                         result += "• Energy starts to decrease\n"
                         result += "• Good for completion projects\n"
                         result += "• Avoid very tight deadlines\n"
@@ -572,7 +571,7 @@ class FreelancerAgent(Agent):
                 pass  # Cycle tracking not available
 
             # 3. Final recommendation
-            result += f"🎯 **Final Recommendation**:\n\n"
+            result += "🎯 **Final Recommendation**:\n\n"
 
             # Extract decision from availability check
             if "ACCEPT**" in availability and "NOT" not in availability:
@@ -644,14 +643,14 @@ class FreelancerAgent(Agent):
                 "cancelled": "❌",
             }.get(new_status, "❓")
 
-            result = f"✅ **Status Updated!**\n\n"
+            result = "✅ **Status Updated!**\n\n"
             result += f"📁 **Project**: {project.project_name}\n"
             result += f"👤 **Client**: {project.client_name}\n"
             result += f"📊 **Previous Status**: {old_status}\n"
             result += f"{status_emoji} **New Status**: {new_status}\n"
 
             if new_status == "completed":
-                result += f"\n🎉 **Project Completed!**\n"
+                result += "\n🎉 **Project Completed!**\n"
                 result += f"• Hours worked: {project.actual_hours:.1f}h\n"
                 result += f"• Total value: R$ {project.calculate_total_value():.2f}\n"
 
@@ -718,7 +717,7 @@ class FreelancerAgent(Agent):
             billable_hours = sum(log.hours for log in work_logs if log.billable)
             total_earned = sum(log.calculate_amount() for log in work_logs if log.billable)
 
-            result += f"⏱️ **Hours Worked**:\n"
+            result += "⏱️ **Hours Worked**:\n"
             result += f"• Total: {total_hours:.1f}h\n"
             result += f"• Billable: {billable_hours:.1f}h\n"
             result += f"• Non-billable: {total_hours - billable_hours:.1f}h\n\n"
@@ -731,7 +730,7 @@ class FreelancerAgent(Agent):
                 project_hours[log.project_id]["hours"] += log.hours
 
             if project_hours:
-                result += f"📁 **By Project**:\n"
+                result += "📁 **By Project**:\n"
                 for proj_data in sorted(
                     project_hours.values(), key=lambda x: x["hours"], reverse=True
                 ):
@@ -741,7 +740,7 @@ class FreelancerAgent(Agent):
                 result += "\n"
 
             # Invoices summary
-            result += f"💰 **Revenue**:\n"
+            result += "💰 **Revenue**:\n"
             result += f"• Value earned: R$ {total_earned:.2f}\n"
             result += f"• Invoices issued: {len(invoices)}\n"
 
@@ -754,7 +753,7 @@ class FreelancerAgent(Agent):
                 result += f"• Total paid: R$ {total_paid:.2f}\n"
                 result += f"• Pending: R$ {total_invoiced - total_paid:.2f}\n\n"
 
-                result += f"📄 **Invoices**:\n"
+                result += "📄 **Invoices**:\n"
                 for inv in invoices:
                     status_emoji = {
                         "draft": "📝",
@@ -769,7 +768,7 @@ class FreelancerAgent(Agent):
             # Stats
             if billable_hours > 0:
                 avg_rate = total_earned / billable_hours
-                result += f"\n📈 **Statistics**:\n"
+                result += "\n📈 **Statistics**:\n"
                 result += f"• Average rate: R$ {avg_rate:.2f}/h\n"
 
                 working_days = 20  # Assume ~20 working days per month

@@ -19,7 +19,7 @@ from agno.models.openai import OpenAIChat
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
-from database.models import FreelanceOpportunity, ProjectExecution
+from database.models import FreelanceOpportunity
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +309,7 @@ Return ONLY valid JSON, no markdown formatting.
             results = []
             for opp in opportunities:
                 try:
-                    result = self.analyze_opportunity(opp.id)
+                    self.analyze_opportunity(opp.id)
                     results.append(f"✅ {opp.title[:50]}...")
                 except Exception as e:
                     logger.error(f"Error analyzing opportunity {opp.id}: {e}")

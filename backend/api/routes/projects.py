@@ -214,7 +214,7 @@ def analyze_opportunity(
     """Analyze an opportunity using SemanticAnalyzerAgent."""
     try:
         agent = create_semantic_analyzer_agent(db=db, user_id=current_user.id)
-        result = agent.analyze_opportunity(opportunity_id)
+        agent.analyze_opportunity(opportunity_id)
 
         # Refresh opportunity from database
         opportunity = crud.get_opportunity(db, opportunity_id, user_id=current_user.id)
@@ -258,7 +258,7 @@ def evaluate_opportunity(
     """Evaluate an opportunity using ProjectEvaluatorAgent."""
     try:
         agent = create_project_evaluator_agent(db=db, user_id=current_user.id)
-        result = agent.evaluate_opportunity(opportunity_id)
+        agent.evaluate_opportunity(opportunity_id)
 
         # Refresh opportunity from database
         opportunity = crud.get_opportunity(db, opportunity_id, user_id=current_user.id)

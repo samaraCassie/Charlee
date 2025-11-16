@@ -3,7 +3,6 @@
 from datetime import date, timedelta
 
 from fastapi import status
-import pytest
 
 
 class TestFreelanceProjectsAPI:
@@ -123,7 +122,7 @@ class TestWorkLogsAPI:
         assert data["project_id"] == sample_freelance_project.id
         assert data["hours"] == 5.0
         assert data["description"] == "Implemented login feature"
-        assert data["billable"] == True
+        assert data["billable"]
         assert "id" in data
 
     def test_create_work_log_invalid_project(self, client, auth_headers):
