@@ -311,7 +311,10 @@ async def get_reminder_status(db: Session = Depends(get_db)):
 
         logger.info(
             "Reminder status checked",
-            extra={"recorded_today": bool(registro_hoje), "missing_count": len(dias_sem_registro)},
+            extra={
+                "recorded_today": bool(registro_hoje),
+                "missing_count": len(dias_sem_registro),
+            },
         )
 
         return {

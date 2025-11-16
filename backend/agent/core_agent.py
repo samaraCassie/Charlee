@@ -114,7 +114,10 @@ class CharleeAgent(Agent):
     # ==================== Tarefas Tools ====================
 
     def listar_tarefas(
-        self, status: Optional[str] = None, big_rock_id: Optional[int] = None, limite: int = 20
+        self,
+        status: Optional[str] = None,
+        big_rock_id: Optional[int] = None,
+        limite: int = 20,
     ) -> str:
         """
         Lista tarefas com filtros opcionais.
@@ -183,7 +186,10 @@ class CharleeAgent(Agent):
                     return "❌ Formato de data inválido. Use YYYY-MM-DD (ex: 2025-01-15)"
 
             tarefa_data = schemas.TaskCreate(
-                description=descricao, big_rock_id=big_rock_id, type=tipo, deadline=deadline_date
+                description=descricao,
+                big_rock_id=big_rock_id,
+                type=tipo,
+                deadline=deadline_date,
             )
 
             new_tarefa = crud.create_task(self.database, tarefa_data)

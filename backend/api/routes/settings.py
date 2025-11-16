@@ -239,4 +239,7 @@ async def get_integrations_status():
 @router.post("/integrations/{service}/connect")
 async def connect_integration(service: str):
     """Conectar uma integração externa."""
-    return {"message": f"Integração com {service} ainda não implementada", "status": "coming_soon"}
+    return {
+        "message": f"Integração com {service} ainda não implementada",
+        "status": "coming_soon",
+    }

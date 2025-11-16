@@ -138,7 +138,10 @@ class SistemaPriorizacao:
         return tipo_scores.get(tarefa.tipo, 0.5)
 
     def priorizar_tarefas(
-        self, status: str = "Pendente", big_rock_id: Optional[int] = None, limite: int = 20
+        self,
+        status: str = "Pendente",
+        big_rock_id: Optional[int] = None,
+        limite: int = 20,
     ) -> List[Task]:
         """
         Retorna lista de tarefas priorizadas.

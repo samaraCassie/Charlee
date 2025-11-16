@@ -14,6 +14,7 @@ Charlee é um sistema de inteligência pessoal desenvolvido com agentes AI que a
 - **🌸 Cycle-Aware**: Adaptação baseada no ciclo menstrual
 - **🛡️ Capacity Guard**: Proteção contra sobrecarga
 - **📊 Priorização Automática**: Algoritmo multi-fator para ordenar tarefas
+- **💼 Freelancer Manager**: Gestão de projetos freelance, timetracking e invoicing (V2)
 - **💾 Memória Persistente**: Redis para sessões e aprendizado contínuo
 
 ## 🏗️ Estrutura do Projeto
@@ -142,6 +143,8 @@ Documentação detalhada em [`docs/`](docs/):
 1. **CharleeAgent** (Core): Agente principal conversacional
 2. **CycleAwareAgent**: Especialista em bem-estar e ciclo menstrual
 3. **CapacityGuardAgent**: Guardião da capacidade de trabalho
+4. **FreelancerAgent** (V2): Gerenciamento de projetos freelance e faturamento
+5. **DailyTrackingAgent**: Rastreamento de padrões diários e otimizações
 
 ## 🎯 Roadmap
 
@@ -175,5 +178,55 @@ Projeto privado - Todos os direitos reservados
 
 ---
 
-**Status**: 🎉 V3.0 - Frontend Web React + MVP Complete!
-**Última atualização**: 2025-01-08
+## 💼 Freelancer System (V2)
+
+O Charlee V2 inclui um sistema completo de gerenciamento de projetos freelance:
+
+### Features
+
+- **📁 Gerenciamento de Projetos**: Crie e gerencie projetos de clientes
+- **⏱️ Time Tracking**: Registre horas trabalhadas por projeto
+- **💰 Invoicing**: Gere invoices profissionais baseados em horas
+- **📊 Relatórios**: Análise mensal de faturamento e produtividade
+- **🤖 IA Integrada**: Sugestões inteligentes para aceitar/rejeitar projetos
+- **🛡️ Proteção de Capacidade**: Integração com CapacityGuard para evitar sobrecarga
+
+### Uso via API
+
+```bash
+# Criar projeto freelance
+curl -X POST http://localhost:8000/api/v2/freelancer/projects \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "client_name": "Acme Corp",
+    "project_name": "Website Redesign",
+    "hourly_rate": 150,
+    "estimated_hours": 40,
+    "deadline": "2025-12-31"
+  }'
+
+# Registrar horas trabalhadas
+curl -X POST http://localhost:8000/api/v2/freelancer/projects/1/log-work \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "hours": 5,
+    "description": "Implemented login feature"
+  }'
+
+# Gerar invoice
+curl -X GET http://localhost:8000/api/v2/freelancer/projects/1/invoice \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Database Models
+
+- **FreelanceProject**: Projetos de clientes com taxas, deadlines e status
+- **WorkLog**: Registro de horas trabalhadas com descrições
+- **Invoice**: Invoices geradas com cálculo automático de valores
+
+---
+
+**Status**: 🎉 V2 - Freelancer System Complete!
+**Última atualização**: 2025-11-16

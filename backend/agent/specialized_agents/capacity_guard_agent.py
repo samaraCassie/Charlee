@@ -110,7 +110,10 @@ class CapacityGuardAgent(Agent):
             return f"❌ Erro: {str(e)}"
 
     def avaliar_novo_compromisso(
-        self, nome_compromisso: str, tarefas_estimadas: int, big_rock_nome: Optional[str] = None
+        self,
+        nome_compromisso: str,
+        tarefas_estimadas: int,
+        big_rock_nome: Optional[str] = None,
     ) -> str:
         """
         Avalia se há capacidade para um novo compromisso.

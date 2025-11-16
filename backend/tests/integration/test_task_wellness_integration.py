@@ -606,7 +606,12 @@ def test_get_recommendation_reason_focus_session(task_wellness, context_manager)
 def test_get_recommendation_reason_normal(task_wellness, context_manager):
     """Test recommendation reason in normal conditions."""
     context_manager.update_context(
-        {"fase_ciclo": "folicular", "energia_atual": 7, "nivel_stress": 5, "em_sessao_foco": False}
+        {
+            "fase_ciclo": "folicular",
+            "energia_atual": 7,
+            "nivel_stress": 5,
+            "em_sessao_foco": False,
+        }
     )
 
     context = context_manager.get_context()

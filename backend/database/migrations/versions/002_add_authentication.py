@@ -64,7 +64,12 @@ def upgrade():
     op.add_column("big_rocks", sa.Column("user_id", sa.Integer(), nullable=True))
     op.create_index(op.f("ix_big_rocks_user_id"), "big_rocks", ["user_id"], unique=False)
     op.create_foreign_key(
-        "fk_big_rocks_user_id", "big_rocks", "users", ["user_id"], ["id"], ondelete="CASCADE"
+        "fk_big_rocks_user_id",
+        "big_rocks",
+        "users",
+        ["user_id"],
+        ["id"],
+        ondelete="CASCADE",
     )
 
     # Add user_id to tasks table
@@ -77,7 +82,10 @@ def upgrade():
     # Add user_id to menstrual_cycles table
     op.add_column("menstrual_cycles", sa.Column("user_id", sa.Integer(), nullable=True))
     op.create_index(
-        op.f("ix_menstrual_cycles_user_id"), "menstrual_cycles", ["user_id"], unique=False
+        op.f("ix_menstrual_cycles_user_id"),
+        "menstrual_cycles",
+        ["user_id"],
+        unique=False,
     )
     op.create_foreign_key(
         "fk_menstrual_cycles_user_id",
@@ -92,7 +100,12 @@ def upgrade():
     op.add_column("daily_logs", sa.Column("user_id", sa.Integer(), nullable=True))
     op.create_index(op.f("ix_daily_logs_user_id"), "daily_logs", ["user_id"], unique=False)
     op.create_foreign_key(
-        "fk_daily_logs_user_id", "daily_logs", "users", ["user_id"], ["id"], ondelete="CASCADE"
+        "fk_daily_logs_user_id",
+        "daily_logs",
+        "users",
+        ["user_id"],
+        ["id"],
+        ondelete="CASCADE",
     )
 
     # Drop old unique constraint on date and create new one with user_id

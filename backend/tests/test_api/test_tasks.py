@@ -75,7 +75,9 @@ class TestTasksAPI:
     def test_update_task(self, client, sample_task, auth_headers):
         """Should update task."""
         response = client.patch(
-            f"/api/v1/tasks/{sample_task.id}", json={"status": "in_progress"}, headers=auth_headers
+            f"/api/v1/tasks/{sample_task.id}",
+            json={"status": "in_progress"},
+            headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK

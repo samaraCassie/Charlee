@@ -62,20 +62,32 @@ def upgrade():
     op.create_index(op.f("ix_system_events_id"), "system_events", ["id"], unique=False)
     op.create_index(op.f("ix_system_events_tipo"), "system_events", ["tipo"], unique=False)
     op.create_index(
-        op.f("ix_system_events_modulo_origem"), "system_events", ["modulo_origem"], unique=False
+        op.f("ix_system_events_modulo_origem"),
+        "system_events",
+        ["modulo_origem"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_system_events_prioridade"), "system_events", ["prioridade"], unique=False
+        op.f("ix_system_events_prioridade"),
+        "system_events",
+        ["prioridade"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_system_events_processado"), "system_events", ["processado"], unique=False
+        op.f("ix_system_events_processado"),
+        "system_events",
+        ["processado"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_system_events_criado_em"), "system_events", ["criado_em"], unique=False
     )
     # Composite indexes
     op.create_index(
-        "ix_events_tipo_processado", "system_events", ["tipo", "processado"], unique=False
+        "ix_events_tipo_processado",
+        "system_events",
+        ["tipo", "processado"],
+        unique=False,
     )
     op.create_index(
         "ix_events_prioridade_desc",
@@ -102,7 +114,10 @@ def upgrade():
         sa.Column("projetos_ativos", sa.Integer(), server_default="0"),
         sa.Column("notificacoes_nao_lidas", sa.Integer(), server_default="0"),
         sa.Column(
-            "hora_dia", sa.Integer(), sa.CheckConstraint("hora_dia BETWEEN 0 AND 23"), nullable=True
+            "hora_dia",
+            sa.Integer(),
+            sa.CheckConstraint("hora_dia BETWEEN 0 AND 23"),
+            nullable=True,
         ),
         sa.Column(
             "dia_semana",
@@ -118,7 +133,12 @@ def upgrade():
             server_default="5",
         ),
         sa.Column("necessita_pausa", sa.Boolean(), server_default="false"),
-        sa.Column("atualizado_em", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
+        sa.Column(
+            "atualizado_em",
+            sa.DateTime(),
+            nullable=True,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -139,7 +159,10 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_cross_module_relations_id"), "cross_module_relations", ["id"], unique=False
+        op.f("ix_cross_module_relations_id"),
+        "cross_module_relations",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_cross_module_relations_tipo_relacao"),
@@ -228,19 +251,24 @@ def downgrade():
     op.drop_index("ix_cross_module_destino", table_name="cross_module_relations")
     op.drop_index("ix_cross_module_origem", table_name="cross_module_relations")
     op.drop_index(
-        op.f("ix_cross_module_relations_entidade_destino_id"), table_name="cross_module_relations"
+        op.f("ix_cross_module_relations_entidade_destino_id"),
+        table_name="cross_module_relations",
     )
     op.drop_index(
-        op.f("ix_cross_module_relations_modulo_destino"), table_name="cross_module_relations"
+        op.f("ix_cross_module_relations_modulo_destino"),
+        table_name="cross_module_relations",
     )
     op.drop_index(
-        op.f("ix_cross_module_relations_entidade_origem_id"), table_name="cross_module_relations"
+        op.f("ix_cross_module_relations_entidade_origem_id"),
+        table_name="cross_module_relations",
     )
     op.drop_index(
-        op.f("ix_cross_module_relations_modulo_origem"), table_name="cross_module_relations"
+        op.f("ix_cross_module_relations_modulo_origem"),
+        table_name="cross_module_relations",
     )
     op.drop_index(
-        op.f("ix_cross_module_relations_tipo_relacao"), table_name="cross_module_relations"
+        op.f("ix_cross_module_relations_tipo_relacao"),
+        table_name="cross_module_relations",
     )
     op.drop_index(op.f("ix_cross_module_relations_id"), table_name="cross_module_relations")
     op.drop_table("cross_module_relations")
