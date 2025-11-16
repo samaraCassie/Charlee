@@ -38,9 +38,6 @@ class PortfolioBuilderAgent(Agent):
             db: Database session
             user_id: User ID for multi-tenancy
         """
-        self.db = db
-        self.user_id = user_id
-
         super().__init__(
             name="Portfolio Builder",
             model=OpenAIChat(id="gpt-4o-mini"),
@@ -59,6 +56,9 @@ class PortfolioBuilderAgent(Agent):
                 self.get_top_achievements,
             ],
         )
+
+        self.db = db
+        self.user_id = user_id
 
     def build_full_portfolio(self, include_in_progress: bool = False) -> str:
         """

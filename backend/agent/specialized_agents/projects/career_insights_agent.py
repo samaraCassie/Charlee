@@ -41,9 +41,6 @@ class CareerInsightsAgent(Agent):
             db: Database session
             user_id: User ID for multi-tenancy
         """
-        self.db = db
-        self.user_id = user_id
-
         super().__init__(
             name="Career Insights Analyst",
             model=OpenAIChat(id="gpt-4o-mini"),
@@ -62,6 +59,9 @@ class CareerInsightsAgent(Agent):
                 self.generate_career_recommendations,
             ],
         )
+
+        self.db = db
+        self.user_id = user_id
 
     def get_career_summary(self, days: int = 90) -> str:
         """
