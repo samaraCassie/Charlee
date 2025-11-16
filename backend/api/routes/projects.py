@@ -3,9 +3,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from agent.specialized_agents.projects.career_insights_agent import (
+    create_career_insights_agent,
+)
 from agent.specialized_agents.projects.collector_agent import create_collector_agent
 from agent.specialized_agents.projects.negotiation_engine import (
     create_negotiation_engine,
+)
+from agent.specialized_agents.projects.portfolio_builder_agent import (
+    create_portfolio_builder_agent,
 )
 from agent.specialized_agents.projects.project_evaluator_agent import (
     create_project_evaluator_agent,
@@ -702,3 +708,207 @@ def get_negotiation_history(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"History retrieval failed: {str(e)}")
+
+
+# ==================== Career Insights Routes ====================
+
+
+@router.get("/insights/career-summary")
+def get_career_summary(
+    days: int = 90,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get comprehensive career summary for recent period.
+
+    Args:
+        days: Number of days to analyze (default: 90)
+    """
+    try:
+        agent = create_career_insights_agent(db=db, user_id=current_user.id)
+        result = agent.get_career_summary(days=days)
+        return {"message": "Career summary generated", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Career summary failed: {str(e)}")
+
+
+@router.get("/insights/skills-progression")
+def analyze_skills_progression(
+    skill_name: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Analyze skills development over time.
+
+    Args:
+        skill_name: Optional specific skill to analyze
+    """
+    try:
+        agent = create_career_insights_agent(db=db, user_id=current_user.id)
+        result = agent.analyze_skills_progression(skill_name=skill_name)
+        return {"message": "Skills progression analyzed", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Skills analysis failed: {str(e)}")
+
+
+@router.get("/insights/top-performing-projects")
+def identify_top_performing_projects(
+    limit: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Identify top-performing projects based on multiple criteria.
+
+    Args:
+        limit: Number of top projects to return (default: 10)
+    """
+    try:
+        agent = create_career_insights_agent(db=db, user_id=current_user.id)
+        result = agent.identify_top_performing_projects(limit=limit)
+        return {"message": "Top projects identified", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Top projects analysis failed: {str(e)}")
+
+
+@router.get("/insights/income-trends")
+def get_income_trends(
+    months: int = 6,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Analyze income trends over time.
+
+    Args:
+        months: Number of months to analyze (default: 6)
+    """
+    try:
+        agent = create_career_insights_agent(db=db, user_id=current_user.id)
+        result = agent.get_income_trends(months=months)
+        return {"message": "Income trends analyzed", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Income trends analysis failed: {str(e)}")
+
+
+@router.get("/insights/career-recommendations")
+def generate_career_recommendations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generate strategic career recommendations based on data analysis."""
+    try:
+        agent = create_career_insights_agent(db=db, user_id=current_user.id)
+        result = agent.generate_career_recommendations()
+        return {"message": "Career recommendations generated", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Recommendations failed: {str(e)}")
+
+
+# ==================== Portfolio Builder Routes ====================
+
+
+@router.get("/portfolio/full")
+def build_full_portfolio(
+    include_in_progress: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Build a complete portfolio from all completed projects.
+
+    Args:
+        include_in_progress: Whether to include in-progress projects (default: False)
+    """
+    try:
+        agent = create_portfolio_builder_agent(db=db, user_id=current_user.id)
+        result = agent.build_full_portfolio(include_in_progress=include_in_progress)
+        return {"message": "Portfolio built successfully", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Portfolio build failed: {str(e)}")
+
+
+@router.get("/portfolio/projects/{project_execution_id}/description")
+def generate_project_description(
+    project_execution_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate a professional description for a specific project.
+
+    Args:
+        project_execution_id: Project execution ID
+    """
+    try:
+        agent = create_portfolio_builder_agent(db=db, user_id=current_user.id)
+        result = agent.generate_project_description(project_execution_id=project_execution_id)
+        return {"message": "Project description generated", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Description generation failed: {str(e)}")
+
+
+@router.get("/portfolio/categorized")
+def categorize_projects(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Categorize all projects by type and skill."""
+    try:
+        agent = create_portfolio_builder_agent(db=db, user_id=current_user.id)
+        result = agent.categorize_projects()
+        return {"message": "Projects categorized", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Categorization failed: {str(e)}")
+
+
+@router.get("/portfolio/by-skill/{skill_name}")
+def get_portfolio_by_skill(
+    skill_name: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get portfolio filtered by specific skill.
+
+    Args:
+        skill_name: Skill to filter by
+    """
+    try:
+        agent = create_portfolio_builder_agent(db=db, user_id=current_user.id)
+        result = agent.get_portfolio_by_skill(skill_name=skill_name)
+        return {"message": "Skill portfolio retrieved", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Skill portfolio retrieval failed: {str(e)}")
+
+
+@router.get("/portfolio/achievements")
+def get_top_achievements(
+    limit: int = 5,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get top achievements and highlights for portfolio.
+
+    Args:
+        limit: Number of achievements to return (default: 5)
+    """
+    try:
+        agent = create_portfolio_builder_agent(db=db, user_id=current_user.id)
+        result = agent.get_top_achievements(limit=limit)
+        return {"message": "Top achievements retrieved", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Achievements retrieval failed: {str(e)}")

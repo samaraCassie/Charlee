@@ -17,6 +17,11 @@ from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 
 from database.models import FreelancePlatform, FreelanceOpportunity
+from .integrations import (
+    PlatformConfig,
+    create_upwork_integration,
+    create_freelancer_com_integration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -227,20 +232,48 @@ class CollectorAgent(Agent):
 
         Returns:
             List of opportunity data dictionaries
-
-        Note:
-            This is a placeholder. Real implementation would use Upwork API.
         """
-        # TODO: Implement real Upwork API integration
-        # For now, return empty list
-        # In production, this would:
-        # 1. Use OAuth credentials from platform.api_config
-        # 2. Call Upwork API endpoint
-        # 3. Parse response
-        # 4. Return normalized data
+        try:
+            # Create platform configuration from stored API config
+            config = PlatformConfig(
+                api_key=platform.api_config.get("api_key") if platform.api_config else None,
+                api_secret=platform.api_config.get("api_secret") if platform.api_config else None,
+            )
 
-        logger.info(f"Upwork collection not yet implemented for platform {platform.id}")
-        return []
+            # Create Upwork integration
+            integration = create_upwork_integration(config)
+
+            # Fetch opportunities (using mock data if no API credentials)
+            opportunities = integration.fetch_opportunities(max_results=50)
+
+            # Convert JobOpportunity objects to dictionaries
+            result = []
+            for opp in opportunities:
+                result.append(
+                    {
+                        "external_id": opp.external_id,
+                        "title": opp.title,
+                        "description": opp.description,
+                        "client_name": opp.client_name,
+                        "client_rating": opp.client_rating,
+                        "client_country": opp.client_country,
+                        "client_projects_count": opp.client_projects_count,
+                        "required_skills": opp.required_skills,
+                        "budget": opp.budget,
+                        "currency": opp.currency,
+                        "deadline_days": opp.deadline_days,
+                        "contract_type": opp.contract_type,
+                    }
+                )
+
+            logger.info(
+                f"Collected {len(result)} opportunities from Upwork (platform {platform.id})"
+            )
+            return result
+
+        except Exception as e:
+            logger.error(f"Error collecting from Upwork: {e}")
+            return []
 
     def _collect_freelancer(self, platform: FreelancePlatform) -> List[Dict[str, Any]]:
         """
@@ -251,15 +284,48 @@ class CollectorAgent(Agent):
 
         Returns:
             List of opportunity data dictionaries
-
-        Note:
-            This is a placeholder. Real implementation would use Freelancer.com API.
         """
-        # TODO: Implement real Freelancer.com API integration
-        # For now, return empty list
+        try:
+            # Create platform configuration from stored API config
+            config = PlatformConfig(
+                api_key=platform.api_config.get("api_key") if platform.api_config else None,
+                api_secret=platform.api_config.get("api_secret") if platform.api_config else None,
+            )
 
-        logger.info(f"Freelancer.com collection not yet implemented for platform {platform.id}")
-        return []
+            # Create Freelancer.com integration
+            integration = create_freelancer_com_integration(config)
+
+            # Fetch opportunities (using mock data if no API credentials)
+            opportunities = integration.fetch_opportunities(max_results=50)
+
+            # Convert JobOpportunity objects to dictionaries
+            result = []
+            for opp in opportunities:
+                result.append(
+                    {
+                        "external_id": opp.external_id,
+                        "title": opp.title,
+                        "description": opp.description,
+                        "client_name": opp.client_name,
+                        "client_rating": opp.client_rating,
+                        "client_country": opp.client_country,
+                        "client_projects_count": opp.client_projects_count,
+                        "required_skills": opp.required_skills,
+                        "budget": opp.budget,
+                        "currency": opp.currency,
+                        "deadline_days": opp.deadline_days,
+                        "contract_type": opp.contract_type,
+                    }
+                )
+
+            logger.info(
+                f"Collected {len(result)} opportunities from Freelancer.com (platform {platform.id})"
+            )
+            return result
+
+        except Exception as e:
+            logger.error(f"Error collecting from Freelancer.com: {e}")
+            return []
 
     def _save_opportunity(self, platform: FreelancePlatform, data: Dict[str, Any]) -> bool:
         """
