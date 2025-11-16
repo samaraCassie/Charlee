@@ -299,29 +299,35 @@ class TestProjectExecutionAPI:
 
     def test_create_project_execution(self, client, sample_opportunity, auth_headers):
         """Should create ProjectExecution with valid data."""
+        from datetime import date, timedelta
+
         response = client.post(
             "/api/v2/projects/executions/",
             json={
                 "opportunity_id": sample_opportunity.id,
-                "accepted_price": 5000.0,
-                "accepted_deadline_days": 30,
+                "negotiated_value": 5000.0,
+                "start_date": date.today().isoformat(),
+                "planned_end_date": (date.today() + timedelta(days=30)).isoformat(),
             },
             headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        assert data["accepted_price"] == 5000.0
-        assert data["status"] == "in_progress"
-        assert "started_at" in data
+        assert data["negotiated_value"] == 5000.0
+        assert data["status"] == "planned"
+        assert "created_at" in data
 
     def test_create_execution_invalid_opportunity(self, client, auth_headers):
         """Should return 400 for invalid opportunity_id."""
+        from datetime import date
+
         response = client.post(
             "/api/v2/projects/executions/",
             json={
                 "opportunity_id": 9999,
-                "accepted_price": 1000.0,
+                "negotiated_value": 1000.0,
+                "start_date": date.today().isoformat(),
             },
             headers=auth_headers,
         )
@@ -347,7 +353,7 @@ class TestProjectExecutionAPI:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["id"] == sample_project_execution.id
-        assert data["accepted_price"] == 5000.0
+        assert data["negotiated_value"] == 5000.0
 
     def test_update_project_execution(self, client, sample_project_execution, auth_headers):
         """Should update project execution for authenticated user."""
@@ -384,19 +390,19 @@ class TestNegotiationAPI:
             "/api/v2/projects/negotiations/",
             json={
                 "opportunity_id": sample_opportunity.id,
-                "round_number": 1,
-                "our_proposal": 6000.0,
-                "client_counter": 5500.0,
-                "rationale": "Need higher budget for added features",
+                "original_budget": 5000.0,
+                "counter_proposal_budget": 6000.0,
+                "counter_proposal_justification": "Need higher budget for added features",
+                "final_agreed_budget": 5500.0,
             },
             headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        assert data["our_proposal"] == 6000.0
-        assert data["client_counter"] == 5500.0
-        assert data["status"] == "proposed"
+        assert data["counter_proposal_budget"] == 6000.0
+        assert data["final_agreed_budget"] == 5500.0
+        assert data["outcome"] == "pending"
 
     def test_create_negotiation_invalid_opportunity(self, client, auth_headers):
         """Should return 400 for invalid opportunity_id."""
@@ -404,7 +410,8 @@ class TestNegotiationAPI:
             "/api/v2/projects/negotiations/",
             json={
                 "opportunity_id": 9999,
-                "our_proposal": 1000.0,
+                "counter_proposal_budget": 1000.0,
+                "counter_proposal_justification": "Test justification",
             },
             headers=auth_headers,
         )
@@ -430,20 +437,20 @@ class TestNegotiationAPI:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["id"] == sample_negotiation.id
-        assert data["our_proposal"] == 6000.0
+        assert data["counter_proposal_budget"] == 6000.0
 
     def test_update_negotiation(self, client, sample_negotiation, auth_headers):
         """Should update negotiation for authenticated user."""
         response = client.patch(
             f"/api/v2/projects/negotiations/{sample_negotiation.id}",
-            json={"status": "accepted", "client_counter": 5800.0},
+            json={"outcome": "accepted", "final_agreed_budget": 5800.0},
             headers=auth_headers,
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["status"] == "accepted"
-        assert data["client_counter"] == 5800.0
+        assert data["outcome"] == "accepted"
+        assert data["final_agreed_budget"] == 5800.0
 
     def test_delete_negotiation(self, client, sample_negotiation, auth_headers):
         """Should delete negotiation for authenticated user."""

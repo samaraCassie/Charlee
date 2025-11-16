@@ -302,17 +302,17 @@ def sample_pricing_parameter(db, sample_user):
 @pytest.fixture
 def sample_project_execution(db, sample_user, sample_opportunity):
     """Create a sample ProjectExecution for testing."""
-    from datetime import datetime, timezone
+    from datetime import date, timedelta
 
     from database.models import ProjectExecution
 
     execution = ProjectExecution(
         user_id=sample_user.id,
         opportunity_id=sample_opportunity.id,
-        accepted_price=5000.0,
-        accepted_deadline_days=30,
+        negotiated_value=5000.0,
+        start_date=date.today(),
+        planned_end_date=date.today() + timedelta(days=30),
         status="in_progress",
-        started_at=datetime.now(timezone.utc),
     )
     db.add(execution)
     db.commit()
@@ -323,19 +323,16 @@ def sample_project_execution(db, sample_user, sample_opportunity):
 @pytest.fixture
 def sample_negotiation(db, sample_user, sample_opportunity):
     """Create a sample Negotiation for testing."""
-    from datetime import date
-
     from database.models import Negotiation
 
     negotiation = Negotiation(
         user_id=sample_user.id,
         opportunity_id=sample_opportunity.id,
-        round_number=1,
-        our_proposal=6000.0,
-        client_counter=5500.0,
-        negotiation_date=date.today(),
-        status="countered",
-        rationale="Increased scope requires higher budget",
+        original_budget=5000.0,
+        counter_proposal_budget=6000.0,
+        counter_proposal_justification="Increased scope requires higher budget",
+        final_agreed_budget=5500.0,
+        outcome="agreed",
     )
     db.add(negotiation)
     db.commit()

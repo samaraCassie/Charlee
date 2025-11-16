@@ -353,11 +353,11 @@ class FreelancePlatformBase(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100)
     platform_type: Optional[str] = Field(None, max_length=50)
+    website_url: Optional[str] = Field(None, max_length=255)
     api_config: Optional[dict] = None
     auto_collect: bool = True
     active: bool = True
-    collection_interval_hours: Optional[int] = Field(None, ge=1)
-    search_filters: Optional[dict] = None
+    collection_interval_minutes: Optional[int] = Field(None, ge=1)
 
     @field_validator("name")
     @classmethod
@@ -382,11 +382,11 @@ class FreelancePlatformUpdate(BaseModel):
 
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     platform_type: Optional[str] = Field(None, max_length=50)
+    website_url: Optional[str] = Field(None, max_length=255)
     api_config: Optional[dict] = None
     auto_collect: Optional[bool] = None
     active: Optional[bool] = None
-    collection_interval_hours: Optional[int] = Field(None, ge=1)
-    search_filters: Optional[dict] = None
+    collection_interval_minutes: Optional[int] = Field(None, ge=1)
 
 
 class FreelancePlatformResponse(FreelancePlatformBase):
@@ -567,17 +567,28 @@ class PricingParameterResponse(PricingParameterBase):
 class ProjectExecutionBase(BaseModel):
     """Base schema for ProjectExecution."""
 
-    opportunity_id: int = Field(..., gt=0)
-    accepted_price: float = Field(..., gt=0)
-    accepted_deadline_days: Optional[int] = Field(None, gt=0)
-    actual_hours: Optional[float] = Field(None, ge=0)
-    actual_revenue: Optional[float] = Field(None, ge=0)
-    actual_costs: Optional[float] = Field(None, ge=0)
-    client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
-    technical_challenges: Optional[str] = None
-    lessons_learned: Optional[str] = None
+    opportunity_id: Optional[int] = Field(None, gt=0)
+    freelance_project_id: Optional[int] = Field(None, gt=0)
 
-    @field_validator("technical_challenges", "lessons_learned")
+    # Planning
+    start_date: date
+    planned_end_date: Optional[date] = None
+
+    # Time investment
+    planned_hours: Optional[float] = Field(None, ge=0)
+
+    # Financial
+    negotiated_value: float = Field(..., gt=0)
+    currency: str = Field(default="USD", max_length=10)
+
+    # Client evaluation
+    client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
+    client_feedback: Optional[str] = None
+
+    # Personal notes
+    personal_notes: Optional[str] = None
+
+    @field_validator("client_feedback", "personal_notes")
     @classmethod
     def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
         """Sanitize text fields to prevent XSS."""
@@ -596,24 +607,29 @@ class ProjectExecutionCreate(ProjectExecutionBase):
 class ProjectExecutionUpdate(BaseModel):
     """Schema for updating a ProjectExecution."""
 
-    accepted_price: Optional[float] = Field(None, gt=0)
-    accepted_deadline_days: Optional[int] = Field(None, gt=0)
+    planned_end_date: Optional[date] = None
+    actual_end_date: Optional[date] = None
+    planned_hours: Optional[float] = Field(None, ge=0)
     actual_hours: Optional[float] = Field(None, ge=0)
-    actual_revenue: Optional[float] = Field(None, ge=0)
-    actual_costs: Optional[float] = Field(None, ge=0)
+    received_value: Optional[float] = Field(None, ge=0)
+    payment_date: Optional[date] = None
     client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
-    status: Optional[Literal["in_progress", "completed", "cancelled"]] = None
-    technical_challenges: Optional[str] = None
-    lessons_learned: Optional[str] = None
+    client_feedback: Optional[str] = None
+    personal_notes: Optional[str] = None
+    status: Optional[
+        Literal["planned", "in_progress", "completed", "cancelled", "on_hold"]
+    ] = None
 
 
 class ProjectExecutionResponse(ProjectExecutionBase):
     """Schema for ProjectExecution response."""
 
     id: int
+    user_id: int
     status: str
-    started_at: datetime
-    completed_at: Optional[datetime] = None
+    actual_end_date: Optional[date] = None
+    actual_hours: float
+    received_value: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 
@@ -627,49 +643,63 @@ class NegotiationBase(BaseModel):
     """Base schema for Negotiation."""
 
     opportunity_id: int = Field(..., gt=0)
-    round_number: int = Field(default=1, ge=1)
-    our_proposal: float = Field(..., gt=0)
-    client_counter: Optional[float] = Field(None, gt=0)
-    proposed_scope_changes: Optional[str] = None
-    proposed_deadline_changes: Optional[int] = None
-    rationale: Optional[str] = None
 
-    @field_validator("proposed_scope_changes", "rationale")
+    # Original proposal
+    original_budget: Optional[float] = Field(None, gt=0)
+    original_deadline_days: Optional[int] = Field(None, gt=0)
+
+    # Counter-proposal
+    counter_proposal_budget: float = Field(..., gt=0)
+    counter_proposal_deadline_days: Optional[int] = Field(None, gt=0)
+    counter_proposal_justification: str = Field(..., min_length=1)
+
+    # Client response
+    final_agreed_budget: Optional[float] = Field(None, gt=0)
+    final_agreed_deadline_days: Optional[int] = Field(None, gt=0)
+
+    @field_validator("counter_proposal_justification")
     @classmethod
-    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def sanitize_text_fields(cls, v: str) -> str:
         """Sanitize text fields to prevent XSS."""
-        if v is None:
-            return v
         sanitized = sanitize_string(v, max_length=5000, allow_newlines=True)
-        return sanitized if sanitized.strip() else None
+        if not sanitized.strip():
+            raise ValueError("Justification cannot be empty")
+        return sanitized
 
 
 class NegotiationCreate(NegotiationBase):
     """Schema for creating a Negotiation."""
 
-    negotiation_date: Optional[date] = None  # Auto-set to today if not provided
+    pass
 
 
 class NegotiationUpdate(BaseModel):
     """Schema for updating a Negotiation."""
 
-    round_number: Optional[int] = Field(None, ge=1)
-    our_proposal: Optional[float] = Field(None, gt=0)
-    client_counter: Optional[float] = Field(None, gt=0)
-    proposed_scope_changes: Optional[str] = None
-    proposed_deadline_changes: Optional[int] = None
-    rationale: Optional[str] = None
-    status: Optional[Literal["proposed", "accepted", "rejected", "countered"]] = None
+    counter_proposal_budget: Optional[float] = Field(None, gt=0)
+    counter_proposal_deadline_days: Optional[int] = Field(None, gt=0)
+    counter_proposal_justification: Optional[str] = None
+    client_response: Optional[str] = None
+    final_agreed_budget: Optional[float] = Field(None, gt=0)
+    final_agreed_deadline_days: Optional[int] = Field(None, gt=0)
+    outcome: Optional[
+        Literal["accepted", "rejected", "agreed", "no_response", "pending"]
+    ] = None
+    outcome_notes: Optional[str] = None
 
 
 class NegotiationResponse(NegotiationBase):
     """Schema for Negotiation response."""
 
     id: int
-    status: str
-    negotiation_date: date
+    user_id: int
+    outcome: str
+    client_response: Optional[str] = None
+    generated_message: Optional[str] = None
+    outcome_notes: Optional[str] = None
     created_at: datetime
-    updated_at: datetime
+    responded_at: Optional[datetime] = None
+    finalized_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

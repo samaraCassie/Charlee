@@ -785,7 +785,7 @@ def get_project_executions(
     if opportunity_id:
         query = query.filter(ProjectExecution.opportunity_id == opportunity_id)
 
-    return query.order_by(ProjectExecution.started_at.desc()).offset(skip).limit(limit).all()
+    return query.order_by(ProjectExecution.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def create_project_execution(db: Session, execution_data, user_id: int):
@@ -862,9 +862,9 @@ def get_negotiations(
         query = query.filter(Negotiation.opportunity_id == opportunity_id)
 
     if status:
-        query = query.filter(Negotiation.status == status)
+        query = query.filter(Negotiation.outcome == status)
 
-    return query.order_by(Negotiation.negotiation_date.desc()).offset(skip).limit(limit).all()
+    return query.order_by(Negotiation.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def create_negotiation(db: Session, negotiation_data, user_id: int):
@@ -878,8 +878,6 @@ def create_negotiation(db: Session, negotiation_data, user_id: int):
             raise ValueError(f"Opportunity with id {negotiation_data.opportunity_id} not found")
 
     negotiation_dict = negotiation_data.model_dump()
-    if "negotiation_date" not in negotiation_dict or not negotiation_dict["negotiation_date"]:
-        negotiation_dict["negotiation_date"] = datetime.now(timezone.utc).date()
 
     db_negotiation = Negotiation(**negotiation_dict, user_id=user_id)
     db.add(db_negotiation)
