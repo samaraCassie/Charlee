@@ -1,5 +1,6 @@
 """CRUD operations for database models."""
 
+from datetime import datetime, timezone
 from typing import Optional, cast
 
 from sqlalchemy.orm import Session
@@ -470,5 +471,444 @@ def delete_invoice(db: Session, invoice_id: int, user_id: int) -> bool:
         log.invoice_id = None
 
     db.delete(db_invoice)
+    db.commit()
+    return True
+
+
+# ==================== Projects Intelligence System CRUD ====================
+
+
+# ----- FreelancePlatform CRUD -----
+
+
+def get_platform(db: Session, platform_id: int, user_id: int):
+    """Get a specific freelance platform by ID for a user."""
+    from database.models import FreelancePlatform
+
+    return (
+        db.query(FreelancePlatform)
+        .filter(FreelancePlatform.id == platform_id, FreelancePlatform.user_id == user_id)
+        .first()
+    )
+
+
+def get_platforms(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    active_only: bool = False,
+) -> list:
+    """Get all freelance platforms for a user with optional filters."""
+    from database.models import FreelancePlatform
+
+    query = db.query(FreelancePlatform).filter(FreelancePlatform.user_id == user_id)
+
+    if active_only:
+        query = query.filter(FreelancePlatform.active == True)  # noqa: E712
+
+    return query.order_by(FreelancePlatform.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def create_platform(db: Session, platform_data, user_id: int):
+    """Create a new freelance platform for a user."""
+    from database.models import FreelancePlatform
+
+    db_platform = FreelancePlatform(**platform_data.model_dump(), user_id=user_id)
+    db.add(db_platform)
+    db.commit()
+    db.refresh(db_platform)
+    return db_platform
+
+
+def update_platform(db: Session, platform_id: int, platform_update, user_id: int):
+    """Update a freelance platform for a user."""
+    db_platform = get_platform(db, platform_id, user_id)
+    if not db_platform:
+        return None
+
+    update_data = platform_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_platform, field, value)
+
+    db.commit()
+    db.refresh(db_platform)
+    return db_platform
+
+
+def delete_platform(db: Session, platform_id: int, user_id: int) -> bool:
+    """Delete a freelance platform for a user."""
+    db_platform = get_platform(db, platform_id, user_id)
+    if not db_platform:
+        return False
+
+    db.delete(db_platform)
+    db.commit()
+    return True
+
+
+# ----- FreelanceOpportunity CRUD -----
+
+
+def get_opportunity(db: Session, opportunity_id: int, user_id: int):
+    """Get a specific freelance opportunity by ID for a user."""
+    from database.models import FreelanceOpportunity
+
+    return (
+        db.query(FreelanceOpportunity)
+        .filter(
+            FreelanceOpportunity.id == opportunity_id,
+            FreelanceOpportunity.user_id == user_id,
+        )
+        .first()
+    )
+
+
+def get_opportunities(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    platform_id: Optional[int] = None,
+    min_score: Optional[float] = None,
+    recommendation: Optional[str] = None,
+) -> list:
+    """Get all freelance opportunities for a user with optional filters."""
+    from database.models import FreelanceOpportunity
+
+    query = db.query(FreelanceOpportunity).filter(FreelanceOpportunity.user_id == user_id)
+
+    if status:
+        query = query.filter(FreelanceOpportunity.status == status)
+
+    if platform_id:
+        query = query.filter(FreelanceOpportunity.platform_id == platform_id)
+
+    if min_score is not None:
+        query = query.filter(FreelanceOpportunity.final_score >= min_score)
+
+    if recommendation:
+        query = query.filter(FreelanceOpportunity.recommendation == recommendation)
+
+    return (
+        query.order_by(FreelanceOpportunity.final_score.desc().nullslast())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def create_opportunity(db: Session, opportunity_data, user_id: int):
+    """Create a new freelance opportunity for a user."""
+    from database.models import FreelanceOpportunity
+
+    # Validate platform_id if provided
+    if hasattr(opportunity_data, "platform_id") and opportunity_data.platform_id is not None:
+        platform = get_platform(db, opportunity_data.platform_id, user_id)
+        if not platform:
+            raise ValueError(f"Platform with id {opportunity_data.platform_id} not found")
+
+    db_opportunity = FreelanceOpportunity(**opportunity_data.model_dump(), user_id=user_id)
+    db.add(db_opportunity)
+    db.commit()
+    db.refresh(db_opportunity)
+    return db_opportunity
+
+
+def update_opportunity(db: Session, opportunity_id: int, opportunity_update, user_id: int):
+    """Update a freelance opportunity for a user."""
+    db_opportunity = get_opportunity(db, opportunity_id, user_id)
+    if not db_opportunity:
+        return None
+
+    update_data = opportunity_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_opportunity, field, value)
+
+    db.commit()
+    db.refresh(db_opportunity)
+    return db_opportunity
+
+
+def delete_opportunity(db: Session, opportunity_id: int, user_id: int) -> bool:
+    """Delete a freelance opportunity for a user."""
+    db_opportunity = get_opportunity(db, opportunity_id, user_id)
+    if not db_opportunity:
+        return False
+
+    db.delete(db_opportunity)
+    db.commit()
+    return True
+
+
+# ----- PricingParameter CRUD -----
+
+
+def get_pricing_parameter(db: Session, param_id: int, user_id: int):
+    """Get a specific pricing parameter by ID for a user."""
+    from database.models import PricingParameter
+
+    return (
+        db.query(PricingParameter)
+        .filter(PricingParameter.id == param_id, PricingParameter.user_id == user_id)
+        .first()
+    )
+
+
+def get_pricing_parameters(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    active_only: bool = True,
+) -> list:
+    """Get all pricing parameters for a user with optional filters."""
+    from database.models import PricingParameter
+
+    query = db.query(PricingParameter).filter(PricingParameter.user_id == user_id)
+
+    if active_only:
+        query = query.filter(PricingParameter.active == True)  # noqa: E712
+
+    return query.order_by(PricingParameter.version.desc()).offset(skip).limit(limit).all()
+
+
+def get_active_pricing_parameter(db: Session, user_id: int):
+    """Get the current active pricing parameter for a user."""
+    from database.models import PricingParameter
+
+    return (
+        db.query(PricingParameter)
+        .filter(PricingParameter.user_id == user_id, PricingParameter.active == True)  # noqa: E712
+        .order_by(PricingParameter.version.desc())
+        .first()
+    )
+
+
+def create_pricing_parameter(db: Session, pricing_data, user_id: int):
+    """Create a new pricing parameter version for a user."""
+    from database.models import PricingParameter
+
+    # Get next version number
+    latest = (
+        db.query(PricingParameter)
+        .filter(PricingParameter.user_id == user_id)
+        .order_by(PricingParameter.version.desc())
+        .first()
+    )
+    next_version = (latest.version + 1) if latest else 1
+
+    # Deactivate previous version if setting new as active
+    if hasattr(pricing_data, "active") and pricing_data.active:
+        db.query(PricingParameter).filter(
+            PricingParameter.user_id == user_id, PricingParameter.active == True  # noqa: E712
+        ).update({"active": False})
+
+    db_pricing = PricingParameter(
+        **pricing_data.model_dump(), user_id=user_id, version=next_version
+    )
+    db.add(db_pricing)
+    db.commit()
+    db.refresh(db_pricing)
+    return db_pricing
+
+
+def update_pricing_parameter(db: Session, param_id: int, pricing_update, user_id: int):
+    """Update a pricing parameter for a user."""
+    db_pricing = get_pricing_parameter(db, param_id, user_id)
+    if not db_pricing:
+        return None
+
+    update_data = pricing_update.model_dump(exclude_unset=True)
+
+    # If activating this version, deactivate others
+    if update_data.get("active") is True:
+        db.query(PricingParameter).filter(
+            PricingParameter.user_id == user_id,
+            PricingParameter.id != param_id,
+            PricingParameter.active == True,  # noqa: E712
+        ).update({"active": False})
+
+    for field, value in update_data.items():
+        setattr(db_pricing, field, value)
+
+    db.commit()
+    db.refresh(db_pricing)
+    return db_pricing
+
+
+def delete_pricing_parameter(db: Session, param_id: int, user_id: int) -> bool:
+    """Delete a pricing parameter for a user (only if not active)."""
+    db_pricing = get_pricing_parameter(db, param_id, user_id)
+    if not db_pricing:
+        return False
+
+    if db_pricing.active:
+        raise ValueError("Cannot delete active pricing parameter")
+
+    db.delete(db_pricing)
+    db.commit()
+    return True
+
+
+# ----- ProjectExecution CRUD -----
+
+
+def get_project_execution(db: Session, execution_id: int, user_id: int):
+    """Get a specific project execution by ID for a user."""
+    from database.models import ProjectExecution
+
+    return (
+        db.query(ProjectExecution)
+        .filter(ProjectExecution.id == execution_id, ProjectExecution.user_id == user_id)
+        .first()
+    )
+
+
+def get_project_executions(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    opportunity_id: Optional[int] = None,
+) -> list:
+    """Get all project executions for a user with optional filters."""
+    from database.models import ProjectExecution
+
+    query = db.query(ProjectExecution).filter(ProjectExecution.user_id == user_id)
+
+    if status:
+        query = query.filter(ProjectExecution.status == status)
+
+    if opportunity_id:
+        query = query.filter(ProjectExecution.opportunity_id == opportunity_id)
+
+    return query.order_by(ProjectExecution.started_at.desc()).offset(skip).limit(limit).all()
+
+
+def create_project_execution(db: Session, execution_data, user_id: int):
+    """Create a new project execution for a user."""
+    from database.models import ProjectExecution
+
+    # Validate opportunity_id
+    if hasattr(execution_data, "opportunity_id"):
+        opportunity = get_opportunity(db, execution_data.opportunity_id, user_id)
+        if not opportunity:
+            raise ValueError(f"Opportunity with id {execution_data.opportunity_id} not found")
+
+    db_execution = ProjectExecution(**execution_data.model_dump(), user_id=user_id)
+    db.add(db_execution)
+    db.commit()
+    db.refresh(db_execution)
+    return db_execution
+
+
+def update_project_execution(db: Session, execution_id: int, execution_update, user_id: int):
+    """Update a project execution for a user."""
+    db_execution = get_project_execution(db, execution_id, user_id)
+    if not db_execution:
+        return None
+
+    update_data = execution_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_execution, field, value)
+
+    db.commit()
+    db.refresh(db_execution)
+    return db_execution
+
+
+def delete_project_execution(db: Session, execution_id: int, user_id: int) -> bool:
+    """Delete a project execution for a user."""
+    db_execution = get_project_execution(db, execution_id, user_id)
+    if not db_execution:
+        return False
+
+    db.delete(db_execution)
+    db.commit()
+    return True
+
+
+# ----- Negotiation CRUD -----
+
+
+def get_negotiation(db: Session, negotiation_id: int, user_id: int):
+    """Get a specific negotiation by ID for a user."""
+    from database.models import Negotiation
+
+    return (
+        db.query(Negotiation)
+        .filter(Negotiation.id == negotiation_id, Negotiation.user_id == user_id)
+        .first()
+    )
+
+
+def get_negotiations(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    opportunity_id: Optional[int] = None,
+    status: Optional[str] = None,
+) -> list:
+    """Get all negotiations for a user with optional filters."""
+    from database.models import Negotiation
+
+    query = db.query(Negotiation).filter(Negotiation.user_id == user_id)
+
+    if opportunity_id:
+        query = query.filter(Negotiation.opportunity_id == opportunity_id)
+
+    if status:
+        query = query.filter(Negotiation.status == status)
+
+    return query.order_by(Negotiation.negotiation_date.desc()).offset(skip).limit(limit).all()
+
+
+def create_negotiation(db: Session, negotiation_data, user_id: int):
+    """Create a new negotiation record for a user."""
+    from database.models import Negotiation
+
+    # Validate opportunity_id
+    if hasattr(negotiation_data, "opportunity_id"):
+        opportunity = get_opportunity(db, negotiation_data.opportunity_id, user_id)
+        if not opportunity:
+            raise ValueError(f"Opportunity with id {negotiation_data.opportunity_id} not found")
+
+    negotiation_dict = negotiation_data.model_dump()
+    if "negotiation_date" not in negotiation_dict or not negotiation_dict["negotiation_date"]:
+        negotiation_dict["negotiation_date"] = datetime.now(timezone.utc).date()
+
+    db_negotiation = Negotiation(**negotiation_dict, user_id=user_id)
+    db.add(db_negotiation)
+    db.commit()
+    db.refresh(db_negotiation)
+    return db_negotiation
+
+
+def update_negotiation(db: Session, negotiation_id: int, negotiation_update, user_id: int):
+    """Update a negotiation for a user."""
+    db_negotiation = get_negotiation(db, negotiation_id, user_id)
+    if not db_negotiation:
+        return None
+
+    update_data = negotiation_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_negotiation, field, value)
+
+    db.commit()
+    db.refresh(db_negotiation)
+    return db_negotiation
+
+
+def delete_negotiation(db: Session, negotiation_id: int, user_id: int) -> bool:
+    """Delete a negotiation for a user."""
+    db_negotiation = get_negotiation(db, negotiation_id, user_id)
+    if not db_negotiation:
+        return False
+
+    db.delete(db_negotiation)
     db.commit()
     return True

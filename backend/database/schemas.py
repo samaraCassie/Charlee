@@ -340,3 +340,368 @@ class InvoiceListResponse(BaseModel):
 
     total: int
     invoices: list[InvoiceResponse]
+
+
+# ==================== Projects Intelligence System Schemas ====================
+
+
+# ----- FreelancePlatform Schemas -----
+
+
+class FreelancePlatformBase(BaseModel):
+    """Base schema for FreelancePlatform."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    platform_type: Optional[str] = Field(None, max_length=50)
+    api_config: Optional[dict] = None
+    auto_collect: bool = True
+    active: bool = True
+    collection_interval_hours: Optional[int] = Field(None, ge=1)
+    search_filters: Optional[dict] = None
+
+    @field_validator("name")
+    @classmethod
+    def sanitize_name(cls, v: str) -> str:
+        """Sanitize name to prevent XSS."""
+        if not v:
+            raise ValueError("Name cannot be empty")
+        sanitized = sanitize_string(v, max_length=100, allow_newlines=False)
+        if not sanitized.strip():
+            raise ValueError("Name cannot be empty after sanitization")
+        return sanitized
+
+
+class FreelancePlatformCreate(FreelancePlatformBase):
+    """Schema for creating a FreelancePlatform."""
+
+    pass
+
+
+class FreelancePlatformUpdate(BaseModel):
+    """Schema for updating a FreelancePlatform."""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    platform_type: Optional[str] = Field(None, max_length=50)
+    api_config: Optional[dict] = None
+    auto_collect: Optional[bool] = None
+    active: Optional[bool] = None
+    collection_interval_hours: Optional[int] = Field(None, ge=1)
+    search_filters: Optional[dict] = None
+
+
+class FreelancePlatformResponse(FreelancePlatformBase):
+    """Schema for FreelancePlatform response."""
+
+    id: int
+    last_collection_at: Optional[datetime] = None
+    last_collection_count: int
+    total_projects_collected: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- FreelanceOpportunity Schemas -----
+
+
+class FreelanceOpportunityBase(BaseModel):
+    """Base schema for FreelanceOpportunity."""
+
+    title: str = Field(..., min_length=1, max_length=300)
+    description: str = Field(..., min_length=1)
+    platform_id: Optional[int] = Field(None, gt=0)
+    external_id: Optional[str] = Field(None, max_length=100)
+    client_name: Optional[str] = Field(None, max_length=200)
+    client_rating: Optional[float] = Field(None, ge=0, le=5)
+    client_country: Optional[str] = Field(None, max_length=100)
+    client_projects_count: Optional[int] = Field(None, ge=0)
+    required_skills: Optional[list[str]] = None
+    client_budget: Optional[float] = Field(None, gt=0)
+    client_currency: str = Field(default="USD", max_length=3)
+    client_deadline_days: Optional[int] = Field(None, gt=0)
+    contract_type: Optional[str] = Field(None, max_length=50)
+
+    @field_validator("title")
+    @classmethod
+    def sanitize_title(cls, v: str) -> str:
+        """Sanitize title to prevent XSS."""
+        if not v:
+            raise ValueError("Title cannot be empty")
+        sanitized = sanitize_string(v, max_length=300, allow_newlines=False)
+        if not sanitized.strip():
+            raise ValueError("Title cannot be empty after sanitization")
+        return sanitized
+
+    @field_validator("description")
+    @classmethod
+    def sanitize_description(cls, v: str) -> str:
+        """Sanitize description to prevent XSS."""
+        if not v:
+            raise ValueError("Description cannot be empty")
+        sanitized = sanitize_string(v, max_length=10000, allow_newlines=True)
+        if not sanitized.strip():
+            raise ValueError("Description cannot be empty after sanitization")
+        return sanitized
+
+
+class FreelanceOpportunityCreate(FreelanceOpportunityBase):
+    """Schema for creating a FreelanceOpportunity."""
+
+    pass
+
+
+class FreelanceOpportunityUpdate(BaseModel):
+    """Schema for updating a FreelanceOpportunity."""
+
+    title: Optional[str] = Field(None, min_length=1, max_length=300)
+    description: Optional[str] = Field(None, min_length=1)
+    client_name: Optional[str] = Field(None, max_length=200)
+    client_rating: Optional[float] = Field(None, ge=0, le=5)
+    client_country: Optional[str] = Field(None, max_length=100)
+    client_projects_count: Optional[int] = Field(None, ge=0)
+    required_skills: Optional[list[str]] = None
+    client_budget: Optional[float] = Field(None, gt=0)
+    client_currency: Optional[str] = Field(None, max_length=3)
+    client_deadline_days: Optional[int] = Field(None, gt=0)
+    contract_type: Optional[str] = Field(None, max_length=50)
+    status: Optional[Literal["new", "analyzed", "evaluated", "accepted", "rejected"]] = None
+    recommendation: Optional[Literal["accept", "negotiate", "reject", "pending"]] = None
+
+
+class FreelanceOpportunityResponse(FreelanceOpportunityBase):
+    """Schema for FreelanceOpportunity response."""
+
+    id: int
+    status: str
+    estimated_complexity: Optional[int] = None
+    skill_level: Optional[str] = None
+    category: Optional[str] = None
+    estimated_hours: Optional[float] = None
+    suggested_price: Optional[float] = None
+    viability_score: Optional[float] = None
+    alignment_score: Optional[float] = None
+    strategic_score: Optional[float] = None
+    final_score: Optional[float] = None
+    client_intent: Optional[str] = None
+    red_flags: Optional[list[str]] = None
+    opportunities: Optional[list[str]] = None
+    recommendation: str
+    analyzed_at: Optional[datetime] = None
+    evaluated_at: Optional[datetime] = None
+    collected_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- PricingParameter Schemas -----
+
+
+class PricingParameterBase(BaseModel):
+    """Base schema for PricingParameter."""
+
+    base_hourly_rate: float = Field(..., gt=0)
+    minimum_margin: float = Field(default=0.20, ge=0, le=1)
+    minimum_project_value: float = Field(default=100.0, gt=0)
+    complexity_factors: Optional[dict] = None
+    specialization_factors: Optional[dict] = None
+    deadline_factors: Optional[dict] = None
+    client_factors: Optional[dict] = None
+    active: bool = True
+
+    @field_validator("complexity_factors", "specialization_factors", "deadline_factors", "client_factors")
+    @classmethod
+    def validate_factors(cls, v: Optional[dict]) -> Optional[dict]:
+        """Validate factor dictionaries contain positive multipliers."""
+        if v is None:
+            return v
+        for key, value in v.items():
+            if not isinstance(value, (int, float)) or value <= 0:
+                raise ValueError(f"Factor '{key}' must be a positive number, got {value}")
+        return v
+
+
+class PricingParameterCreate(PricingParameterBase):
+    """Schema for creating a PricingParameter."""
+
+    pass
+
+
+class PricingParameterUpdate(BaseModel):
+    """Schema for updating a PricingParameter."""
+
+    base_hourly_rate: Optional[float] = Field(None, gt=0)
+    minimum_margin: Optional[float] = Field(None, ge=0, le=1)
+    minimum_project_value: Optional[float] = Field(None, gt=0)
+    complexity_factors: Optional[dict] = None
+    specialization_factors: Optional[dict] = None
+    deadline_factors: Optional[dict] = None
+    client_factors: Optional[dict] = None
+    active: Optional[bool] = None
+
+
+class PricingParameterResponse(PricingParameterBase):
+    """Schema for PricingParameter response."""
+
+    id: int
+    version: int
+    auto_adjusted: bool
+    based_on_executions_count: int
+    adjustment_reason: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- ProjectExecution Schemas -----
+
+
+class ProjectExecutionBase(BaseModel):
+    """Base schema for ProjectExecution."""
+
+    opportunity_id: int = Field(..., gt=0)
+    accepted_price: float = Field(..., gt=0)
+    accepted_deadline_days: Optional[int] = Field(None, gt=0)
+    actual_hours: Optional[float] = Field(None, ge=0)
+    actual_revenue: Optional[float] = Field(None, ge=0)
+    actual_costs: Optional[float] = Field(None, ge=0)
+    client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
+    technical_challenges: Optional[str] = None
+    lessons_learned: Optional[str] = None
+
+    @field_validator("technical_challenges", "lessons_learned")
+    @classmethod
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        """Sanitize text fields to prevent XSS."""
+        if v is None:
+            return v
+        sanitized = sanitize_string(v, max_length=5000, allow_newlines=True)
+        return sanitized if sanitized.strip() else None
+
+
+class ProjectExecutionCreate(ProjectExecutionBase):
+    """Schema for creating a ProjectExecution."""
+
+    pass
+
+
+class ProjectExecutionUpdate(BaseModel):
+    """Schema for updating a ProjectExecution."""
+
+    accepted_price: Optional[float] = Field(None, gt=0)
+    accepted_deadline_days: Optional[int] = Field(None, gt=0)
+    actual_hours: Optional[float] = Field(None, ge=0)
+    actual_revenue: Optional[float] = Field(None, ge=0)
+    actual_costs: Optional[float] = Field(None, ge=0)
+    client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
+    status: Optional[Literal["in_progress", "completed", "cancelled"]] = None
+    technical_challenges: Optional[str] = None
+    lessons_learned: Optional[str] = None
+
+
+class ProjectExecutionResponse(ProjectExecutionBase):
+    """Schema for ProjectExecution response."""
+
+    id: int
+    status: str
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Negotiation Schemas -----
+
+
+class NegotiationBase(BaseModel):
+    """Base schema for Negotiation."""
+
+    opportunity_id: int = Field(..., gt=0)
+    round_number: int = Field(default=1, ge=1)
+    our_proposal: float = Field(..., gt=0)
+    client_counter: Optional[float] = Field(None, gt=0)
+    proposed_scope_changes: Optional[str] = None
+    proposed_deadline_changes: Optional[int] = None
+    rationale: Optional[str] = None
+
+    @field_validator("proposed_scope_changes", "rationale")
+    @classmethod
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        """Sanitize text fields to prevent XSS."""
+        if v is None:
+            return v
+        sanitized = sanitize_string(v, max_length=5000, allow_newlines=True)
+        return sanitized if sanitized.strip() else None
+
+
+class NegotiationCreate(NegotiationBase):
+    """Schema for creating a Negotiation."""
+
+    negotiation_date: Optional[date] = None  # Auto-set to today if not provided
+
+
+class NegotiationUpdate(BaseModel):
+    """Schema for updating a Negotiation."""
+
+    round_number: Optional[int] = Field(None, ge=1)
+    our_proposal: Optional[float] = Field(None, gt=0)
+    client_counter: Optional[float] = Field(None, gt=0)
+    proposed_scope_changes: Optional[str] = None
+    proposed_deadline_changes: Optional[int] = None
+    rationale: Optional[str] = None
+    status: Optional[Literal["proposed", "accepted", "rejected", "countered"]] = None
+
+
+class NegotiationResponse(NegotiationBase):
+    """Schema for Negotiation response."""
+
+    id: int
+    status: str
+    negotiation_date: date
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==================== Projects Intelligence List Responses ====================
+
+
+class FreelancePlatformListResponse(BaseModel):
+    """Schema for list of freelance platforms."""
+
+    total: int
+    platforms: list[FreelancePlatformResponse]
+
+
+class FreelanceOpportunityListResponse(BaseModel):
+    """Schema for list of freelance opportunities."""
+
+    total: int
+    opportunities: list[FreelanceOpportunityResponse]
+
+
+class PricingParameterListResponse(BaseModel):
+    """Schema for list of pricing parameters."""
+
+    total: int
+    pricing_parameters: list[PricingParameterResponse]
+
+
+class ProjectExecutionListResponse(BaseModel):
+    """Schema for list of project executions."""
+
+    total: int
+    executions: list[ProjectExecutionResponse]
+
+
+class NegotiationListResponse(BaseModel):
+    """Schema for list of negotiations."""
+
+    total: int
+    negotiations: list[NegotiationResponse]

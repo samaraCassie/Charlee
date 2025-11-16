@@ -29,6 +29,7 @@ from api.routes import (
     inbox,
     oauth_routes,
     priorizacao,
+    projects,
     settings,
     tasks,
     wellness,
@@ -140,6 +141,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "name": "Freelancer (V2)",
             "description": "Freelance project management, time tracking, and invoicing",
         },
+        {
+            "name": "Projects Intelligence (V2)",
+            "description": "AI-powered freelance opportunity analysis, semantic search, and strategic pricing",
+        },
     ],
 )
 
@@ -219,6 +224,9 @@ app.include_router(
     daily_tracking.router, prefix="/api/v2/daily-tracking", tags=["Daily Tracking (V2)"]
 )
 app.include_router(freelancer.router, prefix="/api/v2/freelancer", tags=["Freelancer (V2)"])
+app.include_router(
+    projects.router, prefix="/api/v2/projects", tags=["Projects Intelligence (V2)"]
+)
 
 # ========================================
 # PROMETHEUS METRICS
