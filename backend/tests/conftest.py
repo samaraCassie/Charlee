@@ -210,3 +210,134 @@ def sample_invoice(db, sample_user, sample_freelance_project, sample_work_log):
     db.commit()
 
     return invoice
+
+
+# ==================== Projects Intelligence System Fixtures ====================
+
+
+@pytest.fixture
+def sample_platform(db, sample_user):
+    """Create a sample FreelancePlatform for testing."""
+    from database.models import FreelancePlatform
+
+    platform = FreelancePlatform(
+        user_id=sample_user.id,
+        name="Upwork",
+        platform_type="freelance_marketplace",
+        active=True,
+        auto_collect=True,
+        collection_interval_hours=24,
+    )
+    db.add(platform)
+    db.commit()
+    db.refresh(platform)
+    return platform
+
+
+@pytest.fixture
+def sample_opportunity(db, sample_user, sample_platform):
+    """Create a sample FreelanceOpportunity for testing."""
+    from database.models import FreelanceOpportunity
+
+    opportunity = FreelanceOpportunity(
+        user_id=sample_user.id,
+        platform_id=sample_platform.id,
+        external_id="upwork-12345",
+        title="Build a Full-Stack Web Application",
+        description="We need a full-stack developer to build a web application using React and Node.js. Must have experience with PostgreSQL and Docker.",
+        client_name="Tech Startup Inc",
+        client_rating=4.8,
+        client_country="United States",
+        client_projects_count=25,
+        required_skills=["React", "Node.js", "PostgreSQL", "Docker"],
+        client_budget=5000.0,
+        client_currency="USD",
+        client_deadline_days=30,
+        contract_type="fixed_price",
+        status="new",
+        recommendation="pending",
+    )
+    db.add(opportunity)
+    db.commit()
+    db.refresh(opportunity)
+    return opportunity
+
+
+@pytest.fixture
+def sample_pricing_parameter(db, sample_user):
+    """Create a sample PricingParameter for testing."""
+    from database.models import PricingParameter
+
+    pricing = PricingParameter(
+        user_id=sample_user.id,
+        version=1,
+        base_hourly_rate=100.0,
+        minimum_margin=0.20,
+        minimum_project_value=500.0,
+        complexity_factors={
+            "1-2": 0.7,
+            "3-4": 0.9,
+            "5-6": 1.0,
+            "7-8": 1.2,
+            "9-10": 1.5,
+        },
+        specialization_factors={
+            "backend": 1.0,
+            "frontend": 0.9,
+            "full_stack": 1.1,
+            "ai_ml": 1.3,
+        },
+        deadline_factors={"normal": 1.0, "tight": 1.2, "urgent": 1.5},
+        client_factors={"good_rating": 1.0, "new_client": 0.9, "premium": 1.2},
+        active=True,
+        auto_adjusted=False,
+        based_on_executions_count=0,
+    )
+    db.add(pricing)
+    db.commit()
+    db.refresh(pricing)
+    return pricing
+
+
+@pytest.fixture
+def sample_project_execution(db, sample_user, sample_opportunity):
+    """Create a sample ProjectExecution for testing."""
+    from datetime import datetime, timezone
+
+    from database.models import ProjectExecution
+
+    execution = ProjectExecution(
+        user_id=sample_user.id,
+        opportunity_id=sample_opportunity.id,
+        accepted_price=5000.0,
+        accepted_deadline_days=30,
+        status="in_progress",
+        started_at=datetime.now(timezone.utc),
+    )
+    db.add(execution)
+    db.commit()
+    db.refresh(execution)
+    return execution
+
+
+@pytest.fixture
+def sample_negotiation(db, sample_user, sample_opportunity):
+    """Create a sample Negotiation for testing."""
+    from datetime import date
+
+    from database.models import Negotiation
+
+    negotiation = Negotiation(
+        user_id=sample_user.id,
+        opportunity_id=sample_opportunity.id,
+        round_number=1,
+        our_proposal=6000.0,
+        client_counter=5500.0,
+        negotiation_date=date.today(),
+        status="countered",
+        rationale="Increased scope requires higher budget",
+    )
+    db.add(negotiation)
+    db.commit()
+    db.refresh(negotiation)
+    return negotiation
