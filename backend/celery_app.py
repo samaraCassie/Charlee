@@ -4,6 +4,7 @@ This module configures Celery for handling asynchronous tasks like:
 - Auto-collection of freelance opportunities
 - Periodic data analysis and insights generation
 - Scheduled notifications and alerts
+- Calendar synchronization with external providers
 """
 
 import os
@@ -18,7 +19,11 @@ celery_app = Celery(
     "charlee",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["tasks.opportunity_collector", "tasks.intelligence_automation"],
+    include=[
+        "tasks.opportunity_collector",
+        "tasks.intelligence_automation",
+        "tasks.calendar_sync",
+    ],
 )
 
 # Celery configuration
@@ -70,6 +75,19 @@ celery_app.conf.update(
             "task": "tasks.intelligence_automation.detect_career_anomalies",
             "schedule": crontab(day_of_week=1, hour=9, minute=0),
             "options": {"expires": 3600},
+        },
+        # Calendar synchronization tasks
+        # Sync all calendar connections every 15 minutes
+        "sync-all-calendars-every-15-minutes": {
+            "task": "calendar.sync_all_connections",
+            "schedule": crontab(minute="*/15"),
+            "options": {"expires": 600},
+        },
+        # Refresh expired OAuth tokens every 2 hours
+        "refresh-calendar-tokens-every-2-hours": {
+            "task": "calendar.refresh_tokens",
+            "schedule": crontab(minute=0, hour="*/2"),
+            "options": {"expires": 1800},
         },
     },
 )
