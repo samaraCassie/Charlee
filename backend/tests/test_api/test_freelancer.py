@@ -47,9 +47,7 @@ class TestFreelanceProjectsAPI:
 
     def test_list_projects_with_status_filter(self, client, sample_freelance_project, auth_headers):
         """Should filter projects by status."""
-        response = client.get(
-            "/api/v2/freelancer/projects?status=active", headers=auth_headers
-        )
+        response = client.get("/api/v2/freelancer/projects?status=active", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()

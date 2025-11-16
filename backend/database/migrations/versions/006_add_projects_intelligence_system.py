@@ -45,9 +45,15 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_freelance_platforms_id"), "freelance_platforms", ["id"], unique=False)
-    op.create_index(op.f("ix_freelance_platforms_user_id"), "freelance_platforms", ["user_id"], unique=False)
-    op.create_index(op.f("ix_freelance_platforms_active"), "freelance_platforms", ["active"], unique=False)
-    op.create_index("ix_platforms_active_user", "freelance_platforms", ["active", "user_id"], unique=False)
+    op.create_index(
+        op.f("ix_freelance_platforms_user_id"), "freelance_platforms", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_freelance_platforms_active"), "freelance_platforms", ["active"], unique=False
+    )
+    op.create_index(
+        "ix_platforms_active_user", "freelance_platforms", ["active", "user_id"], unique=False
+    )
 
     # Create freelance_opportunities table
     op.create_table(
@@ -97,7 +103,9 @@ def upgrade():
         sa.Column(
             "status",
             sa.String(length=20),
-            sa.CheckConstraint("status IN ('new', 'analyzed', 'negotiating', 'accepted', 'rejected', 'expired')"),
+            sa.CheckConstraint(
+                "status IN ('new', 'analyzed', 'negotiating', 'accepted', 'rejected', 'expired')"
+            ),
             server_default="new",
         ),
         sa.Column("final_decision", sa.String(length=20), nullable=True),
@@ -112,17 +120,69 @@ def upgrade():
         sa.ForeignKeyConstraint(["platform_id"], ["freelance_platforms.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_freelance_opportunities_id"), "freelance_opportunities", ["id"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_user_id"), "freelance_opportunities", ["user_id"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_platform_id"), "freelance_opportunities", ["platform_id"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_external_id"), "freelance_opportunities", ["external_id"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_final_score"), "freelance_opportunities", ["final_score"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_recommendation"), "freelance_opportunities", ["recommendation"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_status"), "freelance_opportunities", ["status"], unique=False)
-    op.create_index(op.f("ix_freelance_opportunities_collected_at"), "freelance_opportunities", ["collected_at"], unique=False)
-    op.create_index("ix_opportunities_score_desc", "freelance_opportunities", [sa.text("final_score DESC")], unique=False)
-    op.create_index("ix_opportunities_status_recommendation", "freelance_opportunities", ["status", "recommendation"], unique=False)
-    op.create_index("ix_opportunities_collected_desc", "freelance_opportunities", [sa.text("collected_at DESC")], unique=False)
+    op.create_index(
+        op.f("ix_freelance_opportunities_id"), "freelance_opportunities", ["id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_user_id"),
+        "freelance_opportunities",
+        ["user_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_platform_id"),
+        "freelance_opportunities",
+        ["platform_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_external_id"),
+        "freelance_opportunities",
+        ["external_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_final_score"),
+        "freelance_opportunities",
+        ["final_score"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_recommendation"),
+        "freelance_opportunities",
+        ["recommendation"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_status"),
+        "freelance_opportunities",
+        ["status"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_freelance_opportunities_collected_at"),
+        "freelance_opportunities",
+        ["collected_at"],
+        unique=False,
+    )
+    op.create_index(
+        "ix_opportunities_score_desc",
+        "freelance_opportunities",
+        [sa.text("final_score DESC")],
+        unique=False,
+    )
+    op.create_index(
+        "ix_opportunities_status_recommendation",
+        "freelance_opportunities",
+        ["status", "recommendation"],
+        unique=False,
+    )
+    op.create_index(
+        "ix_opportunities_collected_desc",
+        "freelance_opportunities",
+        [sa.text("collected_at DESC")],
+        unique=False,
+    )
     # Vector index for similarity search (created after data is populated)
     # op.execute("CREATE INDEX ix_opportunities_embedding ON freelance_opportunities USING ivfflat (description_embedding vector_cosine_ops)")
 
@@ -169,7 +229,9 @@ def upgrade():
         sa.Column(
             "status",
             sa.String(length=20),
-            sa.CheckConstraint("status IN ('planned', 'in_progress', 'completed', 'cancelled', 'on_hold')"),
+            sa.CheckConstraint(
+                "status IN ('planned', 'in_progress', 'completed', 'cancelled', 'on_hold')"
+            ),
             server_default="planned",
         ),
         sa.Column("created_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
@@ -180,11 +242,27 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_project_executions_id"), "project_executions", ["id"], unique=False)
-    op.create_index(op.f("ix_project_executions_user_id"), "project_executions", ["user_id"], unique=False)
-    op.create_index(op.f("ix_project_executions_opportunity_id"), "project_executions", ["opportunity_id"], unique=False)
-    op.create_index(op.f("ix_project_executions_freelance_project_id"), "project_executions", ["freelance_project_id"], unique=False)
-    op.create_index(op.f("ix_project_executions_status"), "project_executions", ["status"], unique=False)
-    op.create_index("ix_executions_dates", "project_executions", ["start_date", "actual_end_date"], unique=False)
+    op.create_index(
+        op.f("ix_project_executions_user_id"), "project_executions", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_project_executions_opportunity_id"),
+        "project_executions",
+        ["opportunity_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_project_executions_freelance_project_id"),
+        "project_executions",
+        ["freelance_project_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_project_executions_status"), "project_executions", ["status"], unique=False
+    )
+    op.create_index(
+        "ix_executions_dates", "project_executions", ["start_date", "actual_end_date"], unique=False
+    )
 
     # Create pricing_parameters table
     op.create_table(
@@ -211,9 +289,18 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_pricing_parameters_id"), "pricing_parameters", ["id"], unique=False)
-    op.create_index(op.f("ix_pricing_parameters_user_id"), "pricing_parameters", ["user_id"], unique=False)
-    op.create_index(op.f("ix_pricing_parameters_active"), "pricing_parameters", ["active"], unique=False)
-    op.create_index("ix_pricing_active_user_version", "pricing_parameters", ["active", "user_id", sa.text("version DESC")], unique=False)
+    op.create_index(
+        op.f("ix_pricing_parameters_user_id"), "pricing_parameters", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_pricing_parameters_active"), "pricing_parameters", ["active"], unique=False
+    )
+    op.create_index(
+        "ix_pricing_active_user_version",
+        "pricing_parameters",
+        ["active", "user_id", sa.text("version DESC")],
+        unique=False,
+    )
 
     # Create negotiations table
     op.create_table(
@@ -233,7 +320,9 @@ def upgrade():
         sa.Column(
             "outcome",
             sa.String(length=20),
-            sa.CheckConstraint("outcome IN ('accepted', 'rejected', 'agreed', 'no_response', 'pending')"),
+            sa.CheckConstraint(
+                "outcome IN ('accepted', 'rejected', 'agreed', 'no_response', 'pending')"
+            ),
             server_default="pending",
         ),
         sa.Column("outcome_notes", sa.Text(), nullable=True),
@@ -246,7 +335,9 @@ def upgrade():
     )
     op.create_index(op.f("ix_negotiations_id"), "negotiations", ["id"], unique=False)
     op.create_index(op.f("ix_negotiations_user_id"), "negotiations", ["user_id"], unique=False)
-    op.create_index(op.f("ix_negotiations_opportunity_id"), "negotiations", ["opportunity_id"], unique=False)
+    op.create_index(
+        op.f("ix_negotiations_opportunity_id"), "negotiations", ["opportunity_id"], unique=False
+    )
     op.create_index(op.f("ix_negotiations_outcome"), "negotiations", ["outcome"], unique=False)
 
     # Create career_insights table
@@ -283,11 +374,21 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_career_insights_id"), "career_insights", ["id"], unique=False)
-    op.create_index(op.f("ix_career_insights_user_id"), "career_insights", ["user_id"], unique=False)
-    op.create_index(op.f("ix_career_insights_period_start"), "career_insights", ["period_start"], unique=False)
-    op.create_index(op.f("ix_career_insights_period_end"), "career_insights", ["period_end"], unique=False)
-    op.create_index(op.f("ix_career_insights_report_type"), "career_insights", ["report_type"], unique=False)
-    op.create_index("ix_insights_period", "career_insights", ["period_start", "period_end"], unique=False)
+    op.create_index(
+        op.f("ix_career_insights_user_id"), "career_insights", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_career_insights_period_start"), "career_insights", ["period_start"], unique=False
+    )
+    op.create_index(
+        op.f("ix_career_insights_period_end"), "career_insights", ["period_end"], unique=False
+    )
+    op.create_index(
+        op.f("ix_career_insights_report_type"), "career_insights", ["report_type"], unique=False
+    )
+    op.create_index(
+        "ix_insights_period", "career_insights", ["period_start", "period_end"], unique=False
+    )
 
     # Create portfolio_items table
     op.create_table(
@@ -316,10 +417,18 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_portfolio_items_id"), "portfolio_items", ["id"], unique=False)
-    op.create_index(op.f("ix_portfolio_items_user_id"), "portfolio_items", ["user_id"], unique=False)
-    op.create_index(op.f("ix_portfolio_items_execution_id"), "portfolio_items", ["execution_id"], unique=False)
-    op.create_index(op.f("ix_portfolio_items_featured"), "portfolio_items", ["featured"], unique=False)
-    op.create_index("ix_portfolio_featured_public", "portfolio_items", ["featured", "public"], unique=False)
+    op.create_index(
+        op.f("ix_portfolio_items_user_id"), "portfolio_items", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_portfolio_items_execution_id"), "portfolio_items", ["execution_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_portfolio_items_featured"), "portfolio_items", ["featured"], unique=False
+    )
+    op.create_index(
+        "ix_portfolio_featured_public", "portfolio_items", ["featured", "public"], unique=False
+    )
 
     # Create learning_records table
     op.create_table(
@@ -351,10 +460,24 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_learning_records_id"), "learning_records", ["id"], unique=False)
-    op.create_index(op.f("ix_learning_records_user_id"), "learning_records", ["user_id"], unique=False)
-    op.create_index(op.f("ix_learning_records_learning_type"), "learning_records", ["learning_type"], unique=False)
-    op.create_index(op.f("ix_learning_records_created_at"), "learning_records", ["created_at"], unique=False)
-    op.create_index("ix_learning_type_date", "learning_records", ["learning_type", sa.text("created_at DESC")], unique=False)
+    op.create_index(
+        op.f("ix_learning_records_user_id"), "learning_records", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_learning_records_learning_type"),
+        "learning_records",
+        ["learning_type"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_learning_records_created_at"), "learning_records", ["created_at"], unique=False
+    )
+    op.create_index(
+        "ix_learning_type_date",
+        "learning_records",
+        ["learning_type", sa.text("created_at DESC")],
+        unique=False,
+    )
 
     # Create personal_reflections table
     op.create_table(
@@ -375,11 +498,21 @@ def upgrade():
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_personal_reflections_id"), "personal_reflections", ["id"], unique=False)
-    op.create_index(op.f("ix_personal_reflections_user_id"), "personal_reflections", ["user_id"], unique=False)
-    op.create_index(op.f("ix_personal_reflections_date"), "personal_reflections", ["date"], unique=False)
-    op.create_index(op.f("ix_personal_reflections_category"), "personal_reflections", ["category"], unique=False)
-    op.create_index("ix_reflections_date_desc", "personal_reflections", [sa.text("date DESC")], unique=False)
+    op.create_index(
+        op.f("ix_personal_reflections_id"), "personal_reflections", ["id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_personal_reflections_user_id"), "personal_reflections", ["user_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_personal_reflections_date"), "personal_reflections", ["date"], unique=False
+    )
+    op.create_index(
+        op.f("ix_personal_reflections_category"), "personal_reflections", ["category"], unique=False
+    )
+    op.create_index(
+        "ix_reflections_date_desc", "personal_reflections", [sa.text("date DESC")], unique=False
+    )
 
 
 def downgrade():

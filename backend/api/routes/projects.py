@@ -128,7 +128,9 @@ def get_opportunity(
     return opportunity
 
 
-@router.post("/opportunities/", response_model=schemas.FreelanceOpportunityResponse, status_code=201)
+@router.post(
+    "/opportunities/", response_model=schemas.FreelanceOpportunityResponse, status_code=201
+)
 def create_opportunity(
     opportunity: schemas.FreelanceOpportunityCreate,
     current_user: User = Depends(get_current_user),
@@ -143,7 +145,9 @@ def create_opportunity(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.patch("/opportunities/{opportunity_id}", response_model=schemas.FreelanceOpportunityResponse)
+@router.patch(
+    "/opportunities/{opportunity_id}", response_model=schemas.FreelanceOpportunityResponse
+)
 def update_opportunity(
     opportunity_id: int,
     opportunity_update: schemas.FreelanceOpportunityUpdate,
@@ -199,7 +203,9 @@ def collect_opportunities(
         raise HTTPException(status_code=500, detail=f"Collection failed: {str(e)}")
 
 
-@router.post("/opportunities/{opportunity_id}/analyze", response_model=schemas.FreelanceOpportunityResponse)
+@router.post(
+    "/opportunities/{opportunity_id}/analyze", response_model=schemas.FreelanceOpportunityResponse
+)
 def analyze_opportunity(
     opportunity_id: int,
     current_user: User = Depends(get_current_user),
@@ -241,7 +247,9 @@ def batch_analyze_opportunities(
         raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
 
 
-@router.post("/opportunities/{opportunity_id}/evaluate", response_model=schemas.FreelanceOpportunityResponse)
+@router.post(
+    "/opportunities/{opportunity_id}/evaluate", response_model=schemas.FreelanceOpportunityResponse
+)
 def evaluate_opportunity(
     opportunity_id: int,
     current_user: User = Depends(get_current_user),
@@ -326,7 +334,9 @@ def get_pricing_parameter(
     return param
 
 
-@router.post("/pricing-parameters/", response_model=schemas.PricingParameterResponse, status_code=201)
+@router.post(
+    "/pricing-parameters/", response_model=schemas.PricingParameterResponse, status_code=201
+)
 def create_pricing_parameter(
     pricing_param: schemas.PricingParameterCreate,
     current_user: User = Depends(get_current_user),

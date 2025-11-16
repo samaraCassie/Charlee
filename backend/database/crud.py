@@ -273,11 +273,7 @@ def get_work_log(db: Session, log_id: int, user_id: int):
     """Get a specific work log by ID for a user."""
     from database.models import WorkLog
 
-    return (
-        db.query(WorkLog)
-        .filter(WorkLog.id == log_id, WorkLog.user_id == user_id)
-        .first()
-    )
+    return db.query(WorkLog).filter(WorkLog.id == log_id, WorkLog.user_id == user_id).first()
 
 
 def create_work_log(db: Session, log_data, user_id: int):
@@ -367,11 +363,7 @@ def get_invoice(db: Session, invoice_id: int, user_id: int):
     """Get a specific invoice by ID for a user."""
     from database.models import Invoice
 
-    return (
-        db.query(Invoice)
-        .filter(Invoice.id == invoice_id, Invoice.user_id == user_id)
-        .first()
-    )
+    return db.query(Invoice).filter(Invoice.id == invoice_id, Invoice.user_id == user_id).first()
 
 
 def create_invoice(db: Session, invoice_data, user_id: int):

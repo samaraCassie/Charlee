@@ -511,7 +511,9 @@ class PricingParameterBase(BaseModel):
     client_factors: Optional[dict] = None
     active: bool = True
 
-    @field_validator("complexity_factors", "specialization_factors", "deadline_factors", "client_factors")
+    @field_validator(
+        "complexity_factors", "specialization_factors", "deadline_factors", "client_factors"
+    )
     @classmethod
     def validate_factors(cls, v: Optional[dict]) -> Optional[dict]:
         """Validate factor dictionaries contain positive multipliers."""

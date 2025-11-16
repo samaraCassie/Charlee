@@ -695,12 +695,8 @@ class FreelanceProject(Base):
 
     # Relationships
     user = relationship("User")
-    work_logs = relationship(
-        "WorkLog", back_populates="project", cascade="all, delete-orphan"
-    )
-    invoices = relationship(
-        "Invoice", back_populates="project", cascade="all, delete-orphan"
-    )
+    work_logs = relationship("WorkLog", back_populates="project", cascade="all, delete-orphan")
+    invoices = relationship("Invoice", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<FreelanceProject(id={self.id}, client='{self.client_name}', project='{self.project_name}', status='{self.status}')>"
@@ -718,9 +714,7 @@ class FreelanceProject(Base):
         from sqlalchemy import func
 
         total = (
-            db_session.query(func.sum(WorkLog.hours))
-            .filter(WorkLog.project_id == self.id)
-            .scalar()
+            db_session.query(func.sum(WorkLog.hours)).filter(WorkLog.project_id == self.id).scalar()
         )
         self.actual_hours = total or 0.0
 
@@ -792,9 +786,7 @@ class Invoice(Base):
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    project_id = Column(
-        Integer, ForeignKey("freelance_projects.id"), nullable=False, index=True
-    )
+    project_id = Column(Integer, ForeignKey("freelance_projects.id"), nullable=False, index=True)
 
     # Invoice details
     invoice_number = Column(String(50), unique=True, nullable=False, index=True)
@@ -917,9 +909,7 @@ class FreelanceOpportunity(Base):
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    platform_id = Column(
-        Integer, ForeignKey("freelance_platforms.id"), nullable=True, index=True
-    )
+    platform_id = Column(Integer, ForeignKey("freelance_platforms.id"), nullable=True, index=True)
 
     # Original data from platform
     external_id = Column(String(100), nullable=True, index=True)  # Platform's project ID
@@ -934,9 +924,7 @@ class FreelanceOpportunity(Base):
 
     # Technical requirements
     required_skills = Column(JSON, nullable=True)  # List of required skills/technologies
-    skill_level = Column(
-        String(20), nullable=True
-    )  # 'junior', 'mid', 'senior', 'expert'
+    skill_level = Column(String(20), nullable=True)  # 'junior', 'mid', 'senior', 'expert'
     category = Column(
         String(50), nullable=True
     )  # 'full_stack', 'backend', 'frontend', 'ai_ml', 'devops', etc.
@@ -945,9 +933,7 @@ class FreelanceOpportunity(Base):
     client_budget = Column(Float, nullable=True)
     client_currency = Column(String(10), default="USD")
     client_deadline_days = Column(Integer, nullable=True)
-    contract_type = Column(
-        String(20), nullable=True
-    )  # 'fixed_price', 'hourly', 'milestone'
+    contract_type = Column(String(20), nullable=True)  # 'fixed_price', 'hourly', 'milestone'
 
     # AI Analysis - Estimations
     estimated_complexity = Column(
@@ -973,9 +959,7 @@ class FreelanceOpportunity(Base):
     recommendation_reason = Column(Text, nullable=True)
 
     # Semantic Analysis
-    client_intent = Column(
-        String(50), nullable=True
-    )  # 'serious_project', 'test', 'exploration'
+    client_intent = Column(String(50), nullable=True)  # 'serious_project', 'test', 'exploration'
     red_flags = Column(JSON, nullable=True)  # List of warning signs
     opportunities = Column(JSON, nullable=True)  # List of positive aspects
     extracted_context = Column(JSON, nullable=True)  # Full semantic analysis
@@ -992,9 +976,7 @@ class FreelanceOpportunity(Base):
         default="new",
         index=True,
     )
-    final_decision = Column(
-        String(20), nullable=True
-    )  # 'accepted', 'rejected', 'no_response'
+    final_decision = Column(String(20), nullable=True)  # 'accepted', 'rejected', 'no_response'
     decision_reason = Column(Text, nullable=True)
 
     # Timestamps
@@ -1096,9 +1078,7 @@ class ProjectExecution(Base):
     user = relationship("User")
     opportunity = relationship("FreelanceOpportunity", back_populates="execution")
     freelance_project = relationship("FreelanceProject")
-    portfolio_item = relationship(
-        "PortfolioItem", back_populates="execution", uselist=False
-    )
+    portfolio_item = relationship("PortfolioItem", back_populates="execution", uselist=False)
 
     def __repr__(self):
         return f"<ProjectExecution(id={self.id}, status='{self.status}', value={self.negotiated_value})>"
@@ -1303,9 +1283,7 @@ class PortfolioItem(Base):
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    execution_id = Column(
-        Integer, ForeignKey("project_executions.id"), nullable=True, index=True
-    )
+    execution_id = Column(Integer, ForeignKey("project_executions.id"), nullable=True, index=True)
 
     # Portfolio content
     title = Column(String(200), nullable=False)
@@ -1338,7 +1316,9 @@ class PortfolioItem(Base):
     execution = relationship("ProjectExecution", back_populates="portfolio_item")
 
     def __repr__(self):
-        return f"<PortfolioItem(id={self.id}, title='{self.title[:40]}...', featured={self.featured})>"
+        return (
+            f"<PortfolioItem(id={self.id}, title='{self.title[:40]}...', featured={self.featured})>"
+        )
 
 
 class LearningRecord(Base):
@@ -1372,9 +1352,7 @@ class LearningRecord(Base):
 
     # User feedback
     user_feedback = Column(Text, nullable=True)  # Manual feedback from user
-    user_rating = Column(
-        Integer, CheckConstraint("user_rating BETWEEN 1 AND 5"), nullable=True
-    )
+    user_rating = Column(Integer, CheckConstraint("user_rating BETWEEN 1 AND 5"), nullable=True)
 
     # Adjustment tracking
     adjustment_applied = Column(Boolean, default=False)
@@ -1384,9 +1362,7 @@ class LearningRecord(Base):
     related_opportunity_id = Column(
         Integer, ForeignKey("freelance_opportunities.id"), nullable=True
     )
-    related_execution_id = Column(
-        Integer, ForeignKey("project_executions.id"), nullable=True
-    )
+    related_execution_id = Column(Integer, ForeignKey("project_executions.id"), nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=utc_now, index=True)

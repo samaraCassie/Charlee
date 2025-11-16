@@ -14,7 +14,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from agno import Agent
+from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from openai import OpenAI
 from sqlalchemy.orm import Session
@@ -98,9 +98,7 @@ class SemanticAnalyzerAgent(Agent):
             embedding = self._generate_embedding(opportunity.description)
 
             # Find similar historical projects
-            similar_projects = self._find_similar_historical_projects(
-                embedding, limit=5
-            )
+            similar_projects = self._find_similar_historical_projects(embedding, limit=5)
 
             # Update opportunity with analysis results
             opportunity.estimated_complexity = analysis["complexity"]
@@ -193,9 +191,7 @@ Return ONLY valid JSON, no markdown formatting.
 
         try:
             # Call OpenAI for analysis
-            response = self.model.response(
-                messages=[{"role": "user", "content": prompt}]
-            )
+            response = self.model.response(messages=[{"role": "user", "content": prompt}])
 
             # Parse JSON response
             analysis_text = response.content
@@ -422,8 +418,7 @@ Return ONLY valid JSON, no markdown formatting.
                     total_opportunities_count += len(opp.opportunities)
 
             avg_complexity = (
-                sum(o.estimated_complexity for o in opportunities if o.estimated_complexity)
-                / total
+                sum(o.estimated_complexity for o in opportunities if o.estimated_complexity) / total
             )
 
             summary = {

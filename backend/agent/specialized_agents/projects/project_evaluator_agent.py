@@ -14,7 +14,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from agno import Agent
+from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 
@@ -259,11 +259,7 @@ class ProjectEvaluatorAgent(Agent):
 
         # Calculate final suggested price
         suggested_price = (
-            base_value
-            * complexity_factor
-            * specialization_factor
-            * deadline_factor
-            * client_factor
+            base_value * complexity_factor * specialization_factor * deadline_factor * client_factor
         )
 
         # Apply minimum margin
@@ -397,9 +393,7 @@ class ProjectEvaluatorAgent(Agent):
         strategic_score = max(0.0, min(1.0, strategic_score))
 
         # 4. Final score (weighted average)
-        final_score = (
-            viability_score * 0.4 + alignment_score * 0.3 + strategic_score * 0.3
-        )
+        final_score = viability_score * 0.4 + alignment_score * 0.3 + strategic_score * 0.3
 
         return {
             "viability": round(viability_score, 2),
@@ -517,8 +511,7 @@ class ProjectEvaluatorAgent(Agent):
                 version=current_params.version + 1,
                 base_hourly_rate=base_hourly_rate or current_params.base_hourly_rate,
                 minimum_margin=minimum_margin or current_params.minimum_margin,
-                minimum_project_value=minimum_project_value
-                or current_params.minimum_project_value,
+                minimum_project_value=minimum_project_value or current_params.minimum_project_value,
                 currency=current_params.currency,
                 complexity_factors=current_params.complexity_factors,
                 specialization_factors=current_params.specialization_factors,

@@ -46,16 +46,16 @@ def upgrade():
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_freelance_projects_id"), "freelance_projects", ["id"], unique=False
-    )
+    op.create_index(op.f("ix_freelance_projects_id"), "freelance_projects", ["id"], unique=False)
     op.create_index(
         op.f("ix_freelance_projects_user_id"), "freelance_projects", ["user_id"], unique=False
     )
     op.create_index(
         op.f("ix_freelance_projects_status"), "freelance_projects", ["status"], unique=False
     )
-    op.create_index("ix_freelance_projects_deadline", "freelance_projects", ["deadline"], unique=False)
+    op.create_index(
+        "ix_freelance_projects_deadline", "freelance_projects", ["deadline"], unique=False
+    )
 
     # Create work_logs table
     op.create_table(
@@ -116,9 +116,7 @@ def upgrade():
     op.create_index(op.f("ix_invoices_id"), "invoices", ["id"], unique=False)
     op.create_index(op.f("ix_invoices_user_id"), "invoices", ["user_id"], unique=False)
     op.create_index(op.f("ix_invoices_project_id"), "invoices", ["project_id"], unique=False)
-    op.create_index(
-        op.f("ix_invoices_invoice_number"), "invoices", ["invoice_number"], unique=True
-    )
+    op.create_index(op.f("ix_invoices_invoice_number"), "invoices", ["invoice_number"], unique=True)
     op.create_index(op.f("ix_invoices_issue_date"), "invoices", ["issue_date"], unique=False)
     op.create_index(op.f("ix_invoices_status"), "invoices", ["status"], unique=False)
 

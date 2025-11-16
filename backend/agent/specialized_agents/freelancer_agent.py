@@ -133,9 +133,7 @@ class FreelancerAgent(Agent):
             self.database.rollback()
             return f"❌ Error creating project: {str(e)}"
 
-    def list_projects(
-        self, user_id: int, status: Optional[str] = None, limit: int = 20
-    ) -> str:
+    def list_projects(self, user_id: int, status: Optional[str] = None, limit: int = 20) -> str:
         """
         List freelance projects with optional filters.
 
@@ -182,7 +180,9 @@ class FreelancerAgent(Agent):
 
                 result += f"{status_emoji} **{project.project_name}**\n"
                 result += f"   👤 Client: {project.client_name}\n"
-                result += f"   ⏱️ Hours: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+                result += (
+                    f"   ⏱️ Hours: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+                )
                 result += f"   💰 Value: R$ {current_value:.2f} / R$ {estimated_value:.2f}\n"
 
                 if project.deadline:
@@ -240,9 +240,7 @@ class FreelancerAgent(Agent):
             # Verify project exists and belongs to user
             project = (
                 self.database.query(FreelanceProject)
-                .filter(
-                    FreelanceProject.id == project_id, FreelanceProject.user_id == user_id
-                )
+                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
                 .first()
             )
 
@@ -292,9 +290,15 @@ class FreelancerAgent(Agent):
             result += f"\n📝 **Description**: {description}\n"
 
             result += f"\n📊 **Project Total**:\n"
-            result += f"• Hours worked: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+            result += (
+                f"• Hours worked: {project.actual_hours:.1f}h / {project.estimated_hours:.1f}h\n"
+            )
 
-            progress_pct = (project.actual_hours / project.estimated_hours * 100) if project.estimated_hours > 0 else 0
+            progress_pct = (
+                (project.actual_hours / project.estimated_hours * 100)
+                if project.estimated_hours > 0
+                else 0
+            )
             result += f"• Progress: {progress_pct:.1f}%\n"
 
             total_value = project.calculate_total_value()
@@ -337,9 +341,7 @@ class FreelancerAgent(Agent):
             # Verify project
             project = (
                 self.database.query(FreelanceProject)
-                .filter(
-                    FreelanceProject.id == project_id, FreelanceProject.user_id == user_id
-                )
+                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
                 .first()
             )
 
@@ -367,11 +369,7 @@ class FreelancerAgent(Agent):
             # Generate invoice number if not provided
             if not invoice_number:
                 today = date.today()
-                count = (
-                    self.database.query(Invoice)
-                    .filter(Invoice.user_id == user_id)
-                    .count()
-                )
+                count = self.database.query(Invoice).filter(Invoice.user_id == user_id).count()
                 invoice_number = f"INV-{today.strftime('%Y%m')}-{count + 1:04d}"
 
             # Create invoice
@@ -452,8 +450,14 @@ class FreelancerAgent(Agent):
 
             # Assume 20 hours/week capacity (adjust based on user settings)
             weekly_capacity = 20
-            weeks_needed_current = total_remaining_hours / weekly_capacity if weekly_capacity > 0 else 0
-            weeks_needed_with_new = (total_remaining_hours + estimated_hours) / weekly_capacity if weekly_capacity > 0 else 0
+            weeks_needed_current = (
+                total_remaining_hours / weekly_capacity if weekly_capacity > 0 else 0
+            )
+            weeks_needed_with_new = (
+                (total_remaining_hours + estimated_hours) / weekly_capacity
+                if weekly_capacity > 0
+                else 0
+            )
 
             result = f"📊 **Availability Analysis**\n\n"
             result += f"🔄 **Active Projects**: {len(active_projects)}\n"
@@ -598,9 +602,7 @@ class FreelancerAgent(Agent):
         except Exception as e:
             return f"❌ Error suggesting acceptance: {str(e)}"
 
-    def update_project_status(
-        self, user_id: int, project_id: int, new_status: str
-    ) -> str:
+    def update_project_status(self, user_id: int, project_id: int, new_status: str) -> str:
         """
         Update project status.
 
@@ -619,9 +621,7 @@ class FreelancerAgent(Agent):
 
             project = (
                 self.database.query(FreelanceProject)
-                .filter(
-                    FreelanceProject.id == project_id, FreelanceProject.user_id == user_id
-                )
+                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
                 .first()
             )
 
@@ -661,7 +661,9 @@ class FreelancerAgent(Agent):
             self.database.rollback()
             return f"❌ Error updating status: {str(e)}"
 
-    def generate_monthly_report(self, user_id: int, month: Optional[int] = None, year: Optional[int] = None) -> str:
+    def generate_monthly_report(
+        self, user_id: int, month: Optional[int] = None, year: Optional[int] = None
+    ) -> str:
         """
         Generate monthly report of projects and revenue.
 

@@ -73,9 +73,7 @@ def update_freelance_project(
     db: Session = Depends(get_db),
 ):
     """Update a freelance project for the authenticated user and invalidate cache."""
-    project = crud.update_freelance_project(
-        db, project_id, project_update, user_id=current_user.id
-    )
+    project = crud.update_freelance_project(db, project_id, project_update, user_id=current_user.id)
     if not project:
         raise HTTPException(status_code=404, detail="Freelance project not found")
 
@@ -290,7 +288,9 @@ def delete_invoice(
 # ==================== Additional Endpoints ====================
 
 
-@router.post("/projects/{project_id}/log-work", response_model=schemas.WorkLogResponse, status_code=201)
+@router.post(
+    "/projects/{project_id}/log-work", response_model=schemas.WorkLogResponse, status_code=201
+)
 def log_work_on_project(
     project_id: int,
     work_log: schemas.WorkLogCreate,
@@ -318,7 +318,9 @@ def log_work_on_project(
     return result
 
 
-@router.get("/projects/{project_id}/invoice", response_model=schemas.InvoiceResponse, status_code=201)
+@router.get(
+    "/projects/{project_id}/invoice", response_model=schemas.InvoiceResponse, status_code=201
+)
 def generate_invoice_for_project(
     project_id: int,
     invoice_number: Optional[str] = None,
