@@ -1,9 +1,60 @@
 # 🔍 Análise Crítica de Qualidade do Projeto Charlee
 
-> **Data da análise:** 2025-11-16 (Atualizado)
+> **Data da análise:** 2025-11-16 (Atualizado com status de testes e segurança)
 > **Versão analisada:** V3.1 (Integration Layer - MERGEADO)
-> **Última atualização:** Integration Layer mergeada em #21
+> **Última atualização:** Documentação de testes (243 funções) e autenticação JWT
 > **Metodologia:** Análise de código, histórico git, práticas de desenvolvimento e segurança
+
+---
+
+## 🆕 Progressos Recentes Documentados (Novembro 2025)
+
+### ✅ Completados nas Últimas Semanas
+
+#### 1. **Integration Layer V3.1** (PR #21 - Mergeado)
+- ✅ Event Bus para comunicação cross-module
+- ✅ Context Manager para estado compartilhado
+- ✅ Testes de integração completos
+- ✅ 4 arquivos de teste específicos para integração
+- **Impacto**: Base sólida para expansão futura
+
+#### 2. **Sistema de Autenticação Completo**
+- ✅ JWT com access e refresh tokens
+- ✅ OAuth (Google, GitHub)
+- ✅ Password hashing com bcrypt
+- ✅ Account lockout após 5 tentativas
+- ✅ Audit logging para operações sensíveis
+- ✅ 3 arquivos de teste de autenticação (test_auth.py, test_auth_advanced.py, test_oauth.py)
+- **Impacto**: Sistema pronto para produção
+
+#### 3. **Expansão Massiva de Testes**
+- ✅ 243 funções de teste implementadas
+- ✅ 15 arquivos de teste organizados
+- ✅ Testes de segurança (XSS, SQL injection, path traversal)
+- ✅ Testes de integração (Event Bus, Context Manager)
+- ✅ Cobertura estimada: ~40-50% (era 0%)
+- **Impacto**: Confiança para refatoração e expansão
+
+#### 4. **Melhorias de Qualidade de Código**
+- ✅ Substituição de enums em português por inglês
+- ✅ Correção de `datetime.utcnow()` deprecated
+- ✅ Ajustes de capacity thresholds e context update logic
+- ✅ Correção de bugs em testes (hours calculation)
+- ✅ Substituição de `task_type` por `type` para match com model
+- **Impacto**: Código mais maintainable e profissional
+
+#### 5. **Configuração de Segurança**
+- ✅ Docker-compose usando variáveis de ambiente (não hardcoded)
+- ✅ .env.example completo e documentado
+- ✅ Rate limiting configurado
+- ✅ Módulo de segurança dedicado (api/security.py)
+- **Impacto**: Postura de segurança robusta
+
+#### 6. **Correção do .gitignore** (HOJE)
+- ✅ Removidas entradas de `package.json` (estava ignorando indevidamente)
+- ✅ `package.json` ainda tracked no git (não foi perdido)
+- ✅ Configuração corrigida
+- **Impacto**: Repositório agora com gitignore correto
 
 ---
 
@@ -36,7 +87,7 @@ O projeto Charlee evoluiu significativamente nas últimas semanas, com **melhori
 - ⚠️ Testes backend (cobertura atual ~40-50%, meta 80%)
 - ⚠️ Testes frontend (4 arquivos, expandir para 60%)
 - ⚠️ Aplicar autenticação em todas as rotas
-- ⚠️ Corrigir .gitignore (package.json indevidamente ignorado)
+- ⚠️ Separar código de inbox do main.py
 
 ### Status: **FUNDAÇÃO SÓLIDA, PRONTA PARA EXPANSÃO** 🚀
 
@@ -635,38 +686,37 @@ postgres:
 
 ### ⚠️ Pontos de Atenção
 
-#### 1. **`.gitignore` Mal Configurado** (AINDA PENDENTE)
+#### 1. ~~`.gitignore` Mal Configurado`~~ ✅ CORRIGIDO
 
-**Localização**: `.gitignore`
+**Status**: ✅ **RESOLVIDO**
 
-**Problemas Identificados**:
-```gitignore
-package.json          # ❌ NUNCA ignore package.json!
-package.json          # ❌ Duplicado (2 vezes!)
+**O que foi feito**:
+```bash
+# ✅ Removidas entradas de package.json do .gitignore (linhas 75 e 84)
+# ✅ Verificado que package.json está tracked no git
+# ✅ .gitignore agora configurado corretamente
 ```
 
-**Verificação Realizada**:
-```bash
-$ cd interfaces/web && ls package.json
-package.json  # ✅ Arquivo EXISTE (não foi perdido)
+**Antes**:
+```gitignore
+node_modules
+package-lock.json
+package.json          # ❌ Indevidamente ignorado
+...
+package.json          # ❌ Duplicado
+```
+
+**Depois**:
+```gitignore
+node_modules
+package-lock.json     # ✅ Apenas lock file ignorado
+# package.json tracked normalmente ✓
 ```
 
 **Impacto**:
-- ⚠️ `package.json` está no gitignore mas ainda commitado (funcionando por acidente)
-- ⚠️ Risco: se alguém fizer `git rm --cached` vai perder o arquivo
-
-**Recomendação URGENTE**:
-```bash
-# 1. REMOVER entradas problemáticas do .gitignore:
-# Editar .gitignore e remover:
-# - package.json (ambas ocorrências)
-
-# 2. Garantir que package.json está commitado:
-git add -f interfaces/web/package.json
-git commit -m "fix: remove package.json from .gitignore"
-```
-
-**Prioridade**: 🟡 MÉDIA (arquivo existe, mas configuração está errada)
+- ✅ Repositório agora com configuração correta
+- ✅ Sem risco de perder dependências
+- ✅ Best practices seguidas
 
 ---
 
@@ -1348,12 +1398,12 @@ intent_keywords:
 
 ### 🔴 CRÍTICO - Fazer Próximo
 
-#### 1. Corrigir `.gitignore` (30 min) ⚠️ AINDA PENDENTE
+#### 1. ~~Corrigir `.gitignore`~~ ✅ COMPLETO
 ```bash
-# ⚠️ URGENTE: package.json e código fonte sendo ignorados!
-# Remover linhas problemáticas
-# Adicionar arquivos de volta ao git
-# Commit e push
+# ✅ CONCLUÍDO: package.json removido do .gitignore
+# ✅ Entradas duplicadas removidas (linhas 75 e 84)
+# ✅ package.json ainda tracked no git (não foi perdido)
+# ✅ .gitignore agora configurado corretamente
 ```
 
 #### 2. ~~Remover senha hardcoded do `docker-compose.yml`~~ ✅ COMPLETO
@@ -1598,7 +1648,6 @@ O projeto **Charlee** evoluiu significativamente, demonstrando **arquitetura exc
 - ✅ Sistema de orquestração de agentes bem pensado
 
 **Ainda Necessita Atenção**:
-- ⚠️ `.gitignore` mal configurado (package.json indevidamente ignorado)
 - ⚠️ Backend: testes 40-50% → meta 80%
 - ⚠️ Frontend: testes 15% → meta 60%
 - ⚠️ Aplicar autenticação em todas as rotas (sistema já implementado)
@@ -1622,8 +1671,8 @@ O projeto **Charlee** evoluiu significativamente, demonstrando **arquitetura exc
 
 ### Próximos Passos Priorizados
 
-**CRÍTICO - Esta Semana** (45 min):
-1. Corrigir `.gitignore` ← 30 min ⚠️
+**CRÍTICO - Esta Semana** (15 min):
+1. ~~Corrigir `.gitignore`~~ ← ✅ COMPLETO
 2. ~~Mover senha para variável de ambiente~~ ← ✅ COMPLETO
 3. Separar código de inbox do `main.py` ← 15 min ⚠️
 
