@@ -341,7 +341,7 @@ async def logout(
 
     if db_token:
         db_token.revoked = True
-        db_token.revoked_at = datetime.utcnow()
+        db_token.revoked_at = datetime.now(timezone.utc)
         db.commit()
 
     # Log logout
@@ -371,7 +371,7 @@ async def logout_all(
     db.query(RefreshToken).filter(
         RefreshToken.user_id == current_user.id,
         RefreshToken.revoked.is_(False),
-    ).update({"revoked": True, "revoked_at": datetime.utcnow()})
+    ).update({"revoked": True, "revoked_at": datetime.now(timezone.utc)})
 
     db.commit()
 
@@ -429,7 +429,7 @@ async def change_password(
 
     # Update password
     current_user.hashed_password = new_hashed_password
-    current_user.updated_at = datetime.utcnow()
+    current_user.updated_at = datetime.now(timezone.utc)
 
     db.commit()
 
