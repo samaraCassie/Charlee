@@ -1,6 +1,5 @@
 """Tests for platform integrations."""
 
-
 from agent.specialized_agents.projects.integrations import (
     JobOpportunity,
     PlatformConfig,

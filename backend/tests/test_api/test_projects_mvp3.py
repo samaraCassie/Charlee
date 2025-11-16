@@ -1,6 +1,5 @@
 """Tests for Projects Intelligence System MVP 3 - Career Insights & Portfolio API endpoints."""
 
-
 from fastapi import status
 
 
