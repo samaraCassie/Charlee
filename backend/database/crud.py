@@ -1,6 +1,5 @@
 """CRUD operations for database models."""
 
-from datetime import datetime, timezone
 from typing import Optional, cast
 
 from sqlalchemy.orm import Session
