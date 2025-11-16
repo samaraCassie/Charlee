@@ -274,7 +274,7 @@ def test_check_capacity_before_accept_negotiate(capacity_integration, context_ma
     # Set high current load
     context_manager.update_context({"carga_trabalho_percentual": 70})
 
-    result = capacity_integration.check_capacity_before_accept(estimated_hours=20)
+    result = capacity_integration.check_capacity_before_accept(estimated_hours=10)
 
     assert result["recommendation"] == "negotiate"
     assert "critical" in result["reason"]
