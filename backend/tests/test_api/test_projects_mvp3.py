@@ -6,7 +6,7 @@ from fastapi import status
 class TestCareerInsightsAPI:
     """Test suite for Career Insights endpoints."""
 
-    def test_get_career_summary(self, client, sample_project_execution, auth_headers):
+    def test_get_career_summary(self, client, sample_completed_project, auth_headers):
         """Should return career summary with completed projects."""
         response = client.get(
             "/api/v2/projects/insights/career-summary?days=90",
@@ -30,7 +30,7 @@ class TestCareerInsightsAPI:
         data = response.json()
         assert "30 days" in data["details"]
 
-    def test_analyze_skills_progression(self, client, sample_project_execution, auth_headers):
+    def test_analyze_skills_progression(self, client, sample_completed_project, auth_headers):
         """Should return skills progression analysis."""
         response = client.get(
             "/api/v2/projects/insights/skills-progression",
@@ -53,7 +53,7 @@ class TestCareerInsightsAPI:
         data = response.json()
         assert "details" in data
 
-    def test_identify_top_performing_projects(self, client, sample_project_execution, auth_headers):
+    def test_identify_top_performing_projects(self, client, sample_completed_project, auth_headers):
         """Should return top performing projects."""
         response = client.get(
             "/api/v2/projects/insights/top-performing-projects?limit=5",
@@ -65,7 +65,7 @@ class TestCareerInsightsAPI:
         assert "message" in data
         assert "details" in data
 
-    def test_get_income_trends(self, client, sample_project_execution, auth_headers):
+    def test_get_income_trends(self, client, sample_completed_project, auth_headers):
         """Should return income trends analysis."""
         response = client.get(
             "/api/v2/projects/insights/income-trends?months=6",
@@ -100,7 +100,7 @@ class TestCareerInsightsAPI:
 class TestPortfolioBuilderAPI:
     """Test suite for Portfolio Builder endpoints."""
 
-    def test_build_full_portfolio(self, client, sample_project_execution, auth_headers):
+    def test_build_full_portfolio(self, client, sample_completed_project, auth_headers):
         """Should build full portfolio from completed projects."""
         response = client.get(
             "/api/v2/projects/portfolio/full",
@@ -124,10 +124,10 @@ class TestPortfolioBuilderAPI:
         data = response.json()
         assert "details" in data
 
-    def test_generate_project_description(self, client, sample_project_execution, auth_headers):
+    def test_generate_project_description(self, client, sample_completed_project, auth_headers):
         """Should generate professional project description."""
         response = client.get(
-            f"/api/v2/projects/portfolio/projects/{sample_project_execution.id}/description",
+            f"/api/v2/projects/portfolio/projects/{sample_completed_project.id}/description",
             headers=auth_headers,
         )
 
@@ -147,7 +147,7 @@ class TestPortfolioBuilderAPI:
         data = response.json()
         assert "not found" in data["details"].lower()
 
-    def test_categorize_projects(self, client, sample_project_execution, auth_headers):
+    def test_categorize_projects(self, client, sample_completed_project, auth_headers):
         """Should categorize projects by skill."""
         response = client.get(
             "/api/v2/projects/portfolio/categorized",
@@ -159,7 +159,7 @@ class TestPortfolioBuilderAPI:
         assert "message" in data
         assert "details" in data
 
-    def test_get_portfolio_by_skill(self, client, sample_project_execution, auth_headers):
+    def test_get_portfolio_by_skill(self, client, sample_completed_project, auth_headers):
         """Should filter portfolio by specific skill."""
         response = client.get(
             "/api/v2/projects/portfolio/by-skill/Python",
@@ -171,7 +171,7 @@ class TestPortfolioBuilderAPI:
         assert "message" in data
         assert "details" in data
 
-    def test_get_top_achievements(self, client, sample_project_execution, auth_headers):
+    def test_get_top_achievements(self, client, sample_completed_project, auth_headers):
         """Should return top achievements."""
         response = client.get(
             "/api/v2/projects/portfolio/achievements?limit=5",

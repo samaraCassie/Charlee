@@ -321,6 +321,29 @@ def sample_project_execution(db, sample_user, sample_opportunity):
 
 
 @pytest.fixture
+def sample_completed_project(db, sample_user, sample_opportunity):
+    """Create a sample completed ProjectExecution for career insights and portfolio testing."""
+    from datetime import date, timedelta
+
+    from database.models import ProjectExecution
+
+    execution = ProjectExecution(
+        user_id=sample_user.id,
+        opportunity_id=sample_opportunity.id,
+        negotiated_value=5000.0,
+        start_date=date.today() - timedelta(days=60),
+        planned_end_date=date.today() - timedelta(days=30),
+        status="completed",
+        client_satisfaction=4.8,
+        client_feedback="Excellent work! Delivered on time and exceeded expectations.",
+    )
+    db.add(execution)
+    db.commit()
+    db.refresh(execution)
+    return execution
+
+
+@pytest.fixture
 def sample_negotiation(db, sample_user, sample_opportunity):
     """Create a sample Negotiation for testing."""
     from database.models import Negotiation
