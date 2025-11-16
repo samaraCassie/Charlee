@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from agent.specialized_agents.projects.collector_agent import create_collector_agent
+from agent.specialized_agents.projects.negotiation_engine import (
+    create_negotiation_engine,
+)
 from agent.specialized_agents.projects.project_evaluator_agent import (
     create_project_evaluator_agent,
 )
@@ -558,3 +561,144 @@ def delete_negotiation(
         raise HTTPException(status_code=404, detail="Negotiation not found")
     invalidate_pattern("projects:negotiations:*")
     return None
+
+
+# ==================== Intelligent Negotiation Routes (NegotiationEngine) ====================
+
+
+@router.post("/opportunities/{opportunity_id}/generate-counter-proposal")
+def generate_counter_proposal(
+    opportunity_id: int,
+    original_budget: float | None = None,
+    justification_style: str = "value_based",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate an intelligent counter-proposal using NegotiationEngine.
+
+    Args:
+        opportunity_id: Opportunity ID
+        original_budget: Client's original budget (optional, uses opportunity.client_budget if not provided)
+        justification_style: value_based, market_based, or effort_based
+    """
+    try:
+        agent = create_negotiation_engine(db=db, user_id=current_user.id)
+        result = agent.generate_counter_proposal(
+            opportunity_id=opportunity_id,
+            original_budget=original_budget,
+            justification_style=justification_style,
+        )
+
+        invalidate_pattern("projects:negotiations:*")
+        return {"message": "Counter-proposal generated", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Counter-proposal generation failed: {str(e)}")
+
+
+@router.post("/negotiations/{negotiation_id}/generate-message")
+def generate_negotiation_message(
+    negotiation_id: int,
+    tone: str = "professional",
+    include_alternatives: bool = True,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate a diplomatic negotiation message using NegotiationEngine.
+
+    Args:
+        negotiation_id: Negotiation record ID
+        tone: professional, friendly, or firm
+        include_alternatives: Include scope/timeline alternatives
+    """
+    try:
+        agent = create_negotiation_engine(db=db, user_id=current_user.id)
+        result = agent.generate_negotiation_message(
+            negotiation_id=negotiation_id,
+            tone=tone,
+            include_alternatives=include_alternatives,
+        )
+
+        invalidate_pattern(f"projects:negotiations:{negotiation_id}")
+        return {"message": "Negotiation message generated", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Message generation failed: {str(e)}")
+
+
+@router.get("/opportunities/{opportunity_id}/scope-adjustments")
+def suggest_scope_adjustments(
+    opportunity_id: int,
+    target_budget: float,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Suggest scope adjustments to match a target budget using NegotiationEngine.
+
+    Args:
+        opportunity_id: Opportunity ID
+        target_budget: Target budget to match
+    """
+    try:
+        agent = create_negotiation_engine(db=db, user_id=current_user.id)
+        result = agent.suggest_scope_adjustments(
+            opportunity_id=opportunity_id,
+            target_budget=target_budget,
+        )
+
+        return {"message": "Scope adjustments suggested", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scope adjustment analysis failed: {str(e)}")
+
+
+@router.get("/opportunities/{opportunity_id}/negotiation-gap-analysis")
+def analyze_negotiation_gap(
+    opportunity_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Analyze the gap between client budget and suggested pricing using NegotiationEngine.
+
+    Args:
+        opportunity_id: Opportunity ID
+    """
+    try:
+        agent = create_negotiation_engine(db=db, user_id=current_user.id)
+        result = agent.analyze_negotiation_gap(opportunity_id=opportunity_id)
+
+        return {"message": "Gap analysis completed", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gap analysis failed: {str(e)}")
+
+
+@router.get("/negotiations/history")
+def get_negotiation_history(
+    opportunity_id: int | None = None,
+    limit: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get negotiation history for learning using NegotiationEngine.
+
+    Args:
+        opportunity_id: Optional opportunity ID to filter by
+        limit: Maximum number of records
+    """
+    try:
+        agent = create_negotiation_engine(db=db, user_id=current_user.id)
+        result = agent.get_negotiation_history(
+            opportunity_id=opportunity_id,
+            limit=limit,
+        )
+
+        return {"message": "Negotiation history retrieved", "details": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"History retrieval failed: {str(e)}")
