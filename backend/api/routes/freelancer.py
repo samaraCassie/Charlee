@@ -289,7 +289,9 @@ def delete_invoice(
 
 
 @router.post(
-    "/projects/{project_id}/log-work", response_model=schemas.WorkLogResponse, status_code=201
+    "/projects/{project_id}/log-work",
+    response_model=schemas.WorkLogResponse,
+    status_code=201,
 )
 def log_work_on_project(
     project_id: int,
@@ -319,7 +321,9 @@ def log_work_on_project(
 
 
 @router.get(
-    "/projects/{project_id}/invoice", response_model=schemas.InvoiceResponse, status_code=201
+    "/projects/{project_id}/invoice",
+    response_model=schemas.InvoiceResponse,
+    status_code=201,
 )
 def generate_invoice_for_project(
     project_id: int,

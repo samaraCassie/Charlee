@@ -125,17 +125,36 @@ async def list_agent_tools():
                 "name": "listar_big_rocks",
                 "description": "Lista todos os Big Rocks (pilares de vida) cadastrados",
             },
-            {"name": "criar_big_rock", "description": "Cria um novo Big Rock (pilar de vida)"},
-            {"name": "listar_tarefas", "description": "Lista tarefas com filtros opcionais"},
+            {
+                "name": "criar_big_rock",
+                "description": "Cria um novo Big Rock (pilar de vida)",
+            },
+            {
+                "name": "listar_tarefas",
+                "description": "Lista tarefas com filtros opcionais",
+            },
             {"name": "criar_tarefa", "description": "Cria uma nova tarefa"},
-            {"name": "marcar_tarefa_concluida", "description": "Marca uma tarefa como concluída"},
-            {"name": "atualizar_tarefa", "description": "Atualiza uma tarefa existente"},
+            {
+                "name": "marcar_tarefa_concluida",
+                "description": "Marca uma tarefa como concluída",
+            },
+            {
+                "name": "atualizar_tarefa",
+                "description": "Atualiza uma tarefa existente",
+            },
         ],
         "specialized_agents": [
             {
                 "name": "CycleAwareAgent",
                 "description": "Agente especializado em ciclo menstrual e bem-estar",
-                "triggers": ["ciclo", "menstruação", "energia", "TPM", "ovulação", "fase"],
+                "triggers": [
+                    "ciclo",
+                    "menstruação",
+                    "energia",
+                    "TPM",
+                    "ovulação",
+                    "fase",
+                ],
             },
             {
                 "name": "CapacityGuardAgent",

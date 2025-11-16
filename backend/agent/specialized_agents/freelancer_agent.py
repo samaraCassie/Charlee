@@ -239,7 +239,10 @@ class FreelancerAgent(Agent):
             # Verify project exists and belongs to user
             project = (
                 self.database.query(FreelanceProject)
-                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
+                .filter(
+                    FreelanceProject.id == project_id,
+                    FreelanceProject.user_id == user_id,
+                )
                 .first()
             )
 
@@ -340,7 +343,10 @@ class FreelancerAgent(Agent):
             # Verify project
             project = (
                 self.database.query(FreelanceProject)
-                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
+                .filter(
+                    FreelanceProject.id == project_id,
+                    FreelanceProject.user_id == user_id,
+                )
                 .first()
             )
 
@@ -620,7 +626,10 @@ class FreelancerAgent(Agent):
 
             project = (
                 self.database.query(FreelanceProject)
-                .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
+                .filter(
+                    FreelanceProject.id == project_id,
+                    FreelanceProject.user_id == user_id,
+                )
                 .first()
             )
 

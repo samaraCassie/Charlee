@@ -4,9 +4,10 @@
 import redis
 import sys
 
+
 def clear_session(session_id):
     """Clear a specific session from Redis."""
-    r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
     # Find and delete session keys
     keys = r.keys(f"*{session_id}*")
@@ -21,7 +22,7 @@ def clear_session(session_id):
 
     confirm = input("\n⚠️  Delete these keys? (yes/no): ")
 
-    if confirm.lower() == 'yes':
+    if confirm.lower() == "yes":
         for key in keys:
             r.delete(key)
             print(f"✅ Deleted: {key}")
@@ -29,9 +30,10 @@ def clear_session(session_id):
     else:
         print("❌ Cancelled")
 
+
 def list_sessions():
     """List all sessions in Redis."""
-    r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
     # Get all session keys
     keys = r.keys("*session*")
@@ -43,6 +45,7 @@ def list_sessions():
     print(f"📋 Found {len(keys)} session(s):\n")
     for key in keys:
         print(f"  - {key}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

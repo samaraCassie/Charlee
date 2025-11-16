@@ -20,7 +20,11 @@ def get_big_rock(db: Session, big_rock_id: int, user_id: int) -> Optional[BigRoc
 
 
 def get_big_rocks(
-    db: Session, user_id: int, skip: int = 0, limit: int = 100, active_only: bool = False
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    active_only: bool = False,
 ) -> list[BigRock]:
     """Get list of BigRocks for a specific user."""
     query = db.query(BigRock).filter(BigRock.user_id == user_id)
@@ -101,7 +105,8 @@ def get_tasks(
         query = query.filter(Task.type == task_type)
 
     return cast(
-        list[Task], query.order_by(Task.deadline.asc().nullslast()).offset(skip).limit(limit).all()
+        list[Task],
+        query.order_by(Task.deadline.asc().nullslast()).offset(skip).limit(limit).all(),
     )
 
 
@@ -661,7 +666,7 @@ def get_pricing_parameters(
     query = db.query(PricingParameter).filter(PricingParameter.user_id == user_id)
 
     if active_only:
-        query = query.filter(PricingParameter.active == True)  # noqa: E712
+        query = query.filter(PricingParameter.active)
 
     return query.order_by(PricingParameter.version.desc()).offset(skip).limit(limit).all()
 
@@ -672,7 +677,7 @@ def get_active_pricing_parameter(db: Session, user_id: int):
 
     return (
         db.query(PricingParameter)
-        .filter(PricingParameter.user_id == user_id, PricingParameter.active == True)  # noqa: E712
+        .filter(PricingParameter.user_id == user_id, PricingParameter.active)
         .order_by(PricingParameter.version.desc())
         .first()
     )
@@ -694,7 +699,8 @@ def create_pricing_parameter(db: Session, pricing_data, user_id: int):
     # Deactivate previous version if setting new as active
     if hasattr(pricing_data, "active") and pricing_data.active:
         db.query(PricingParameter).filter(
-            PricingParameter.user_id == user_id, PricingParameter.active == True  # noqa: E712
+            PricingParameter.user_id == user_id,
+            PricingParameter.active == True,  # noqa: E712
         ).update({"active": False})
 
     db_pricing = PricingParameter(

@@ -108,7 +108,7 @@ class EventBus:
         try:
             # Save to database
             db_event = SystemEvent(
-                tipo=event.tipo.value if isinstance(event.tipo, EventType) else event.tipo,
+                tipo=(event.tipo.value if isinstance(event.tipo, EventType) else event.tipo),
                 modulo_origem=(
                     event.modulo_origem.value
                     if isinstance(event.modulo_origem, ModuleName)

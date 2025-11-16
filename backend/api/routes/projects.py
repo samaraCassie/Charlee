@@ -4,8 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from agent.specialized_agents.projects.collector_agent import create_collector_agent
-from agent.specialized_agents.projects.project_evaluator_agent import create_project_evaluator_agent
-from agent.specialized_agents.projects.semantic_analyzer_agent import create_semantic_analyzer_agent
+from agent.specialized_agents.projects.project_evaluator_agent import (
+    create_project_evaluator_agent,
+)
+from agent.specialized_agents.projects.semantic_analyzer_agent import (
+    create_semantic_analyzer_agent,
+)
 from api.auth.dependencies import get_current_user
 from api.cache import invalidate_pattern
 from database import crud, schemas
@@ -115,7 +119,10 @@ def get_opportunities(
     return {"total": len(opportunities), "opportunities": opportunities}
 
 
-@router.get("/opportunities/{opportunity_id}", response_model=schemas.FreelanceOpportunityResponse)
+@router.get(
+    "/opportunities/{opportunity_id}",
+    response_model=schemas.FreelanceOpportunityResponse,
+)
 def get_opportunity(
     opportunity_id: int,
     current_user: User = Depends(get_current_user),
@@ -129,7 +136,9 @@ def get_opportunity(
 
 
 @router.post(
-    "/opportunities/", response_model=schemas.FreelanceOpportunityResponse, status_code=201
+    "/opportunities/",
+    response_model=schemas.FreelanceOpportunityResponse,
+    status_code=201,
 )
 def create_opportunity(
     opportunity: schemas.FreelanceOpportunityCreate,
@@ -146,7 +155,8 @@ def create_opportunity(
 
 
 @router.patch(
-    "/opportunities/{opportunity_id}", response_model=schemas.FreelanceOpportunityResponse
+    "/opportunities/{opportunity_id}",
+    response_model=schemas.FreelanceOpportunityResponse,
 )
 def update_opportunity(
     opportunity_id: int,
@@ -204,7 +214,8 @@ def collect_opportunities(
 
 
 @router.post(
-    "/opportunities/{opportunity_id}/analyze", response_model=schemas.FreelanceOpportunityResponse
+    "/opportunities/{opportunity_id}/analyze",
+    response_model=schemas.FreelanceOpportunityResponse,
 )
 def analyze_opportunity(
     opportunity_id: int,
@@ -248,7 +259,8 @@ def batch_analyze_opportunities(
 
 
 @router.post(
-    "/opportunities/{opportunity_id}/evaluate", response_model=schemas.FreelanceOpportunityResponse
+    "/opportunities/{opportunity_id}/evaluate",
+    response_model=schemas.FreelanceOpportunityResponse,
 )
 def evaluate_opportunity(
     opportunity_id: int,
@@ -335,7 +347,9 @@ def get_pricing_parameter(
 
 
 @router.post(
-    "/pricing-parameters/", response_model=schemas.PricingParameterResponse, status_code=201
+    "/pricing-parameters/",
+    response_model=schemas.PricingParameterResponse,
+    status_code=201,
 )
 def create_pricing_parameter(
     pricing_param: schemas.PricingParameterCreate,

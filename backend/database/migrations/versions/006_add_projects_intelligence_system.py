@@ -46,13 +46,22 @@ def upgrade():
     )
     op.create_index(op.f("ix_freelance_platforms_id"), "freelance_platforms", ["id"], unique=False)
     op.create_index(
-        op.f("ix_freelance_platforms_user_id"), "freelance_platforms", ["user_id"], unique=False
+        op.f("ix_freelance_platforms_user_id"),
+        "freelance_platforms",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_freelance_platforms_active"), "freelance_platforms", ["active"], unique=False
+        op.f("ix_freelance_platforms_active"),
+        "freelance_platforms",
+        ["active"],
+        unique=False,
     )
     op.create_index(
-        "ix_platforms_active_user", "freelance_platforms", ["active", "user_id"], unique=False
+        "ix_platforms_active_user",
+        "freelance_platforms",
+        ["active", "user_id"],
+        unique=False,
     )
 
     # Create freelance_opportunities table
@@ -110,7 +119,12 @@ def upgrade():
         ),
         sa.Column("final_decision", sa.String(length=20), nullable=True),
         sa.Column("decision_reason", sa.Text(), nullable=True),
-        sa.Column("collected_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
+        sa.Column(
+            "collected_at",
+            sa.DateTime(),
+            nullable=True,
+            server_default=sa.text("now()"),
+        ),
         sa.Column("analyzed_at", sa.DateTime(), nullable=True),
         sa.Column("responded_at", sa.DateTime(), nullable=True),
         sa.Column("expires_at", sa.DateTime(), nullable=True),
@@ -121,7 +135,10 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_freelance_opportunities_id"), "freelance_opportunities", ["id"], unique=False
+        op.f("ix_freelance_opportunities_id"),
+        "freelance_opportunities",
+        ["id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_freelance_opportunities_user_id"),
@@ -243,7 +260,10 @@ def upgrade():
     )
     op.create_index(op.f("ix_project_executions_id"), "project_executions", ["id"], unique=False)
     op.create_index(
-        op.f("ix_project_executions_user_id"), "project_executions", ["user_id"], unique=False
+        op.f("ix_project_executions_user_id"),
+        "project_executions",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_project_executions_opportunity_id"),
@@ -258,10 +278,16 @@ def upgrade():
         unique=False,
     )
     op.create_index(
-        op.f("ix_project_executions_status"), "project_executions", ["status"], unique=False
+        op.f("ix_project_executions_status"),
+        "project_executions",
+        ["status"],
+        unique=False,
     )
     op.create_index(
-        "ix_executions_dates", "project_executions", ["start_date", "actual_end_date"], unique=False
+        "ix_executions_dates",
+        "project_executions",
+        ["start_date", "actual_end_date"],
+        unique=False,
     )
 
     # Create pricing_parameters table
@@ -284,16 +310,23 @@ def upgrade():
         sa.Column("adjustment_reason", sa.Text(), nullable=True),
         sa.Column("active", sa.Boolean(), server_default="true"),
         sa.Column("created_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
+        sa.Column("updated_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
         sa.Column("activated_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_pricing_parameters_id"), "pricing_parameters", ["id"], unique=False)
     op.create_index(
-        op.f("ix_pricing_parameters_user_id"), "pricing_parameters", ["user_id"], unique=False
+        op.f("ix_pricing_parameters_user_id"),
+        "pricing_parameters",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_pricing_parameters_active"), "pricing_parameters", ["active"], unique=False
+        op.f("ix_pricing_parameters_active"),
+        "pricing_parameters",
+        ["active"],
+        unique=False,
     )
     op.create_index(
         "ix_pricing_active_user_version",
@@ -336,7 +369,10 @@ def upgrade():
     op.create_index(op.f("ix_negotiations_id"), "negotiations", ["id"], unique=False)
     op.create_index(op.f("ix_negotiations_user_id"), "negotiations", ["user_id"], unique=False)
     op.create_index(
-        op.f("ix_negotiations_opportunity_id"), "negotiations", ["opportunity_id"], unique=False
+        op.f("ix_negotiations_opportunity_id"),
+        "negotiations",
+        ["opportunity_id"],
+        unique=False,
     )
     op.create_index(op.f("ix_negotiations_outcome"), "negotiations", ["outcome"], unique=False)
 
@@ -369,7 +405,12 @@ def upgrade():
         sa.Column("competitive_advantages", sa.JSON(), nullable=True),
         sa.Column("ai_generated_summary", sa.Text(), nullable=True),
         sa.Column("ai_confidence_score", sa.Float(), nullable=True),
-        sa.Column("generated_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
+        sa.Column(
+            "generated_at",
+            sa.DateTime(),
+            nullable=True,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -378,16 +419,28 @@ def upgrade():
         op.f("ix_career_insights_user_id"), "career_insights", ["user_id"], unique=False
     )
     op.create_index(
-        op.f("ix_career_insights_period_start"), "career_insights", ["period_start"], unique=False
+        op.f("ix_career_insights_period_start"),
+        "career_insights",
+        ["period_start"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_career_insights_period_end"), "career_insights", ["period_end"], unique=False
+        op.f("ix_career_insights_period_end"),
+        "career_insights",
+        ["period_end"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_career_insights_report_type"), "career_insights", ["report_type"], unique=False
+        op.f("ix_career_insights_report_type"),
+        "career_insights",
+        ["report_type"],
+        unique=False,
     )
     op.create_index(
-        "ix_insights_period", "career_insights", ["period_start", "period_end"], unique=False
+        "ix_insights_period",
+        "career_insights",
+        ["period_start", "period_end"],
+        unique=False,
     )
 
     # Create portfolio_items table
@@ -421,13 +474,22 @@ def upgrade():
         op.f("ix_portfolio_items_user_id"), "portfolio_items", ["user_id"], unique=False
     )
     op.create_index(
-        op.f("ix_portfolio_items_execution_id"), "portfolio_items", ["execution_id"], unique=False
+        op.f("ix_portfolio_items_execution_id"),
+        "portfolio_items",
+        ["execution_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_portfolio_items_featured"), "portfolio_items", ["featured"], unique=False
+        op.f("ix_portfolio_items_featured"),
+        "portfolio_items",
+        ["featured"],
+        unique=False,
     )
     op.create_index(
-        "ix_portfolio_featured_public", "portfolio_items", ["featured", "public"], unique=False
+        "ix_portfolio_featured_public",
+        "portfolio_items",
+        ["featured", "public"],
+        unique=False,
     )
 
     # Create learning_records table
@@ -461,7 +523,10 @@ def upgrade():
     )
     op.create_index(op.f("ix_learning_records_id"), "learning_records", ["id"], unique=False)
     op.create_index(
-        op.f("ix_learning_records_user_id"), "learning_records", ["user_id"], unique=False
+        op.f("ix_learning_records_user_id"),
+        "learning_records",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
         op.f("ix_learning_records_learning_type"),
@@ -470,7 +535,10 @@ def upgrade():
         unique=False,
     )
     op.create_index(
-        op.f("ix_learning_records_created_at"), "learning_records", ["created_at"], unique=False
+        op.f("ix_learning_records_created_at"),
+        "learning_records",
+        ["created_at"],
+        unique=False,
     )
     op.create_index(
         "ix_learning_type_date",
@@ -502,16 +570,28 @@ def upgrade():
         op.f("ix_personal_reflections_id"), "personal_reflections", ["id"], unique=False
     )
     op.create_index(
-        op.f("ix_personal_reflections_user_id"), "personal_reflections", ["user_id"], unique=False
+        op.f("ix_personal_reflections_user_id"),
+        "personal_reflections",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_personal_reflections_date"), "personal_reflections", ["date"], unique=False
+        op.f("ix_personal_reflections_date"),
+        "personal_reflections",
+        ["date"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_personal_reflections_category"), "personal_reflections", ["category"], unique=False
+        op.f("ix_personal_reflections_category"),
+        "personal_reflections",
+        ["category"],
+        unique=False,
     )
     op.create_index(
-        "ix_reflections_date_desc", "personal_reflections", [sa.text("date DESC")], unique=False
+        "ix_reflections_date_desc",
+        "personal_reflections",
+        [sa.text("date DESC")],
+        unique=False,
     )
 
 

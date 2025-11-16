@@ -128,7 +128,9 @@ def test_on_task_created_high_capacity(capacity_integration, context_manager):
     context_manager.update_context({"carga_trabalho_percentual": 85})
 
     event = Event(
-        tipo=EventType.TASK_CREATED, modulo_origem=ModuleName.TASK_MANAGER, payload={"task_id": 123}
+        tipo=EventType.TASK_CREATED,
+        modulo_origem=ModuleName.TASK_MANAGER,
+        payload={"task_id": 123},
     )
 
     # Should log warning but not raise exception
@@ -142,7 +144,9 @@ def test_on_task_created_low_capacity(capacity_integration, context_manager):
     context_manager.update_context({"carga_trabalho_percentual": 50})
 
     event = Event(
-        tipo=EventType.TASK_CREATED, modulo_origem=ModuleName.TASK_MANAGER, payload={"task_id": 123}
+        tipo=EventType.TASK_CREATED,
+        modulo_origem=ModuleName.TASK_MANAGER,
+        payload={"task_id": 123},
     )
 
     # Should process without warning
@@ -351,7 +355,12 @@ def test_get_wellness_consideration_needs_break(capacity_integration, context_ma
 def test_get_wellness_consideration_normal(capacity_integration, context_manager):
     """Test wellness consideration in normal conditions."""
     context_manager.update_context(
-        {"fase_ciclo": "folicular", "energia_atual": 7, "nivel_stress": 5, "necessita_pausa": False}
+        {
+            "fase_ciclo": "folicular",
+            "energia_atual": 7,
+            "nivel_stress": 5,
+            "necessita_pausa": False,
+        }
     )
 
     consideration = capacity_integration._get_wellness_consideration()

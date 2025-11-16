@@ -2,9 +2,9 @@
 """Test script to verify agent memory and context persistence."""
 
 import requests
-import json
 
 API_URL = "http://localhost:8000/api/v1/agent/chat"
+
 
 def chat(message, session_id=None):
     """Send message to Charlee agent."""
@@ -22,11 +22,14 @@ def chat(message, session_id=None):
     print(f"{'='*60}")
     print(f"Charlee: {data['response']}")
 
-    return data['session_id']
+    return data["session_id"]
+
 
 # Test 1: First conversation - introduce myself
 print("\n🧪 TEST 1: First conversation")
-session1 = chat("Oi! Meu nome é Samara e estou desenvolvendo um sistema de produtividade.")
+session1 = chat(
+    "Oi! Meu nome é Samara e estou desenvolvendo um sistema de produtividade."
+)
 
 # Test 2: Continue same session - agent should remember my name
 print("\n🧪 TEST 2: Same session - should remember my name")

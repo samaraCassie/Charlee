@@ -55,7 +55,10 @@ async def recalcular_prioridades(
 
     tarefas_priorizadas = sistema.priorizar_tarefas(status="Pendente", big_rock_id=big_rock_id)
 
-    return {"message": "Prioridades recalculadas", "tarefas_processadas": len(tarefas_priorizadas)}
+    return {
+        "message": "Prioridades recalculadas",
+        "tarefas_processadas": len(tarefas_priorizadas),
+    }
 
 
 @router.get("/tarefas-priorizadas", response_model=schemas.TaskListResponse)

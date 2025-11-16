@@ -157,7 +157,9 @@ async def test_on_capacity_critical(context_manager):
 async def test_on_focus_started(context_manager):
     """Test focus session start event handler."""
     event = Event(
-        tipo=EventType.FOCUS_SESSION_STARTED, modulo_origem=ModuleName.FOCUS_MODULE, payload={}
+        tipo=EventType.FOCUS_SESSION_STARTED,
+        modulo_origem=ModuleName.FOCUS_MODULE,
+        payload={},
     )
 
     context_manager.on_focus_started(event)

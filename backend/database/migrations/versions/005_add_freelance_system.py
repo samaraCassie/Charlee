@@ -48,13 +48,22 @@ def upgrade():
     )
     op.create_index(op.f("ix_freelance_projects_id"), "freelance_projects", ["id"], unique=False)
     op.create_index(
-        op.f("ix_freelance_projects_user_id"), "freelance_projects", ["user_id"], unique=False
+        op.f("ix_freelance_projects_user_id"),
+        "freelance_projects",
+        ["user_id"],
+        unique=False,
     )
     op.create_index(
-        op.f("ix_freelance_projects_status"), "freelance_projects", ["status"], unique=False
+        op.f("ix_freelance_projects_status"),
+        "freelance_projects",
+        ["status"],
+        unique=False,
     )
     op.create_index(
-        "ix_freelance_projects_deadline", "freelance_projects", ["deadline"], unique=False
+        "ix_freelance_projects_deadline",
+        "freelance_projects",
+        ["deadline"],
+        unique=False,
     )
 
     # Create work_logs table

@@ -241,7 +241,10 @@ class TestInvoicesAPI:
         )
 
         # Should fail if no work logs exist
-        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_201_CREATED]
+        assert response.status_code in [
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_201_CREATED,
+        ]
 
     def test_list_invoices(self, client, sample_invoice, auth_headers):
         """Should list all invoices."""

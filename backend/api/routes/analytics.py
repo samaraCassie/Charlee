@@ -83,7 +83,13 @@ async def weekly_stats(
             .count()
         )
 
-        stats.append({"day": days[day_date.weekday()], "completed": completed, "pending": pending})
+        stats.append(
+            {
+                "day": days[day_date.weekday()],
+                "completed": completed,
+                "pending": pending,
+            }
+        )
 
     return stats
 
@@ -97,7 +103,20 @@ async def monthly_stats(
     today = date.today()
     stats = []
 
-    months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+    months = [
+        "Jan",
+        "Fev",
+        "Mar",
+        "Abr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Set",
+        "Out",
+        "Nov",
+        "Dez",
+    ]
 
     for i in range(6):
         # Calcular mês
@@ -154,7 +173,11 @@ async def big_rocks_distribution(
 
         if count > 0:
             distribution.append(
-                {"name": br.nome, "value": count, "color": br.cor or colors[i % len(colors)]}
+                {
+                    "name": br.nome,
+                    "value": count,
+                    "color": br.cor or colors[i % len(colors)],
+                }
             )
 
     return distribution

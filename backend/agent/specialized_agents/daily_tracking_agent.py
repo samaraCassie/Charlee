@@ -281,7 +281,10 @@ class DailyTrackingAgent(Agent):
             # Buscar todos os registros com dados suficientes
             registros = (
                 self.database.query(DailyLog)
-                .filter(DailyLog.sleep_hours.isnot(None), DailyLog.morning_energy.isnot(None))
+                .filter(
+                    DailyLog.sleep_hours.isnot(None),
+                    DailyLog.morning_energy.isnot(None),
+                )
                 .all()
             )
 

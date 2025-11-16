@@ -9,7 +9,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
-__all__ = ["limiter", "rate_limit_exceeded_handler", "SlowAPIMiddleware", "RateLimitExceeded"]
+__all__ = [
+    "limiter",
+    "rate_limit_exceeded_handler",
+    "SlowAPIMiddleware",
+    "RateLimitExceeded",
+]
 
 
 def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Response:

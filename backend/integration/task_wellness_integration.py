@@ -60,7 +60,8 @@ class TaskWellnessIntegration:
         tasks = (
             self.db.query(Task)
             .filter(
-                Task.user_id == self.context.user_id, Task.status.in_(["pending", "in_progress"])
+                Task.user_id == self.context.user_id,
+                Task.status.in_(["pending", "in_progress"]),
             )
             .all()
         )
@@ -152,7 +153,13 @@ class TaskWellnessIntegration:
             True if task is heavy
         """
         # Check for keywords indicating heavy tasks
-        heavy_keywords = ["desenvolvimento", "implementar", "criar", "desenvolver", "migrar"]
+        heavy_keywords = [
+            "desenvolvimento",
+            "implementar",
+            "criar",
+            "desenvolver",
+            "migrar",
+        ]
         description_lower = task.description.lower()
 
         return any(keyword in description_lower for keyword in heavy_keywords)

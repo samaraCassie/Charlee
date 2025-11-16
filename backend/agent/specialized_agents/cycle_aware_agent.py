@@ -270,9 +270,12 @@ class CycleAwareAgent(Agent):
             num_tarefas = len(tarefas_proximas)
 
             # Energia esperada para a fase
-            energia_fase = {"menstrual": 0.6, "folicular": 1.2, "ovulacao": 1.4, "lutea": 0.8}.get(
-                fase_atual, 1.0
-            )
+            energia_fase = {
+                "menstrual": 0.6,
+                "folicular": 1.2,
+                "ovulacao": 1.4,
+                "lutea": 0.8,
+            }.get(fase_atual, 1.0)
 
             # Análise
             result = f"📊 **Análise de Carga - Próximos {dias_futuro} dias**\n\n"

@@ -226,7 +226,7 @@ def sample_platform(db, sample_user):
         platform_type="freelance_marketplace",
         active=True,
         auto_collect=True,
-        collection_interval_hours=24,
+        collection_interval_minutes=1440,  # 24 hours = 1440 minutes
     )
     db.add(platform)
     db.commit()

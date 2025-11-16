@@ -129,7 +129,7 @@ class GlobalErrorHandlerMiddleware(BaseHTTPMiddleware):
                     "method": request.method,
                     "error_type": type(exc).__name__,
                     "error": str(exc),
-                    "traceback": traceback.format_exc() if self._should_log_traceback() else None,
+                    "traceback": (traceback.format_exc() if self._should_log_traceback() else None),
                 },
                 exc_info=True,
             )

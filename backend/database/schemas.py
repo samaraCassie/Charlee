@@ -512,7 +512,10 @@ class PricingParameterBase(BaseModel):
     active: bool = True
 
     @field_validator(
-        "complexity_factors", "specialization_factors", "deadline_factors", "client_factors"
+        "complexity_factors",
+        "specialization_factors",
+        "deadline_factors",
+        "client_factors",
     )
     @classmethod
     def validate_factors(cls, v: Optional[dict]) -> Optional[dict]:
