@@ -56,6 +56,14 @@
 - ✅ Configuração corrigida
 - **Impacto**: Repositório agora com gitignore correto
 
+#### 7. **Separação de Código de Inbox** (JÁ CONCLUÍDO)
+- ✅ Código de inbox movido para `api/routes/inbox.py`
+- ✅ 118 linhas de código organizado
+- ✅ 4 endpoints implementados (/rapido, /hoje, /atrasadas, /proxima-semana)
+- ✅ Autenticação aplicada em todas as rotas de inbox
+- ✅ main.py limpo (apenas importa e registra router)
+- **Impacto**: Código mais organizado e main.py com responsabilidade única
+
 ---
 
 ## 📊 Resumo Executivo
@@ -86,8 +94,7 @@ O projeto Charlee evoluiu significativamente nas últimas semanas, com **melhori
 **Ainda Necessita Atenção:**
 - ⚠️ Testes backend (cobertura atual ~40-50%, meta 80%)
 - ⚠️ Testes frontend (4 arquivos, expandir para 60%)
-- ⚠️ Aplicar autenticação em todas as rotas
-- ⚠️ Separar código de inbox do main.py
+- ⚠️ Aplicar autenticação em rotas V1 restantes (V2 já protegido)
 
 ### Status: **FUNDAÇÃO SÓLIDA, PRONTA PARA EXPANSÃO** 🚀
 
@@ -1413,10 +1420,13 @@ intent_keywords:
 # ✅ .env.example atualizado com documentação completa
 ```
 
-#### 3. Corrigir `main.py` - Separar código de inbox (1 hora) ⚠️ AINDA PENDENTE
+#### 3. ~~Separar código de inbox do `main.py`~~ ✅ COMPLETO
 ```bash
-# Mover linhas 90-244 para api/routes/inbox.py
-# Testar que tudo ainda funciona
+# ✅ CONCLUÍDO: Código de inbox já separado em api/routes/inbox.py
+# ✅ 118 linhas de código organizado com 4 endpoints
+# ✅ main.py apenas importa e registra o router (limpo)
+# ✅ Autenticação aplicada em todas as rotas de inbox
+# ✅ Endpoints: /rapido, /hoje, /atrasadas, /proxima-semana
 ```
 
 #### 4. ~~Implementar Autenticação JWT~~ ✅ COMPLETO
@@ -1650,12 +1660,11 @@ O projeto **Charlee** evoluiu significativamente, demonstrando **arquitetura exc
 **Ainda Necessita Atenção**:
 - ⚠️ Backend: testes 40-50% → meta 80%
 - ⚠️ Frontend: testes 15% → meta 60%
-- ⚠️ Aplicar autenticação em todas as rotas (sistema já implementado)
-- ⚠️ `main.py` com código de inbox misturado (243 linhas)
+- ⚠️ Aplicar autenticação em rotas V1 restantes (V2 já protegido)
 
 ### Avaliação por Perfil (Atualizada)
 
-**Para uso pessoal**: ✅ **EXCELENTE**, corrigir apenas `.gitignore`
+**Para uso pessoal**: ✅ **EXCELENTE** - Todos os críticos resolvidos!
 
 **Para produção**: ✅ **MUITO BOM**, aplicar auth em rotas + expandir testes antes de deploy
 
@@ -1671,10 +1680,10 @@ O projeto **Charlee** evoluiu significativamente, demonstrando **arquitetura exc
 
 ### Próximos Passos Priorizados
 
-**CRÍTICO - Esta Semana** (15 min):
+**CRÍTICO - Esta Semana** (TODOS COMPLETOS! 🎉):
 1. ~~Corrigir `.gitignore`~~ ← ✅ COMPLETO
 2. ~~Mover senha para variável de ambiente~~ ← ✅ COMPLETO
-3. Separar código de inbox do `main.py` ← 15 min ⚠️
+3. ~~Separar código de inbox do `main.py`~~ ← ✅ COMPLETO
 
 **ALTA - Próximas 2 Semanas** (40 horas):
 4. Aumentar testes backend 50% → 80% ← 20 horas
