@@ -616,9 +616,7 @@ class ProjectExecutionUpdate(BaseModel):
     client_satisfaction: Optional[int] = Field(None, ge=1, le=5)
     client_feedback: Optional[str] = None
     personal_notes: Optional[str] = None
-    status: Optional[
-        Literal["planned", "in_progress", "completed", "cancelled", "on_hold"]
-    ] = None
+    status: Optional[Literal["planned", "in_progress", "completed", "cancelled", "on_hold"]] = None
 
 
 class ProjectExecutionResponse(ProjectExecutionBase):
@@ -682,9 +680,7 @@ class NegotiationUpdate(BaseModel):
     client_response: Optional[str] = None
     final_agreed_budget: Optional[float] = Field(None, gt=0)
     final_agreed_deadline_days: Optional[int] = Field(None, gt=0)
-    outcome: Optional[
-        Literal["accepted", "rejected", "agreed", "no_response", "pending"]
-    ] = None
+    outcome: Optional[Literal["accepted", "rejected", "agreed", "no_response", "pending"]] = None
     outcome_notes: Optional[str] = None
 
 
