@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 from database.models import (
     FreelanceOpportunity,
     ProjectExecution,
-    ProjectEvaluation,
     Negotiation,
 )
 
@@ -207,10 +206,9 @@ class CareerInsightsAgent(Agent):
             Top performing projects analysis
         """
         try:
-            # Get completed projects with evaluations
+            # Get completed projects
             projects = (
                 self.db.query(ProjectExecution)
-                .outerjoin(ProjectEvaluation)
                 .filter(
                     ProjectExecution.user_id == self.user_id,
                     ProjectExecution.status == "completed",
@@ -230,17 +228,12 @@ class CareerInsightsAgent(Agent):
                 if project.client_satisfaction:
                     score += project.client_satisfaction * 10
 
-                # Project value (0-30 points based on percentile)
+                # Project value (0-50 points based on percentile)
                 if project.negotiated_value:
                     value_percentile = sum(
                         1 for p in projects if p.negotiated_value < project.negotiated_value
                     ) / len(projects)
-                    score += value_percentile * 30
-
-                # Evaluation score (0-20 points)
-                if project.evaluation:
-                    eval_score = project.evaluation.final_score or 0
-                    score += (eval_score / 100) * 20
+                    score += value_percentile * 50
 
                 scored_projects.append((project, score))
 

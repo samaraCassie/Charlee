@@ -202,10 +202,6 @@ class PortfolioBuilderAgent(Agent):
             if project.client_feedback:
                 description += f'\nCLIENT TESTIMONIAL:\n"{project.client_feedback}"\n'
 
-            if project.evaluation:
-                description += "\nPERFORMANCE METRICS:\n"
-                description += f"Overall Score: {project.evaluation.final_score or 'N/A'}/100\n"
-
             return description
 
         except Exception as e:
