@@ -179,3 +179,296 @@ def delete_task(db: Session, task_id: int, user_id: int) -> bool:
     db.delete(db_task)
     db.commit()
     return True
+
+
+# ==================== Freelance System CRUD ====================
+
+
+def get_freelance_projects(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+) -> list:
+    """Get all freelance projects for a user with optional filters."""
+    from database.models import FreelanceProject
+
+    query = db.query(FreelanceProject).filter(FreelanceProject.user_id == user_id)
+
+    if status:
+        query = query.filter(FreelanceProject.status == status)
+
+    return query.order_by(FreelanceProject.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def get_freelance_project(db: Session, project_id: int, user_id: int):
+    """Get a specific freelance project by ID for a user."""
+    from database.models import FreelanceProject
+
+    return (
+        db.query(FreelanceProject)
+        .filter(FreelanceProject.id == project_id, FreelanceProject.user_id == user_id)
+        .first()
+    )
+
+
+def create_freelance_project(db: Session, project_data, user_id: int):
+    """Create a new freelance project for a user."""
+    from database.models import FreelanceProject
+
+    db_project = FreelanceProject(**project_data.model_dump(), user_id=user_id)
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+
+def update_freelance_project(db: Session, project_id: int, project_update, user_id: int):
+    """Update a freelance project for a user."""
+    db_project = get_freelance_project(db, project_id, user_id)
+    if not db_project:
+        return None
+
+    update_data = project_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_project, field, value)
+
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+
+def delete_freelance_project(db: Session, project_id: int, user_id: int) -> bool:
+    """Delete a freelance project for a user."""
+    db_project = get_freelance_project(db, project_id, user_id)
+    if not db_project:
+        return False
+
+    db.delete(db_project)
+    db.commit()
+    return True
+
+
+def get_work_logs(
+    db: Session,
+    user_id: int,
+    project_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> list:
+    """Get work logs for a user with optional project filter."""
+    from database.models import WorkLog
+
+    query = db.query(WorkLog).filter(WorkLog.user_id == user_id)
+
+    if project_id:
+        query = query.filter(WorkLog.project_id == project_id)
+
+    return query.order_by(WorkLog.work_date.desc()).offset(skip).limit(limit).all()
+
+
+def get_work_log(db: Session, log_id: int, user_id: int):
+    """Get a specific work log by ID for a user."""
+    from database.models import WorkLog
+
+    return (
+        db.query(WorkLog)
+        .filter(WorkLog.id == log_id, WorkLog.user_id == user_id)
+        .first()
+    )
+
+
+def create_work_log(db: Session, log_data, user_id: int):
+    """Create a new work log for a user."""
+    from database.models import WorkLog
+    from datetime import date
+
+    # Set work_date to today if not provided
+    log_dict = log_data.model_dump()
+    if not log_dict.get("work_date"):
+        log_dict["work_date"] = date.today()
+
+    db_log = WorkLog(**log_dict, user_id=user_id)
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+
+    # Update project actual hours
+    project = get_freelance_project(db, db_log.project_id, user_id)
+    if project:
+        project.update_actual_hours(db)
+        db.commit()
+
+    return db_log
+
+
+def update_work_log(db: Session, log_id: int, log_update, user_id: int):
+    """Update a work log for a user."""
+    db_log = get_work_log(db, log_id, user_id)
+    if not db_log:
+        return None
+
+    update_data = log_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_log, field, value)
+
+    db.commit()
+    db.refresh(db_log)
+
+    # Update project actual hours
+    project = get_freelance_project(db, db_log.project_id, user_id)
+    if project:
+        project.update_actual_hours(db)
+        db.commit()
+
+    return db_log
+
+
+def delete_work_log(db: Session, log_id: int, user_id: int) -> bool:
+    """Delete a work log for a user."""
+    db_log = get_work_log(db, log_id, user_id)
+    if not db_log:
+        return False
+
+    project_id = db_log.project_id
+    db.delete(db_log)
+    db.commit()
+
+    # Update project actual hours
+    project = get_freelance_project(db, project_id, user_id)
+    if project:
+        project.update_actual_hours(db)
+        db.commit()
+
+    return True
+
+
+def get_invoices(
+    db: Session,
+    user_id: int,
+    project_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> list:
+    """Get invoices for a user with optional project filter."""
+    from database.models import Invoice
+
+    query = db.query(Invoice).filter(Invoice.user_id == user_id)
+
+    if project_id:
+        query = query.filter(Invoice.project_id == project_id)
+
+    return query.order_by(Invoice.issue_date.desc()).offset(skip).limit(limit).all()
+
+
+def get_invoice(db: Session, invoice_id: int, user_id: int):
+    """Get a specific invoice by ID for a user."""
+    from database.models import Invoice
+
+    return (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.user_id == user_id)
+        .first()
+    )
+
+
+def create_invoice(db: Session, invoice_data, user_id: int):
+    """Create a new invoice for a user."""
+    from database.models import Invoice, WorkLog
+    from datetime import date, timedelta
+
+    project_id = invoice_data.project_id
+    include_unbilled = invoice_data.include_unbilled_only
+
+    # Get project
+    project = get_freelance_project(db, project_id, user_id)
+    if not project:
+        raise ValueError(f"Project {project_id} not found")
+
+    # Get work logs
+    query = db.query(WorkLog).filter(
+        WorkLog.project_id == project_id,
+        WorkLog.billable == True,  # noqa: E712
+    )
+
+    if include_unbilled:
+        query = query.filter(WorkLog.invoiced == False)  # noqa: E712
+
+    work_logs = query.all()
+
+    if not work_logs:
+        raise ValueError("No billable work logs found for this project")
+
+    # Calculate totals
+    total_hours = sum(log.hours for log in work_logs)
+    total_amount = sum(log.calculate_amount() for log in work_logs)
+
+    # Generate invoice number if not provided
+    invoice_number = invoice_data.invoice_number
+    if not invoice_number:
+        today = date.today()
+        count = db.query(Invoice).filter(Invoice.user_id == user_id).count()
+        invoice_number = f"INV-{today.strftime('%Y%m')}-{count + 1:04d}"
+
+    # Create invoice
+    db_invoice = Invoice(
+        user_id=user_id,
+        project_id=project_id,
+        invoice_number=invoice_number,
+        issue_date=date.today(),
+        due_date=date.today() + timedelta(days=30),
+        total_amount=total_amount,
+        total_hours=total_hours,
+        hourly_rate=project.hourly_rate,
+        payment_terms=invoice_data.payment_terms or "Net 30",
+        notes=invoice_data.notes,
+        status="draft",
+    )
+
+    db.add(db_invoice)
+    db.commit()
+    db.refresh(db_invoice)
+
+    # Mark work logs as invoiced
+    for log in work_logs:
+        log.invoiced = True
+        log.invoice_id = db_invoice.id
+
+    db.commit()
+
+    return db_invoice
+
+
+def update_invoice(db: Session, invoice_id: int, invoice_update, user_id: int):
+    """Update an invoice for a user."""
+    db_invoice = get_invoice(db, invoice_id, user_id)
+    if not db_invoice:
+        return None
+
+    update_data = invoice_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_invoice, field, value)
+
+    db.commit()
+    db.refresh(db_invoice)
+    return db_invoice
+
+
+def delete_invoice(db: Session, invoice_id: int, user_id: int) -> bool:
+    """Delete an invoice for a user and unmark associated work logs."""
+    from database.models import WorkLog
+
+    db_invoice = get_invoice(db, invoice_id, user_id)
+    if not db_invoice:
+        return False
+
+    # Unmark work logs as invoiced
+    work_logs = db.query(WorkLog).filter(WorkLog.invoice_id == invoice_id).all()
+    for log in work_logs:
+        log.invoiced = False
+        log.invoice_id = None
+
+    db.delete(db_invoice)
+    db.commit()
+    return True

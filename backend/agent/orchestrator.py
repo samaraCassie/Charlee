@@ -8,6 +8,7 @@ from agent.core_agent import CharleeAgent
 from agent.specialized_agents.capacity_guard_agent import CapacityGuardAgent
 from agent.specialized_agents.cycle_aware_agent import CycleAwareAgent
 from agent.specialized_agents.daily_tracking_agent import DailyTrackingAgent
+from agent.specialized_agents.freelancer_agent import FreelancerAgent
 
 
 class AgentOrchestrator:
@@ -42,6 +43,7 @@ class AgentOrchestrator:
         self.cycle_agent = CycleAwareAgent(db=db)
         self.capacity_agent = CapacityGuardAgent(db=db)
         self.daily_tracking_agent = DailyTrackingAgent(db=db)
+        self.freelancer_agent = FreelancerAgent(db=db)
 
         # Track current context
         self.context: Dict[str, Any] = {
@@ -66,6 +68,8 @@ class AgentOrchestrator:
         # Route to appropriate agent based on intent
         if intent == "daily_tracking":
             response = self._handle_daily_tracking(message)
+        elif intent == "freelancer":
+            response = self._handle_freelancer(message)
         elif intent == "wellness" or intent == "cycle":
             response = self._handle_wellness(message)
         elif intent == "capacity" or intent == "workload":
@@ -169,6 +173,34 @@ class AgentOrchestrator:
             "últimos dias",
         ]
 
+        # Freelancer keywords
+        freelancer_keywords = [
+            "freelance",
+            "cliente",
+            "projeto freelance",
+            "projeto novo",
+            "orçamento",
+            "invoice",
+            "fatura",
+            "horas trabalhadas",
+            "registrar horas",
+            "timetracking",
+            "taxa hora",
+            "projeto cliente",
+            "faturamento",
+            "receita mensal",
+            "pagamento cliente",
+            "trabalho freelance",
+            "aceitar projeto",
+            "proposta",
+            "trabalho remoto",
+            "contrato",
+        ]
+
+        # Check for freelancer intent (check first as it's more specific)
+        if any(keyword in message_lower for keyword in freelancer_keywords):
+            return "freelancer"
+
         # Check for daily tracking intent
         if any(keyword in message_lower for keyword in daily_tracking_keywords):
             return "daily_tracking"
@@ -221,6 +253,19 @@ class AgentOrchestrator:
 
         # Get response from capacity guard agent
         response = self.capacity_agent.print_response(message)  # type: ignore[func-returns-value]
+
+        # Extract text from response if it's a RunResponse object
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
+
+    def _handle_freelancer(self, message: str) -> str:
+        """Handle freelancer project management and invoicing queries."""
+        self.context["last_agent_used"] = "freelancer"
+        self.context["conversation_topic"] = "freelancer"
+
+        # Get response from freelancer agent
+        response = self.freelancer_agent.print_response(message)  # type: ignore[func-returns-value]
 
         # Extract text from response if it's a RunResponse object
         if hasattr(response, "content"):

@@ -25,6 +25,7 @@ from api.routes import (
     big_rocks,
     capacity,
     daily_tracking,
+    freelancer,
     inbox,
     oauth_routes,
     priorizacao,
@@ -135,6 +136,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "name": "Settings (V2)",
             "description": "User preferences and configuration",
         },
+        {
+            "name": "Freelancer (V2)",
+            "description": "Freelance project management, time tracking, and invoicing",
+        },
     ],
 )
 
@@ -213,6 +218,7 @@ app.include_router(settings.router, prefix="/api/v2/settings", tags=["Settings (
 app.include_router(
     daily_tracking.router, prefix="/api/v2/daily-tracking", tags=["Daily Tracking (V2)"]
 )
+app.include_router(freelancer.router, prefix="/api/v2/freelancer", tags=["Freelancer (V2)"])
 
 # ========================================
 # PROMETHEUS METRICS

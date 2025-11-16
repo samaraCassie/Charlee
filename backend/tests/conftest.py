@@ -129,3 +129,84 @@ def sample_task(db, sample_big_rock, sample_user):
     db.commit()
     db.refresh(task)
     return task
+
+
+@pytest.fixture
+def sample_freelance_project(db, sample_user):
+    """Create a sample FreelanceProject for testing."""
+    from datetime import date, timedelta
+
+    from database.models import FreelanceProject
+
+    project = FreelanceProject(
+        user_id=sample_user.id,
+        client_name="Test Client",
+        project_name="Test Project",
+        description="Test project description",
+        hourly_rate=100.0,
+        estimated_hours=20.0,
+        deadline=date.today() + timedelta(days=30),
+        status="active",
+    )
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@pytest.fixture
+def sample_work_log(db, sample_user, sample_freelance_project):
+    """Create a sample WorkLog for testing."""
+    from datetime import date
+
+    from database.models import WorkLog
+
+    work_log = WorkLog(
+        user_id=sample_user.id,
+        project_id=sample_freelance_project.id,
+        work_date=date.today(),
+        hours=5.0,
+        description="Test work description",
+        task_type="development",
+        billable=True,
+    )
+    db.add(work_log)
+    db.commit()
+    db.refresh(work_log)
+
+    # Update project actual hours
+    sample_freelance_project.update_actual_hours(db)
+    db.commit()
+
+    return work_log
+
+
+@pytest.fixture
+def sample_invoice(db, sample_user, sample_freelance_project, sample_work_log):
+    """Create a sample Invoice for testing."""
+    from datetime import date, timedelta
+
+    from database.models import Invoice
+
+    invoice = Invoice(
+        user_id=sample_user.id,
+        project_id=sample_freelance_project.id,
+        invoice_number="INV-TEST-001",
+        issue_date=date.today(),
+        due_date=date.today() + timedelta(days=30),
+        total_amount=500.0,
+        total_hours=5.0,
+        hourly_rate=100.0,
+        payment_terms="Net 30",
+        status="draft",
+    )
+    db.add(invoice)
+    db.commit()
+    db.refresh(invoice)
+
+    # Mark work log as invoiced
+    sample_work_log.invoiced = True
+    sample_work_log.invoice_id = invoice.id
+    db.commit()
+
+    return invoice

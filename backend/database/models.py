@@ -641,3 +641,209 @@ class IntegratedDecision(Base):
 # CREATE INDEX idx_events_prioridade ON system_events(prioridade DESC, criado_em);
 # CREATE INDEX idx_cross_module_origem ON cross_module_relations(modulo_origem, entidade_origem_id);
 # CREATE INDEX idx_cross_module_destino ON cross_module_relations(modulo_destino, entidade_destino_id);
+
+
+# ==================== Freelance System Models ====================
+
+
+class FreelanceProject(Base):
+    """
+    Freelance Project - Client projects and contracts.
+
+    Represents freelance projects with client information, rates,
+    deadlines, and project status tracking.
+    """
+
+    __tablename__ = "freelance_projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Project information
+    client_name = Column(String(200), nullable=False)
+    project_name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Financial
+    hourly_rate = Column(Float, nullable=False)  # Rate per hour
+    estimated_hours = Column(Float, nullable=False)  # Estimated total hours
+    actual_hours = Column(Float, default=0.0)  # Actual hours worked (computed from WorkLog)
+
+    # Scheduling
+    start_date = Column(Date, nullable=True)
+    deadline = Column(Date, nullable=True)
+    completed_date = Column(Date, nullable=True)
+
+    # Status tracking
+    status = Column(
+        String(20),
+        CheckConstraint("status IN ('proposal', 'active', 'completed', 'cancelled')"),
+        default="proposal",
+        index=True,
+    )
+
+    # Project metadata
+    notes = Column(Text, nullable=True)
+    tags = Column(Text, nullable=True)  # Comma-separated tags
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    work_logs = relationship(
+        "WorkLog", back_populates="project", cascade="all, delete-orphan"
+    )
+    invoices = relationship(
+        "Invoice", back_populates="project", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<FreelanceProject(id={self.id}, client='{self.client_name}', project='{self.project_name}', status='{self.status}')>"
+
+    def calculate_total_value(self) -> float:
+        """Calculate total project value based on actual hours worked."""
+        return self.actual_hours * self.hourly_rate
+
+    def calculate_estimated_value(self) -> float:
+        """Calculate estimated project value based on estimated hours."""
+        return self.estimated_hours * self.hourly_rate
+
+    def update_actual_hours(self, db_session):
+        """Update actual_hours from work logs."""
+        from sqlalchemy import func
+
+        total = (
+            db_session.query(func.sum(WorkLog.hours))
+            .filter(WorkLog.project_id == self.id)
+            .scalar()
+        )
+        self.actual_hours = total or 0.0
+
+
+class WorkLog(Base):
+    """
+    Work Log - Time tracking for freelance projects.
+
+    Records hours worked on specific projects with descriptions
+    for accurate time tracking and invoicing.
+    """
+
+    __tablename__ = "work_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    project_id = Column(
+        Integer,
+        ForeignKey("freelance_projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Time tracking
+    work_date = Column(Date, nullable=False, index=True)
+    hours = Column(Float, nullable=False)
+    description = Column(Text, nullable=False)
+
+    # Optional categorization
+    task_type = Column(String(50), nullable=True)  # e.g., 'development', 'design', 'meeting'
+
+    # Billing
+    billable = Column(Boolean, default=True)
+    invoiced = Column(Boolean, default=False, index=True)  # Has this been included in an invoice?
+    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=True, index=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    project = relationship("FreelanceProject", back_populates="work_logs")
+    invoice = relationship("Invoice", back_populates="work_logs")
+
+    def __repr__(self):
+        return f"<WorkLog(id={self.id}, project_id={self.project_id}, date={self.work_date}, hours={self.hours})>"
+
+    def calculate_amount(self) -> float:
+        """Calculate billable amount for this work log."""
+        if not self.billable or not self.project:
+            return 0.0
+        return self.hours * self.project.hourly_rate
+
+
+class Invoice(Base):
+    """
+    Invoice - Financial invoices for freelance projects.
+
+    Generates invoices for projects based on work logs,
+    tracks payment status and financial records.
+    """
+
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    project_id = Column(
+        Integer, ForeignKey("freelance_projects.id"), nullable=False, index=True
+    )
+
+    # Invoice details
+    invoice_number = Column(String(50), unique=True, nullable=False, index=True)
+    issue_date = Column(Date, nullable=False, index=True)
+    due_date = Column(Date, nullable=True)
+
+    # Financial
+    total_amount = Column(Float, nullable=False)
+    total_hours = Column(Float, nullable=False)
+    hourly_rate = Column(Float, nullable=False)  # Rate at time of invoicing
+
+    # Payment tracking
+    status = Column(
+        String(20),
+        CheckConstraint("status IN ('draft', 'sent', 'paid', 'overdue', 'cancelled')"),
+        default="draft",
+        index=True,
+    )
+    paid_date = Column(Date, nullable=True)
+    payment_method = Column(String(50), nullable=True)
+
+    # Additional info
+    notes = Column(Text, nullable=True)
+    payment_terms = Column(Text, nullable=True)  # e.g., "Net 30", "Due on receipt"
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    project = relationship("FreelanceProject", back_populates="invoices")
+    work_logs = relationship("WorkLog", back_populates="invoice")
+
+    def __repr__(self):
+        return f"<Invoice(id={self.id}, number='{self.invoice_number}', amount={self.total_amount}, status='{self.status}')>"
+
+    def mark_as_paid(self, payment_date=None, payment_method=None):
+        """Mark invoice as paid."""
+        self.status = "paid"
+        self.paid_date = payment_date or datetime.now(timezone.utc).date()
+        if payment_method:
+            self.payment_method = payment_method
+        self.updated_at = datetime.now(timezone.utc)
+
+
+# Additional indexes for Freelance System
+# CREATE INDEX idx_freelance_projects_status ON freelance_projects(status);
+# CREATE INDEX idx_freelance_projects_deadline ON freelance_projects(deadline);
+# CREATE INDEX idx_work_logs_date ON work_logs(work_date);
+# CREATE INDEX idx_work_logs_invoiced ON work_logs(invoiced);
+# CREATE INDEX idx_invoices_status ON invoices(status);
+# CREATE INDEX idx_invoices_issue_date ON invoices(issue_date);
