@@ -18,7 +18,7 @@ celery_app = Celery(
     "charlee",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["tasks.opportunity_collector"],
+    include=["tasks.opportunity_collector", "tasks.intelligence_automation"],
 )
 
 # Celery configuration
@@ -41,10 +41,35 @@ celery_app.conf.update(
     worker_max_tasks_per_child=1000,
     # Beat schedule (periodic tasks)
     beat_schedule={
+        # Collect opportunities every 15 minutes
         "collect-opportunities-every-15-minutes": {
             "task": "tasks.opportunity_collector.collect_all_opportunities",
-            "schedule": crontab(minute="*/15"),  # Every 15 minutes
-            "options": {"expires": 600},  # Task expires if not picked up in 10 min
+            "schedule": crontab(minute="*/15"),
+            "options": {"expires": 600},
+        },
+        # Analyze new opportunities every 30 minutes (after collection)
+        "analyze-new-opportunities-every-30-minutes": {
+            "task": "tasks.intelligence_automation.analyze_new_opportunities",
+            "schedule": crontab(minute="*/30"),
+            "options": {"expires": 900},
+        },
+        # Send notifications for high-value opportunities every hour
+        "send-opportunity-notifications-hourly": {
+            "task": "tasks.intelligence_automation.send_opportunity_notifications",
+            "schedule": crontab(minute=30),  # Every hour at :30
+            "options": {"expires": 1800},
+        },
+        # Generate daily reports every morning at 8 AM
+        "generate-daily-reports-morning": {
+            "task": "tasks.intelligence_automation.generate_daily_report",
+            "schedule": crontab(hour=8, minute=0),
+            "options": {"expires": 3600},
+        },
+        # Detect career anomalies weekly (Mondays at 9 AM)
+        "detect-career-anomalies-weekly": {
+            "task": "tasks.intelligence_automation.detect_career_anomalies",
+            "schedule": crontab(day_of_week=1, hour=9, minute=0),
+            "options": {"expires": 3600},
         },
     },
 )

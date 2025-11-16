@@ -22,7 +22,7 @@ class TestOrchestratorMVP3Integration:
         for message in messages:
             result = orchestrator.get_routing_decision(message)
             assert result["intent_detected"] == "career_insights"
-            assert result["agent_to_use"] == "CareerInsightsAgent"
+            assert "CareerInsightsAgent" in result["agent_to_use"]
             assert len(result["keywords_matched"]) > 0
 
     def test_portfolio_intent_detection(self, db, sample_user):

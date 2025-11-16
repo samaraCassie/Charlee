@@ -80,7 +80,9 @@ class AgentOrchestrator:
         intent = self._analyze_intent(message)
 
         # Route to appropriate agent based on intent
-        if intent == "daily_tracking":
+        if intent == "dashboard":
+            response = self._handle_dashboard(message)
+        elif intent == "daily_tracking":
             response = self._handle_daily_tracking(message)
         elif intent == "freelancer":
             response = self._handle_freelancer(message)
@@ -261,6 +263,25 @@ class AgentOrchestrator:
             "top achievements",
         ]
 
+        # Dashboard keywords (multi-agent summary)
+        dashboard_keywords = [
+            "resumo geral",
+            "dashboard",
+            "visão geral",
+            "panorama",
+            "status geral",
+            "como estou",
+            "tudo",
+            "resumo completo",
+            "overview",
+            "relatório geral",
+            "meu status",
+        ]
+
+        # Check for dashboard intent (highest priority - multi-agent)
+        if any(keyword in message_lower for keyword in dashboard_keywords):
+            return "dashboard"
+
         # Check for career insights intent (check before freelancer as it's more specific)
         if any(keyword in message_lower for keyword in career_insights_keywords):
             return "career_insights"
@@ -345,9 +366,14 @@ class AgentOrchestrator:
         return str(response)
 
     def _handle_career_insights(self, message: str) -> str:
-        """Handle career insights and analytics queries."""
+        """Handle career insights and analytics queries with portfolio cross-reference."""
         self.context["last_agent_used"] = "career_insights"
         self.context["conversation_topic"] = "career_insights"
+
+        # Check for stagnation patterns
+        stagnation_alert = self._detect_career_stagnation()
+        if stagnation_alert:
+            message += f"\n\n**ALERTA PROATIVO:** {stagnation_alert}"
 
         # Get response from career insights agent
         response = self.career_insights_agent.print_response(message)  # type: ignore[func-returns-value]
@@ -369,6 +395,169 @@ class AgentOrchestrator:
         if hasattr(response, "content"):
             return response.content
         return str(response)
+
+    def _handle_dashboard(self, message: str) -> str:
+        """
+        Handle comprehensive dashboard queries by consulting multiple agents.
+
+        Provides a unified view combining:
+        - Career insights and statistics
+        - Portfolio summary
+        - Current capacity and workload
+        - Wellness/cycle status
+        - Recent tracking data
+        """
+        self.context["last_agent_used"] = "dashboard"
+        self.context["conversation_topic"] = "dashboard"
+
+        # Gather comprehensive insights from all agents
+        insights = {}
+
+        # Career insights
+        try:
+            career_summary = self.career_insights_agent.get_career_summary(days=90)
+            insights["career"] = career_summary
+        except Exception as e:
+            insights["career"] = f"⚠️ Dados de carreira indisponíveis: {str(e)}"
+
+        # Portfolio summary
+        try:
+            portfolio = self.portfolio_builder_agent.build_full_portfolio(include_in_progress=False)
+            insights["portfolio"] = portfolio[:500] if len(portfolio) > 500 else portfolio
+        except Exception as e:
+            insights["portfolio"] = f"⚠️ Portfólio indisponível: {str(e)}"
+
+        # Capacity/workload
+        try:
+            capacity_info = self.capacity_agent.calcular_carga_atual(proximas_semanas=2)
+            insights["capacity"] = capacity_info
+        except Exception as e:
+            insights["capacity"] = f"⚠️ Informação de capacidade indisponível: {str(e)}"
+
+        # Wellness/cycle
+        try:
+            cycle_info = self.cycle_agent.obter_fase_atual()
+            insights["wellness"] = cycle_info
+        except Exception as e:
+            insights["wellness"] = f"⚠️ Informação de bem-estar indisponível: {str(e)}"
+
+        # Check for stagnation
+        stagnation_alert = self._detect_career_stagnation()
+        if stagnation_alert:
+            insights["alerts"] = stagnation_alert
+
+        # Build comprehensive dashboard message
+        dashboard_message = f"""**📊 DASHBOARD COMPLETO - CHARLEE**
+
+**🎯 Carreira & Projetos (últimos 90 dias):**
+{insights.get('career', 'N/A')}
+
+**📂 Portfólio:**
+{insights.get('portfolio', 'N/A')}
+
+**⚖️ Capacidade & Carga de Trabalho:**
+{insights.get('capacity', 'N/A')}
+
+**🌸 Bem-estar & Energia:**
+{insights.get('wellness', 'N/A')}
+"""
+
+        if insights.get("alerts"):
+            dashboard_message += f"\n\n**⚠️ ALERTAS PROATIVOS:**\n{insights['alerts']}"
+
+        dashboard_message += f"\n\n{message}\n\n**CONTEXTO COMPLETO FORNECIDO ACIMA**"
+
+        # Let core agent synthesize the dashboard with all context
+        response = self.core_agent.print_response(dashboard_message)  # type: ignore[func-returns-value]
+
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
+
+    def _detect_career_stagnation(self) -> str:
+        """
+        Detect career stagnation patterns.
+
+        Checks for:
+        - No completed projects in last 30 days
+        - No new skills in last 60 days
+        - Decreasing income trends
+        - Low client satisfaction
+
+        Returns:
+            Alert message if stagnation detected, empty string otherwise
+        """
+        try:
+            from database.models import ProjectExecution
+            from datetime import datetime, timedelta
+
+            # Check completed projects in last 30 days
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            recent_projects = (
+                self.database.query(ProjectExecution)
+                .filter(
+                    ProjectExecution.user_id == self.career_insights_agent.user_id,
+                    ProjectExecution.status == "completed",
+                    ProjectExecution.created_at >= thirty_days_ago,
+                )
+                .count()
+            )
+
+            alerts = []
+
+            if recent_projects == 0:
+                alerts.append(
+                    "Nenhum projeto completado nos últimos 30 dias - considere buscar novas oportunidades"
+                )
+
+            # Check income trends
+            try:
+                income_analysis = self.career_insights_agent.get_income_trends(months=3)
+                if "decrescente" in income_analysis.lower() or "queda" in income_analysis.lower():
+                    alerts.append(
+                        "Tendência de receita decrescente detectada - analise oportunidades de maior valor"
+                    )
+            except Exception:
+                pass
+
+            # Check client satisfaction
+            sixty_days_ago = datetime.now() - timedelta(days=60)
+            low_satisfaction_projects = (
+                self.database.query(ProjectExecution)
+                .filter(
+                    ProjectExecution.user_id == self.career_insights_agent.user_id,
+                    ProjectExecution.status == "completed",
+                    ProjectExecution.created_at >= sixty_days_ago,
+                    ProjectExecution.client_satisfaction < 4.0,
+                )
+                .count()
+            )
+
+            if low_satisfaction_projects > 2:
+                alerts.append(
+                    f"{low_satisfaction_projects} projetos com satisfação baixa (<4.0) - foque em qualidade"
+                )
+
+            return "\n".join(f"• {alert}" for alert in alerts) if alerts else ""
+
+        except Exception as e:
+            return ""
+
+    def _get_career_insights_context(self) -> str:
+        """
+        Get enriched career insights for context injection.
+
+        Returns summary of:
+        - Recent projects performance
+        - Top skills used
+        - Income trends
+        - Recommendations
+        """
+        try:
+            summary = self.career_insights_agent.get_career_summary(days=90)
+            return f"**Contexto de Carreira (últimos 90 dias):**\n{summary}"
+        except Exception as e:
+            return f"⚠️ Contexto de carreira indisponível: {str(e)}"
 
     def _handle_tasks_with_capacity_check(self, message: str) -> str:
         """
@@ -450,14 +639,24 @@ class AgentOrchestrator:
 
     def _gather_insights(self) -> Dict[str, str]:
         """
-        Gather insights from all specialized agents.
+        Gather enriched insights from all specialized agents.
 
         Returns dictionary with context from:
+        - Career insights and performance
+        - Portfolio and achievements
         - Cycle phase and energy levels
         - Current workload capacity
         - Potential overload warnings
+        - Stagnation alerts
         """
         insights = {}
+
+        # Gather career context (NOVO!)
+        try:
+            career_context = self._get_career_insights_context()
+            insights["career"] = career_context
+        except Exception as e:
+            insights["career"] = f"⚠️ Contexto de carreira indisponível: {str(e)}"
 
         # Gather cycle/wellness context
         try:
@@ -480,16 +679,27 @@ class AgentOrchestrator:
         except Exception as e:
             insights["big_rocks"] = f"⚠️ Análise de Big Rocks indisponível: {str(e)}"
 
+        # Check for stagnation alerts (NOVO!)
+        try:
+            stagnation_alert = self._detect_career_stagnation()
+            if stagnation_alert:
+                insights["stagnation"] = stagnation_alert
+        except Exception:
+            pass
+
         return insights
 
     def _enhance_message_with_context(self, message: str, insights: Dict[str, str]) -> str:
         """
         Enhances user message with rich context from specialized agents.
 
-        Adds wellness, capacity, and Big Rocks context to help core agent
+        Adds career, wellness, capacity, and Big Rocks context to help core agent
         make more informed decisions.
         """
         context_parts = []
+
+        if insights.get("career"):
+            context_parts.append(f"**💼 {insights['career']}\n")
 
         if insights.get("cycle"):
             context_parts.append(f"**🌸 Contexto de Bem-Estar:**\n{insights['cycle']}\n")
@@ -500,10 +710,13 @@ class AgentOrchestrator:
         if insights.get("big_rocks"):
             context_parts.append(f"**🎯 Distribuição de Big Rocks:**\n{insights['big_rocks']}\n")
 
+        if insights.get("stagnation"):
+            context_parts.append(f"**⚠️ ALERTAS PROATIVOS:**\n{insights['stagnation']}\n")
+
         if context_parts:
             context_str = "\n".join(context_parts)
-            enhanced = f"{message}\n\n**📋 Contexto Adicional (use para dar respostas mais personalizadas):**\n{context_str}"
-            enhanced += "\n\n**INSTRUÇÃO**: Use os contextos acima para adaptar sua resposta. Por exemplo, se a energia está baixa, sugira tarefas leves. Se há sobrecarga, alerte sobre isso."
+            enhanced = f"{message}\n\n**📋 Contexto Adicional Enriquecido (use para dar respostas mais personalizadas e proativas):**\n{context_str}"
+            enhanced += "\n\n**INSTRUÇÃO**: Use os contextos acima para adaptar sua resposta. Por exemplo:\n- Se a energia está baixa, sugira tarefas leves\n- Se há sobrecarga, alerte sobre isso\n- Se detectar estagnação na carreira, sugira ações proativas\n- Se há oportunidades não aproveitadas, recomende análise"
             return enhanced
 
         return message
@@ -551,11 +764,14 @@ class AgentOrchestrator:
         consultation_needed = self._check_consultation_needed(message)
 
         # Determine which agent would be used
-        if intent == "daily_tracking":
+        if intent == "dashboard":
+            agent = "Multi-Agent Dashboard (Career + Portfolio + Capacity + Wellness)"
+            reason = "Mensagem solicita visão geral completa - consulta todos os agentes"
+        elif intent == "daily_tracking":
             agent = "DailyTrackingAgent"
             reason = "Mensagem contém palavras-chave relacionadas a registro diário e padrões"
         elif intent == "career_insights":
-            agent = "CareerInsightsAgent"
+            agent = "CareerInsightsAgent (com detecção de estagnação)"
             reason = (
                 "Mensagem contém palavras-chave relacionadas a análise de carreira e estatísticas"
             )
@@ -578,8 +794,8 @@ class AgentOrchestrator:
             reason = "Mensagem relacionada a gestão de tarefas"
         else:
             if consultation_needed:
-                agent = "CharleeAgent (com consulta multi-agente)"
-                reason = "Mensagem requer contexto de múltiplos agentes especializados"
+                agent = "CharleeAgent (com consulta multi-agente enriquecida)"
+                reason = "Mensagem requer contexto de múltiplos agentes especializados incluindo career insights"
             else:
                 agent = "CharleeAgent"
                 reason = "Mensagem geral não requer agentes especializados"
