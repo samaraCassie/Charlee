@@ -2356,3 +2356,1056 @@ Agora o arquivo **`Charlee_integracao_modulos.md`** está **completamente atuali
 ✅ **Métricas consolidadas** incluindo estatísticas dos novos módulos
 
 **Todos os módulos agora estão integrados ao orquestrador central via Event Bus!** 🚀
+
+---
+
+## 19.17 Auto-Conhecimento e Consciência Arquitetural do Charlee
+
+### 🧠 Visão Geral
+
+O Charlee possui **auto-conhecimento** de sua própria arquitetura, permitindo:
+
+1. **Ensinar o usuário** a utilizar recursos disponíveis
+2. **Detectar dificuldades** e oferecer ajuda proativa
+3. **Auxiliar no desenvolvimento** de novas versões (apenas admin)
+4. **Sugerir melhorias** baseado em padrões de uso
+
+### 🔐 Níveis de Acesso
+
+```python
+class AccessLevel(Enum):
+    """Níveis de acesso às informações do sistema"""
+
+    USER = "user"              # Usuário final: funcionalidades e tutoriais
+    ADMIN = "admin"            # Admin/Developer: arquitetura completa, debugging
+    SYSTEM = "system"          # Acesso interno entre módulos
+
+# Informações sensíveis NUNCA devem ser expostas para USER
+RESTRICTED_INFO = {
+    "admin_only": [
+        "database_schemas",
+        "api_keys_management",
+        "system_architecture",
+        "event_bus_internals",
+        "integration_code",
+        "security_mechanisms"
+    ]
+}
+```
+
+### 📚 Sistema de Ensino Proativo (USER Level)
+
+```python
+class CharleeTeacher:
+    """
+    Sistema de ensino proativo do Charlee
+    Detecta quando usuário não está usando recursos disponíveis
+    """
+
+    def __init__(self, db_connection, user_id):
+        self.db = db_connection
+        self.user_id = user_id
+        self.usage_patterns = self.load_usage_patterns()
+
+    async def analyze_user_behavior(self):
+        """Analisa comportamento para oferecer ajuda"""
+
+        suggestions = []
+
+        # 1. Usuário criando muitas tarefas manualmente?
+        if self.is_creating_repetitive_tasks():
+            suggestions.append({
+                "tipo": "feature_discovery",
+                "feature": "Rotinas Automatizadas",
+                "mensagem": "💡 Percebi que você cria tarefas similares toda semana. "
+                           "Você sabia que pode criar rotinas automatizadas? "
+                           "Quer que eu te mostre como?"
+            })
+
+        # 2. Usuário não está usando BigRocks?
+        if self.is_not_using_bigrocks():
+            suggestions.append({
+                "tipo": "feature_discovery",
+                "feature": "BigRocks",
+                "mensagem": "💡 Você tem muitas tarefas soltas! BigRocks ajudam a "
+                           "organizar tarefas por área da vida. Posso criar alguns para você?"
+            })
+
+        # 3. Usuário registrou período menstrual mas não usa predições?
+        if self.registered_cycle_but_not_using():
+            suggestions.append({
+                "tipo": "feature_discovery",
+                "feature": "Predições de Ciclo",
+                "mensagem": "🌸 Você registrou seu ciclo! Posso usar isso para ajustar "
+                           "automaticamente suas rotinas e proteger seu bem-estar. Ativar?"
+            })
+
+        # 4. Usuário tem reuniões 1:1 mas não usa Diplomat?
+        if self.has_recurring_meetings_but_no_diplomat():
+            suggestions.append({
+                "tipo": "feature_discovery",
+                "feature": "Diplomat (CRM Pessoal)",
+                "mensagem": "🤝 Vi que você tem várias reuniões 1:1 recorrentes. "
+                           "Posso te ajudar a preparar essas reuniões automaticamente?"
+            })
+
+        # 5. Usuário gasta muito tempo escolhendo roupa?
+        if self.detects_morning_delay_pattern():
+            suggestions.append({
+                "tipo": "feature_discovery",
+                "feature": "Planejamento de Outfits",
+                "mensagem": "👔 Notei que suas manhãs ficam longas. Planejamento semanal "
+                           "de outfits economiza ~15min/dia. Quer experimentar?"
+            })
+
+        return suggestions
+
+    def is_creating_repetitive_tasks(self) -> bool:
+        """Detecta padrão de tarefas repetitivas"""
+
+        recent_tasks = self.db.execute("""
+            SELECT descricao FROM tarefas
+            WHERE user_id = %s
+              AND criado_em > NOW() - INTERVAL '30 days'
+        """, (self.user_id,)).fetchall()
+
+        # Usa similarity para detectar tarefas parecidas
+        from difflib import SequenceMatcher
+
+        repetitive_count = 0
+        for i, task1 in enumerate(recent_tasks):
+            for task2 in recent_tasks[i+1:]:
+                similarity = SequenceMatcher(
+                    None,
+                    task1['descricao'].lower(),
+                    task2['descricao'].lower()
+                ).ratio()
+
+                if similarity > 0.7:  # 70% similar
+                    repetitive_count += 1
+
+        return repetitive_count > 5  # Mais de 5 pares de tarefas similares
+
+    def is_not_using_bigrocks(self) -> bool:
+        """Verifica se usuário não usa BigRocks"""
+
+        bigrocks_count = self.db.execute("""
+            SELECT COUNT(*) FROM big_rocks
+            WHERE user_id = %s
+        """, (self.user_id,)).fetchone()['count']
+
+        tasks_count = self.db.execute("""
+            SELECT COUNT(*) FROM tarefas
+            WHERE user_id = %s
+              AND big_rock_id IS NULL
+        """, (self.user_id,)).fetchone()['count']
+
+        # Tem muitas tarefas mas nenhum BigRock
+        return bigrocks_count == 0 and tasks_count > 10
+
+    def registered_cycle_but_not_using(self) -> bool:
+        """Usuário registrou ciclo mas não ativou features relacionadas"""
+
+        has_cycle_data = self.db.execute("""
+            SELECT COUNT(*) FROM registro_ciclo
+            WHERE user_id = %s
+        """, (self.user_id,)).fetchone()['count'] > 0
+
+        using_cycle_features = self.db.execute("""
+            SELECT configuracoes->>'cycle_aware_scheduling' as enabled
+            FROM user_preferences
+            WHERE user_id = %s
+        """, (self.user_id,)).fetchone()
+
+        return has_cycle_data and not using_cycle_features.get('enabled', False)
+
+    async def offer_tutorial(self, feature: str):
+        """Oferece tutorial interativo de uma feature"""
+
+        tutorials = {
+            "Rotinas Automatizadas": """
+📅 ROTINAS AUTOMATIZADAS - Tutorial Rápido
+
+Rotinas eliminam decisões repetitivas. Você define UMA VEZ,
+Charlee executa SEMPRE.
+
+Exemplo: Rotina Matinal
+1. "Charlee, crie uma rotina matinal"
+2. Eu pergunto: "A que horas você acorda?"
+3. Você lista atividades: "Pelinhos, hidratação, maquiagem..."
+4. Eu crio cronograma otimizado
+5. Toda manhã, você recebe o roteiro pronto!
+
+Economia: ~30min/semana de planejamento
+Benefício: Zero decisões pela manhã = energia para o que importa
+
+Quer criar sua primeira rotina agora?
+""",
+
+            "BigRocks": """
+🪨 BIGROCKS - Tutorial Rápido
+
+BigRocks = Grandes áreas da sua vida que precisam de atenção semanal.
+
+Exemplos:
+• 💼 Trabalho Syssa (15h/semana)
+• 🎓 Mestrado (10h/semana)
+• 💪 Saúde & Fitness (5h/semana)
+• 👥 Relacionamentos (3h/semana)
+
+Como funciona:
+1. Você define capacidade de cada BigRock
+2. Charlee te alerta quando um está sobrecarregado
+3. Tarefas ficam organizadas por área
+4. Você visualiza facilmente onde seu tempo vai
+
+Quer que eu crie BigRocks para você com base nas suas tarefas atuais?
+""",
+
+            "Diplomat (CRM Pessoal)": """
+🤝 DIPLOMAT - Tutorial Rápido
+
+Diplomat = CRM para suas relações pessoais/profissionais importantes.
+
+Problema que resolve:
+"Quando foi a última vez que falei com meu mentor?"
+"O que discutimos na última 1:1 com minha chefe?"
+"Preciso reconectar com aquele contato de networking..."
+
+Como funciona:
+1. Você cadastra pessoas importantes (chefe, mentor, pupilos...)
+2. Define frequência ideal de contato (semanal, mensal...)
+3. Charlee te alerta quando relação precisa atenção
+4. Antes de cada 1:1, recebe resumo automático:
+   - Última conversa
+   - Follow-ups pendentes
+   - Sugestões de tópicos
+
+Economia: ~2h/mês em preparação de reuniões
+Benefício: Relacionamentos mais fortes e consistentes
+
+Quer cadastrar sua primeira pessoa importante?
+"""
+        }
+
+        return tutorials.get(feature, "Tutorial não encontrado")
+
+
+class CharleeIntrospection:
+    """
+    Sistema de auto-conhecimento do Charlee
+    Permite que Charlee explique sua própria arquitetura
+    """
+
+    def __init__(self, access_level: AccessLevel):
+        self.access_level = access_level
+
+    def explain_architecture(self, question: str) -> str:
+        """
+        Charlee explica sua própria arquitetura
+        Resposta varia conforme nível de acesso
+        """
+
+        # USER: Explicações de alto nível, focadas em benefícios
+        if self.access_level == AccessLevel.USER:
+            return self._explain_for_user(question)
+
+        # ADMIN: Detalhes técnicos completos
+        elif self.access_level == AccessLevel.ADMIN:
+            return self._explain_for_admin(question)
+
+    def _explain_for_user(self, question: str) -> str:
+        """Explicações para usuário final (high-level)"""
+
+        user_explanations = {
+            "como você funciona?": """
+🧠 Como eu funciono (versão simples):
+
+Sou um sistema modular que aprende com você:
+
+1. **Módulos Especializados**: Tenho "cérebros" diferentes para cada área:
+   - Um para tarefas e produtividade
+   - Um para seu bem-estar e ciclo menstrual
+   - Um para suas finanças comportamentais
+   - Um para seus relacionamentos
+   - E vários outros!
+
+2. **Coordenação Inteligente**: Esses módulos conversam entre si.
+   Exemplo: Se você está em TPM + sobrecarregada, meu módulo financeiro
+   bloqueia compras impulsivas automaticamente.
+
+3. **Memória Compartilhada**: Tudo que você me conta fica armazenado
+   de forma segura. Eu lembro do contexto e melhoro com o tempo.
+
+4. **Proatividade**: Não espero você pedir. Vejo padrões e ofereço
+   ajuda antes de você precisar.
+
+Quer saber mais sobre algum módulo específico?
+""",
+
+            "quais recursos você tem?": """
+📦 Recursos Disponíveis (versão atual):
+
+✅ **Implementados:**
+- Task Manager: Gestão inteligente de tarefas
+- BigRocks: Organização por áreas da vida
+- Cycle Tracking: Rastreamento de ciclo menstrual
+- Capacity Guardian: Proteção contra sobrecarga
+- Focus Mode: Bloqueio de distrações
+- Calendar Integration: Sincronização com Google/Microsoft
+- Multimodal Input: Envio de áudio, imagem, texto
+
+📋 **Em Documentação (próximas versões):**
+- Charlee Wealth: Finanças comportamentais
+- Charlee Routines: Rotinas automatizadas
+- Charlee Wardrobe: Planejamento de outfits
+- Charlee Diplomat: CRM pessoal
+
+Qual recurso você gostaria de explorar?
+""",
+
+            "como você me protege?": """
+🛡️ Como eu protejo você:
+
+1. **Proteção de Capacidade:**
+   - Monitoro sua carga de trabalho em tempo real
+   - Bloqueio novas tarefas quando você está no limite
+   - Sugiro pausas antes de você quebrar
+
+2. **Proteção de Bem-Estar:**
+   - Ajusto expectativas baseado na sua fase do ciclo
+   - Reduzo pressão durante menstruação/TPM
+   - Recomendo atividades adequadas para sua energia
+
+3. **Proteção Financeira (V4+):**
+   - Detecto padrões de gasto impulsivo
+   - Bloqueio compras durante stress/TPM
+   - Te protejo de você mesma em momentos vulneráveis 😊
+
+4. **Proteção de Foco:**
+   - Bloqueio notificações não-urgentes
+   - Cancelo reuniões desnecessárias em crises
+   - Defendo seu tempo como se fosse meu
+
+Meu trabalho é ser sua guardiã digital!
+"""
+        }
+
+        return user_explanations.get(
+            question.lower(),
+            "Não entendi sua pergunta. Pode reformular?"
+        )
+
+    def _explain_for_admin(self, question: str) -> str:
+        """Explicações técnicas completas (ADMIN ONLY)"""
+
+        admin_explanations = {
+            "arquitetura completa": """
+🏗️ ARQUITETURA COMPLETA DO CHARLEE (ADMIN VIEW)
+
+**Stack Tecnológico:**
+- Backend: FastAPI + Python 3.11+
+- Database: PostgreSQL 15 + PgVector (embeddings)
+- Cache/Sessions: Redis 7
+- LLM: GPT-4o (orquestrador) + GPT-4o-mini (agentes especializados)
+- Frontend: React + TypeScript (V3.0)
+- Deployment: Docker + Docker Compose
+
+**Camadas Arquiteturais:**
+
+1. **API Layer** (`backend/api/`)
+   - REST endpoints (OpenAPI/Swagger)
+   - Authentication: JWT tokens
+   - Rate limiting: Redis-based
+   - CORS: Configurável por ambiente
+
+2. **Orchestrator Layer** (`backend/orchestrator/`)
+   - `CharleeOrchestrator`: Agente central (PhiData Agent)
+   - Intent Analysis: Classifica intenção do usuário
+   - Agent Router: Roteia para agente especializado
+   - Context Manager: Mantém estado global
+
+3. **Agent Layer** (`backend/agent/`)
+   - Agentes especializados por domínio
+   - Cada agente tem acesso ao Event Bus
+   - Comunicação assíncrona via pub/sub
+
+4. **Integration Layer** (`backend/integrations/`)
+   - Google Calendar OAuth 2.0
+   - Microsoft Calendar OAuth 2.0
+   - Webhooks para sync bidirecional
+   - API clients para serviços externos
+
+5. **Data Layer** (`backend/db/`)
+   - PostgreSQL: Dados estruturados + JSONB
+   - PgVector: Embeddings para memória semântica
+   - Redis: Cache + Sessions + Event Queue
+
+**Event Bus Architecture:**
+
+```python
+# Fluxo de evento:
+1. Agente A: event_bus.publish(Event(...))
+2. Event Bus: Salva em PostgreSQL + Redis
+3. Event Bus: Notifica subscribers (async)
+4. Agentes B, C, D: Recebem evento em paralelo
+5. Cada agente processa independentemente
+6. Resultados propagam novos eventos (cascata)
+```
+
+**State Management:**
+
+- **Session State** (Redis): TTL 24h
+  - Conversação atual
+  - Contexto temporário
+  - Cache de queries frequentes
+
+- **Long-term State** (PostgreSQL):
+  - Histórico completo de tarefas
+  - Registro de ciclo menstrual
+  - Preferências do usuário
+  - Relacionamentos (Diplomat)
+
+- **Semantic Memory** (PgVector):
+  - Embeddings de conversas passadas
+  - Busca semântica de contexto relevante
+  - Aprendizado de padrões
+
+**Security Mechanisms:**
+
+1. **Authentication:**
+   - JWT tokens com refresh
+   - Sessões invalidáveis (Redis blacklist)
+   - Rate limiting por usuário
+
+2. **Authorization:**
+   - Role-based: USER vs ADMIN
+   - Resource-level permissions
+   - Admin-only endpoints bloqueados
+
+3. **Data Protection:**
+   - Passwords: bcrypt + salt
+   - API keys: Encrypted at rest
+   - PII: Encrypted columns (PostgreSQL)
+
+4. **API Security:**
+   - HTTPS only
+   - CORS whitelist
+   - Input validation (Pydantic)
+   - SQL injection protection (parameterized queries)
+
+**Observability:**
+
+- Logging: Structured (JSON) via loguru
+- Metrics: Prometheus-compatible
+- Tracing: Correlation IDs em eventos
+- Debugging: Event history por correlation_id
+
+**Deployment:**
+
+```yaml
+Production Stack:
+- 2x Orchestrator instances (load balanced)
+- 1x PostgreSQL (replicado)
+- 1x Redis (sentinel mode)
+- Nginx como reverse proxy
+```
+
+Quer detalhes sobre alguma camada específica?
+""",
+
+            "database schema completo": """
+📊 DATABASE SCHEMA COMPLETO (ADMIN ONLY)
+
+**Core Tables:**
+
+```sql
+-- Usuários
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT DEFAULT 'user',  -- 'user' ou 'admin'
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tarefas
+CREATE TABLE tarefas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    descricao TEXT NOT NULL,
+    tipo TEXT,  -- 'Tarefa', 'Compromisso Fixo', etc
+    deadline TIMESTAMP,
+    big_rock_id UUID REFERENCES big_rocks(id),
+    status TEXT DEFAULT 'Pendente',
+    prioridade INTEGER,
+    estimativa_horas FLOAT,
+    tags TEXT[],
+    fonte TEXT,  -- origem da tarefa
+    id_externo TEXT,  -- ID em sistema externo
+    metadata JSONB,  -- dados extras flexíveis
+    criado_em TIMESTAMP DEFAULT NOW(),
+    concluido_em TIMESTAMP
+);
+
+-- BigRocks
+CREATE TABLE big_rocks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    nome TEXT NOT NULL,
+    cor TEXT,
+    capacidade_semanal FLOAT,  -- horas
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Ciclo Menstrual
+CREATE TABLE registro_ciclo (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    data_inicio DATE NOT NULL,
+    duracao_ciclo INTEGER,  -- dias
+    duracao_menstruacao INTEGER,
+    sintomas JSONB,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Calendar Events (cached)
+CREATE TABLE calendar_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    provider TEXT,  -- 'google' ou 'microsoft'
+    external_id TEXT,
+    title TEXT,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    attendees JSONB,
+    synced_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Event Bus Tables:**
+
+```sql
+-- System Events
+CREATE TABLE system_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT NOT NULL,
+    modulo_origem TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    prioridade INTEGER DEFAULT 5,
+    processado BOOLEAN DEFAULT FALSE,
+    criado_em TIMESTAMP DEFAULT NOW(),
+    processado_em TIMESTAMP
+);
+
+-- Cross-Module Relations
+CREATE TABLE cross_module_relations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo_relacao TEXT NOT NULL,
+    modulo_origem TEXT NOT NULL,
+    entidade_origem_id UUID NOT NULL,
+    modulo_destino TEXT NOT NULL,
+    entidade_destino_id UUID NOT NULL,
+    metadata JSONB,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Context Global
+CREATE TABLE contexto_global (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    fase_ciclo TEXT,
+    energia_atual INTEGER,
+    carga_trabalho_percentual FLOAT,
+    em_sessao_foco BOOLEAN DEFAULT FALSE,
+    nivel_stress INTEGER,
+    atualizado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+**V4+ Module Tables:**
+
+```sql
+-- Wealth Module
+CREATE TABLE despesas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    valor NUMERIC(10, 2),
+    estabelecimento TEXT,
+    data TIMESTAMP,
+    categoria TEXT,
+    contexto_comportamental JSONB,  -- fase_ciclo, stress, etc
+    meta_id UUID REFERENCES metas_financeiras(id),
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Routines Module
+CREATE TABLE roteiros_diarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    data DATE,
+    roteiro JSONB,  -- cronograma completo
+    energia_percentual NUMERIC(5, 2),
+    fase_ciclo TEXT,
+    status TEXT,  -- 'pendente', 'em_andamento', 'completo'
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Wardrobe Module
+CREATE TABLE roupas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    nome TEXT,
+    tipo TEXT,  -- 'camiseta', 'calca', 'tenis'
+    cor_primaria TEXT,
+    estampa TEXT,
+    ocasioes TEXT[],
+    status TEXT,  -- 'limpa', 'para_lavar'
+    foto_url TEXT,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE plano_semanal_looks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    semana_inicio DATE,
+    plano JSONB,  -- outfits para cada dia
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Diplomat Module
+CREATE TABLE pessoas_chave (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    nome TEXT NOT NULL,
+    email TEXT,
+    categoria TEXT,  -- 'chefe', 'mentor', 'pupilo'
+    importancia TEXT,  -- 'baixa', 'media', 'alta', 'critica'
+    frequencia_contato_ideal TEXT,  -- 'semanal', 'mensal'
+    health_status TEXT,  -- 'excelente', 'bom', 'atencao', 'critico'
+    aniversario DATE,
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE interacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pessoa_id UUID REFERENCES pessoas_chave(id),
+    data TIMESTAMP,
+    tipo TEXT,  -- 'reuniao_1_1', 'email', 'mensagem'
+    resumo TEXT,
+    topicos_discutidos TEXT[],
+    sentimento TEXT,  -- 'positivo', 'neutro', 'negativo'
+    proximos_passos TEXT[],
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Vector Storage (PgVector):**
+
+```sql
+-- Semantic Memory
+CREATE TABLE memory_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id),
+    content TEXT,
+    embedding vector(1536),  -- OpenAI embedding dimension
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index para busca vetorial
+CREATE INDEX memory_embeddings_vector_idx
+ON memory_embeddings
+USING ivfflat (embedding vector_cosine_ops);
+```
+
+Quer o schema de algum módulo específico em detalhe?
+""",
+
+            "como adicionar novo módulo": """
+🔧 GUIA: COMO ADICIONAR NOVO MÓDULO (ADMIN ONLY)
+
+**Passo 1: Estrutura de Diretórios**
+
+```bash
+backend/modules/
+└── nome_modulo/
+    ├── __init__.py
+    ├── orchestrator.py      # Orquestrador do módulo
+    ├── agents/              # Agentes especializados
+    │   ├── __init__.py
+    │   └── agente_principal.py
+    ├── schemas.py           # Pydantic schemas
+    ├── models.py            # SQLAlchemy models
+    └── integration.py       # Integração com Event Bus
+```
+
+**Passo 2: Definir Schemas (Pydantic)**
+
+```python
+# schemas.py
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class EntidadeCreate(BaseModel):
+    campo1: str
+    campo2: int
+    campo3: Optional[str] = None
+
+class EntidadeResponse(EntidadeCreate):
+    id: str
+    criado_em: datetime
+```
+
+**Passo 3: Criar Models (SQLAlchemy)**
+
+```python
+# models.py
+from sqlalchemy import Column, String, Integer, TIMESTAMP
+from backend.db.base import Base
+
+class Entidade(Base):
+    __tablename__ = "nome_tabela"
+
+    id = Column(String, primary_key=True)
+    user_id = Column(Integer, nullable=False)
+    campo1 = Column(String, nullable=False)
+    campo2 = Column(Integer)
+    criado_em = Column(TIMESTAMP, server_default="NOW()")
+```
+
+**Passo 4: Criar Agente Especializado**
+
+```python
+# agents/agente_principal.py
+from phidata.agent import Agent
+from phidata.models.openai import OpenAIChat
+
+class AgenteModulo(Agent):
+    def __init__(self, db_connection):
+        super().__init__(
+            name="NomeAgente",
+            model=OpenAIChat(id="gpt-4o-mini"),
+            instructions=[
+                "Você é especialista em X",
+                "Seu objetivo é Y"
+            ]
+        )
+        self.db = db_connection
+
+    async def processar(self, input_data):
+        # Lógica do agente
+        pass
+```
+
+**Passo 5: Criar Integração com Event Bus**
+
+```python
+# integration.py
+from backend.core.event_bus import event_bus, EventType, Event
+
+class ModuloIntegration:
+    def __init__(self, db_connection, event_bus, context_manager):
+        self.db = db_connection
+        self.event_bus = event_bus
+        self.context = context_manager
+
+        # Subscreve eventos relevantes
+        self.event_bus.subscribe(
+            EventType.EVENTO_EXTERNO,
+            self.on_evento_externo
+        )
+
+    async def on_evento_externo(self, event: Event):
+        # Reage ao evento
+        # ... processar ...
+
+        # Publica novo evento se necessário
+        await self.event_bus.publish(Event(
+            tipo=EventType.NOVO_MODULO_EVENT,
+            modulo_origem='nome_modulo',
+            payload={...}
+        ))
+```
+
+**Passo 6: Criar Orquestrador do Módulo**
+
+```python
+# orchestrator.py
+from .agents.agente_principal import AgenteModulo
+from .integration import ModuloIntegration
+
+class ModuloOrchestrator:
+    def __init__(self, db_connection, event_bus, context_manager):
+        self.db = db_connection
+        self.event_bus = event_bus
+        self.context = context_manager
+
+        # Inicializa agente
+        self.agente = AgenteModulo(db_connection)
+
+        # Inicializa integração
+        self.integration = ModuloIntegration(
+            db_connection,
+            event_bus,
+            context_manager
+        )
+
+    async def processar_request(self, input_data):
+        return await self.agente.processar(input_data)
+```
+
+**Passo 7: Registrar no CharleeOrchestrator**
+
+```python
+# backend/orchestrator/charlee_orchestrator.py
+
+from backend.modules.nome_modulo.orchestrator import ModuloOrchestrator
+
+class CharleeOrchestrator(Agent):
+    def __init__(self, ...):
+        # ... existing code ...
+
+        # Adiciona novo módulo
+        self.nome_modulo = ModuloOrchestrator(
+            db_connection,
+            event_bus,
+            context_manager
+        )
+
+        # Adiciona integração
+        self.nome_modulo_integration = ModuloIntegration(
+            db_connection,
+            event_bus,
+            context_manager
+        )
+```
+
+**Passo 8: Criar Migration para BD**
+
+```bash
+# Criar nova migration
+alembic revision -m "add_nome_modulo_tables"
+```
+
+```python
+# migrations/versions/xxx_add_nome_modulo_tables.py
+def upgrade():
+    op.create_table(
+        'nome_tabela',
+        sa.Column('id', sa.String(), primary_key=True),
+        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('campo1', sa.String(), nullable=False),
+        sa.Column('criado_em', sa.TIMESTAMP(), server_default=sa.text('NOW()'))
+    )
+
+def downgrade():
+    op.drop_table('nome_tabela')
+```
+
+**Passo 9: Adicionar API Endpoints**
+
+```python
+# backend/api/routes/nome_modulo.py
+from fastapi import APIRouter, Depends
+
+router = APIRouter(prefix="/api/v1/nome-modulo", tags=["nome-modulo"])
+
+@router.post("/entidade")
+async def criar_entidade(
+    data: EntidadeCreate,
+    user_id: int = Depends(get_current_user_id)
+):
+    # ... implementação ...
+    pass
+```
+
+**Passo 10: Documentar**
+
+Criar `docs/NOME_MODULO.md` seguindo template dos módulos existentes.
+
+**Checklist Final:**
+
+- [ ] Schemas Pydantic definidos
+- [ ] Models SQLAlchemy criados
+- [ ] Migration do BD executada
+- [ ] Agente especializado implementado
+- [ ] Integração com Event Bus configurada
+- [ ] Orquestrador do módulo criado
+- [ ] Registrado no CharleeOrchestrator
+- [ ] API endpoints criados
+- [ ] Testes unitários escritos
+- [ ] Documentação completa
+- [ ] Event types adicionados ao EventType enum
+
+Precisa de ajuda em algum passo específico?
+"""
+        }
+
+        return admin_explanations.get(
+            question.lower(),
+            "Pergunta admin não encontrada. Perguntas disponíveis: " +
+            ", ".join(admin_explanations.keys())
+        )
+
+    def get_current_state(self) -> dict:
+        """Retorna estado atual completo do sistema (ADMIN ONLY)"""
+
+        if self.access_level != AccessLevel.ADMIN:
+            return {"error": "Unauthorized. Admin access required."}
+
+        return {
+            "version": "V3.3",
+            "modules": {
+                "implemented": [
+                    "Task Manager (V1)",
+                    "BigRocks (V1)",
+                    "Cycle Tracking (V1)",
+                    "Capacity Guardian (V2)",
+                    "Focus Module (V2)",
+                    "OKR Dashboard (V2)",
+                    "Projects Module (V2)",
+                    "Calendar Integration (V3.2)",
+                    "Multimodal Input (V3.3)"
+                ],
+                "documented": [
+                    "Charlee Wealth (V4 - planned)",
+                    "Charlee Routines (V4 - planned)",
+                    "Charlee Wardrobe (V4 - planned)",
+                    "Charlee Diplomat (V4 - planned)"
+                ]
+            },
+            "database": {
+                "provider": "PostgreSQL 15",
+                "extensions": ["pgvector"],
+                "total_tables": 25  # aproximado
+            },
+            "api": {
+                "version": "v1",
+                "endpoints": 40,  # aproximado
+                "authentication": "JWT"
+            },
+            "integrations": {
+                "google_calendar": "active",
+                "microsoft_calendar": "active"
+            },
+            "event_bus": {
+                "total_event_types": 40,  # aproximado incluindo V4+
+                "active_subscriptions": 20  # aproximado
+            }
+        }
+```
+
+---
+
+### 🎓 Exemplos de Uso
+
+**Exemplo 1: Usuário Descobrindo Feature**
+
+```
+Usuário: "Gasto muito tempo pensando no que vestir de manhã"
+
+Charlee (detecta padrão):
+👔 Percebi que você menciona isso frequentemente!
+
+Eu tenho um recurso que pode ajudar: **Planejamento Semanal de Outfits**
+
+Como funciona:
+• Você cadastra suas roupas uma vez (posso usar foto!)
+• Todo domingo, eu monto 7 outfits para a semana
+• Considera seu calendário (reunião = outfit profissional)
+• Considera sua fase do ciclo (TPM = conforto máximo)
+
+Economia: ~15min/dia = 1h45min/semana
+
+Quer que eu te mostre como configurar?
+```
+
+**Exemplo 2: Admin Consultando Arquitetura (ADMIN ONLY)**
+
+```
+Admin (Samara): "Charlee, explique a arquitetura completa"
+
+Charlee:
+🏗️ ARQUITETURA COMPLETA DO CHARLEE
+
+[Retorna explicação técnica detalhada conforme código acima]
+
+Admin: "Como adiciono um novo módulo?"
+
+Charlee:
+🔧 GUIA: COMO ADICIONAR NOVO MÓDULO
+
+[Retorna guia passo-a-passo completo]
+```
+
+**Exemplo 3: Charlee Sendo Proativa**
+
+```
+Charlee (detecta que usuário criou 3 tarefas similares em 3 semanas):
+
+💡 SUGESTÃO PROATIVA
+
+Percebi que você cria estas tarefas toda semana:
+• "Enviar relatório semanal para chefe"
+• "Atualizar planilha de horas"
+• "Revisar PRs da equipe"
+
+Posso automatizar isso com uma **Rotina Semanal**?
+
+Ao invés de criar manualmente toda semana, você define UMA VEZ
+e eu crio as tarefas automaticamente toda sexta-feira.
+
+Quer experimentar? [Sim] [Agora não] [Não me mostre de novo]
+```
+
+---
+
+### 🔒 Segurança e Privacidade
+
+**Regras de Acesso:**
+
+```python
+# Informações que NUNCA devem vazar para USER
+RESTRICTED_ADMIN_INFO = [
+    "Database credentials",
+    "API keys e secrets",
+    "Internal system architecture details",
+    "Event Bus internals",
+    "Security mechanisms implementation",
+    "Admin-only commands",
+    "System debugging information"
+]
+
+# Informações seguras para USER
+SAFE_USER_INFO = [
+    "Feature tutorials",
+    "How-to guides",
+    "Benefits and use cases",
+    "High-level architecture (without implementation details)",
+    "Feature discovery suggestions"
+]
+```
+
+**Validação de Acesso:**
+
+```python
+def can_access_info(user_id: int, info_type: str) -> bool:
+    """Valida se usuário pode acessar informação"""
+
+    user_role = db.execute("""
+        SELECT role FROM users WHERE id = %s
+    """, (user_id,)).fetchone()['role']
+
+    if info_type in RESTRICTED_ADMIN_INFO:
+        return user_role == 'admin'
+
+    return True  # Informações USER são públicas
+```
+
+---
+
+**Status**: 📋 Auto-Conhecimento Documentado
+**Acesso**: USER (tutoriais) + ADMIN (arquitetura completa)
+**Objetivo**: Charlee consciente de si mesmo para ensinar usuários e auxiliar desenvolvimento
