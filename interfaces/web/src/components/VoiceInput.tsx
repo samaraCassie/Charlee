@@ -161,7 +161,14 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   };
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-3', className)} role="region" aria-label="Voice recording">
+      {/* Live region for screen reader announcements */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {isRecording && `Recording... ${formatTime(recordingTime)}`}
+        {isProcessing && 'Processing transcription...'}
+        {audioUrl && !isProcessing && 'Recording ready. Use audio controls to play or transcribe.'}
+      </div>
+
       {/* Recording controls */}
       {!audioUrl && (
         <div className="flex items-center gap-2">
@@ -171,23 +178,24 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             size="sm"
             onClick={isRecording ? stopRecording : startRecording}
             disabled={isProcessing}
-            aria-label={isRecording ? 'Parar gravação' : 'Iniciar gravação'}
+            aria-label={isRecording ? 'Stop recording voice input' : 'Start recording voice input'}
+            aria-pressed={isRecording}
             title={isRecording ? 'Parar gravação' : 'Gravar entrada de voz'}
           >
             {isProcessing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             ) : isRecording ? (
-              <MicOff className="mr-2 h-4 w-4" />
+              <MicOff className="mr-2 h-4 w-4" aria-hidden="true" />
             ) : (
-              <Mic className="mr-2 h-4 w-4" />
+              <Mic className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
             {isRecording ? 'Parar Gravação' : 'Iniciar Gravação'}
           </Button>
 
           {/* Recording indicator */}
           {isRecording && (
-            <div className="flex items-center gap-2 text-sm text-destructive">
-              <span className="relative flex h-2 w-2">
+            <div className="flex items-center gap-2 text-sm text-destructive" role="timer" aria-label={`Recording time: ${formatTime(recordingTime)}`}>
+              <span className="relative flex h-2 w-2" aria-hidden="true">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive"></span>
               </span>
@@ -199,9 +207,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
       {/* Audio preview */}
       {audioUrl && !isProcessing && (
-        <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+        <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3" role="group" aria-label="Recorded audio preview">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Play className="h-4 w-4" />
+            <Play className="h-4 w-4" aria-hidden="true" />
             <span>Preview do áudio gravado ({formatTime(recordingTime)})</span>
           </div>
 
@@ -211,17 +219,19 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             controls
             className="w-full"
             src={audioUrl}
+            aria-label={`Recorded audio preview, duration ${formatTime(recordingTime)}`}
           />
 
           {/* Action buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="group" aria-label="Audio actions">
             <Button
               variant="outline"
               size="sm"
               onClick={handleReRecord}
               disabled={isProcessing}
+              aria-label="Re-record audio"
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
               Re-gravar
             </Button>
             <Button
@@ -229,8 +239,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
               size="sm"
               onClick={handleTranscribe}
               disabled={isProcessing}
+              aria-label={`Transcribe recorded audio, duration ${formatTime(recordingTime)}`}
             >
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               Transcrever
             </Button>
           </div>
@@ -239,8 +250,12 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
       {/* Processing indicator */}
       {isProcessing && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+          role="status"
+          aria-label="Processing transcription"
+        >
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           <span>Processando transcrição...</span>
         </div>
       )}

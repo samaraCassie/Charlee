@@ -119,8 +119,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     fileInputRef.current?.click();
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // Support Enter and Space for keyboard accessibility
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      triggerFileInput();
+    }
+  };
+
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
+    <div className={cn('flex flex-col gap-2', className)} role="region" aria-label="Image upload">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -128,8 +136,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         accept=".png,.jpg,.jpeg,.heic,.webp"
         onChange={handleFileInputChange}
         className="hidden"
-        aria-label="Upload image"
+        aria-label="Upload image file"
+        id="image-upload-input"
       />
+
+      {/* Live region for screen reader announcements */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {isProcessing && 'Analyzing image...'}
+        {selectedImage && !isProcessing && `Image ${selectedImage.name} selected`}
+      </div>
 
       {/* Upload button or preview */}
       {!selectedImage ? (
@@ -145,6 +160,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={triggerFileInput}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload image file by clicking or dragging and dropping"
         >
           <div className="flex flex-col items-center gap-2 text-center">
             {isDragging ? (
@@ -183,8 +202,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 className="absolute right-2 top-2 h-6 w-6"
                 onClick={clearImage}
                 disabled={isProcessing}
+                aria-label="Remove image"
+                title="Remove image"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           )}
@@ -204,6 +225,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <Button
               className="mt-2 w-full"
               onClick={() => analyzeImage(selectedImage)}
+              aria-label={`Analyze image ${selectedImage.name}`}
             >
               Analyze Image
             </Button>
@@ -211,8 +233,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
           {/* Processing indicator */}
           {isProcessing && (
-            <div className="mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <div
+              className="mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground"
+              role="status"
+              aria-label="Analyzing image"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               <span>Analyzing...</span>
             </div>
           )}
