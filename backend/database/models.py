@@ -1904,3 +1904,118 @@ class CalendarConflict(Base):
 # CREATE INDEX idx_calendar_events_connection_external ON calendar_events(connection_id, external_event_id);
 # CREATE INDEX idx_calendar_sync_logs_user_started ON calendar_sync_logs(user_id, started_at DESC);
 # CREATE INDEX idx_calendar_conflicts_event_status ON calendar_conflicts(event_id, status);
+
+
+# ==================== Notification System Models ====================
+
+
+class Notification(Base):
+    """
+    Notification - In-app notification system.
+
+    Represents system notifications sent to users for various events
+    like task deadlines, capacity warnings, and cycle phase changes.
+    """
+
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Notification type and content
+    type = Column(
+        String(50),
+        CheckConstraint(
+            "type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change', 'freelance_invoice_ready', 'system', 'achievement')"
+        ),
+        nullable=False,
+        index=True,
+    )
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+
+    # Status
+    read = Column(Boolean, default=False, nullable=False, index=True)
+
+    # Additional metadata (JSON for flexibility)
+    metadata = Column(JSON, nullable=True)
+    # Example metadata:
+    # - task_id: int (for task-related notifications)
+    # - big_rock_id: int (for Big Rock-related notifications)
+    # - priority: str ('low', 'medium', 'high', 'critical')
+    # - action_url: str (deep link to relevant page)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now, index=True)
+    read_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<Notification(id={self.id}, user_id={self.user_id}, type='{self.type}', read={self.read})>"
+
+    def mark_as_read(self):
+        """Mark notification as read."""
+        if not self.read:
+            self.read = True
+            self.read_at = datetime.now(timezone.utc)
+
+
+class NotificationPreference(Base):
+    """
+    Notification Preference - User preferences for notification delivery.
+
+    Allows users to control which notifications they receive and
+    through which channels (in-app, email, push, etc.).
+    """
+
+    __tablename__ = "notification_preferences"
+    __table_args__ = (UniqueConstraint("user_id", "notification_type", name="uix_user_notification_type"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Notification type
+    notification_type = Column(
+        String(50),
+        CheckConstraint(
+            "notification_type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change', 'freelance_invoice_ready', 'system', 'achievement', 'all')"
+        ),
+        nullable=False,
+    )
+
+    # Delivery channels (each can be enabled/disabled independently)
+    enabled = Column(Boolean, default=True, nullable=False)
+    in_app_enabled = Column(Boolean, default=True, nullable=False)
+    email_enabled = Column(Boolean, default=False, nullable=False)
+    push_enabled = Column(Boolean, default=False, nullable=False)
+
+    # Additional settings (JSON for flexibility)
+    settings = Column(JSON, nullable=True)
+    # Example settings:
+    # - quiet_hours_start: str (e.g., "22:00")
+    # - quiet_hours_end: str (e.g., "08:00")
+    # - digest_frequency: str ('immediate', 'hourly', 'daily')
+    # - priority_threshold: str ('low', 'medium', 'high')
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<NotificationPreference(user_id={self.user_id}, type='{self.notification_type}', enabled={self.enabled})>"
+
+
+# Additional indexes for Notification System
+# CREATE INDEX idx_notifications_user_read ON notifications(user_id, read);
+# CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);
+# CREATE INDEX idx_notifications_type_created ON notifications(type, created_at DESC);
+# CREATE INDEX idx_notification_preferences_user_type ON notification_preferences(user_id, notification_type);

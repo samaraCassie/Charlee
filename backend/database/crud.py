@@ -4,8 +4,17 @@ from typing import Optional, cast
 
 from sqlalchemy.orm import Session
 
-from database.models import BigRock, Task
-from database.schemas import BigRockCreate, BigRockUpdate, TaskCreate, TaskUpdate
+from database.models import BigRock, Notification, NotificationPreference, Task
+from database.schemas import (
+    BigRockCreate,
+    BigRockUpdate,
+    NotificationCreate,
+    NotificationPreferenceCreate,
+    NotificationPreferenceUpdate,
+    NotificationUpdate,
+    TaskCreate,
+    TaskUpdate,
+)
 
 # ==================== Big Rock CRUD ====================
 
@@ -909,3 +918,213 @@ def delete_negotiation(db: Session, negotiation_id: int, user_id: int) -> bool:
     db.delete(db_negotiation)
     db.commit()
     return True
+
+
+# ==================== Notification CRUD ====================
+
+
+def get_notification(db: Session, notification_id: int, user_id: int) -> Optional[Notification]:
+    """Get a single Notification by ID for a specific user."""
+    return cast(
+        Optional[Notification],
+        db.query(Notification)
+        .filter(Notification.id == notification_id, Notification.user_id == user_id)
+        .first(),
+    )
+
+
+def get_notifications(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    unread_only: bool = False,
+    notification_type: Optional[str] = None,
+) -> list[Notification]:
+    """Get list of Notifications for a specific user."""
+    query = db.query(Notification).filter(Notification.user_id == user_id)
+
+    if unread_only:
+        query = query.filter(Notification.read == False)  # noqa: E712
+
+    if notification_type:
+        query = query.filter(Notification.type == notification_type)
+
+    return cast(
+        list[Notification], query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+    )
+
+
+def count_unread_notifications(db: Session, user_id: int) -> int:
+    """Count unread notifications for a user."""
+    return (
+        db.query(Notification)
+        .filter(Notification.user_id == user_id, Notification.read == False)  # noqa: E712
+        .count()
+    )
+
+
+def create_notification(db: Session, notification: NotificationCreate) -> Notification:
+    """Create a new Notification."""
+    db_notification = Notification(**notification.model_dump())
+    db.add(db_notification)
+    db.commit()
+    db.refresh(db_notification)
+    return db_notification
+
+
+def update_notification(
+    db: Session, notification_id: int, notification_update: NotificationUpdate, user_id: int
+) -> Optional[Notification]:
+    """Update a Notification for a specific user."""
+    db_notification = get_notification(db, notification_id, user_id)
+    if not db_notification:
+        return None
+
+    update_data = notification_update.model_dump(exclude_unset=True)
+
+    # If marking as read, call the model method to set read_at
+    if update_data.get("read") is True:
+        db_notification.mark_as_read()
+    else:
+        for field, value in update_data.items():
+            setattr(db_notification, field, value)
+
+    db.commit()
+    db.refresh(db_notification)
+    return db_notification
+
+
+def mark_notification_as_read(db: Session, notification_id: int, user_id: int) -> Optional[Notification]:
+    """Mark a single notification as read."""
+    db_notification = get_notification(db, notification_id, user_id)
+    if not db_notification:
+        return None
+
+    db_notification.mark_as_read()
+    db.commit()
+    db.refresh(db_notification)
+    return db_notification
+
+
+def mark_all_notifications_as_read(db: Session, user_id: int) -> int:
+    """Mark all notifications as read for a user. Returns count of updated notifications."""
+    from datetime import datetime, timezone
+
+    updated_count = (
+        db.query(Notification)
+        .filter(Notification.user_id == user_id, Notification.read == False)  # noqa: E712
+        .update({"read": True, "read_at": datetime.now(timezone.utc)}, synchronize_session=False)
+    )
+    db.commit()
+    return cast(int, updated_count)
+
+
+def delete_notification(db: Session, notification_id: int, user_id: int) -> bool:
+    """Delete a Notification for a specific user."""
+    db_notification = get_notification(db, notification_id, user_id)
+    if not db_notification:
+        return False
+
+    db.delete(db_notification)
+    db.commit()
+    return True
+
+
+# ==================== Notification Preference CRUD ====================
+
+
+def get_notification_preference(
+    db: Session, user_id: int, notification_type: str
+) -> Optional[NotificationPreference]:
+    """Get a notification preference for a user and type."""
+    return cast(
+        Optional[NotificationPreference],
+        db.query(NotificationPreference)
+        .filter(
+            NotificationPreference.user_id == user_id,
+            NotificationPreference.notification_type == notification_type,
+        )
+        .first(),
+    )
+
+
+def get_notification_preferences(
+    db: Session,
+    user_id: int,
+) -> list[NotificationPreference]:
+    """Get all notification preferences for a user."""
+    return cast(
+        list[NotificationPreference],
+        db.query(NotificationPreference).filter(NotificationPreference.user_id == user_id).all(),
+    )
+
+
+def create_notification_preference(
+    db: Session, preference: NotificationPreferenceCreate, user_id: int
+) -> NotificationPreference:
+    """Create a new NotificationPreference for a user."""
+    db_preference = NotificationPreference(**preference.model_dump(), user_id=user_id)
+    db.add(db_preference)
+    db.commit()
+    db.refresh(db_preference)
+    return db_preference
+
+
+def update_notification_preference(
+    db: Session,
+    notification_type: str,
+    preference_update: NotificationPreferenceUpdate,
+    user_id: int,
+) -> Optional[NotificationPreference]:
+    """Update a NotificationPreference for a user."""
+    db_preference = get_notification_preference(db, user_id, notification_type)
+    if not db_preference:
+        return None
+
+    update_data = preference_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_preference, field, value)
+
+    db.commit()
+    db.refresh(db_preference)
+    return db_preference
+
+
+def delete_notification_preference(db: Session, notification_type: str, user_id: int) -> bool:
+    """Delete a NotificationPreference for a user."""
+    db_preference = get_notification_preference(db, user_id, notification_type)
+    if not db_preference:
+        return False
+
+    db.delete(db_preference)
+    db.commit()
+    return True
+
+
+def get_or_create_default_preferences(db: Session, user_id: int) -> list[NotificationPreference]:
+    """Get or create default notification preferences for a user."""
+    default_types = [
+        "task_due_soon",
+        "capacity_overload",
+        "cycle_phase_change",
+        "freelance_invoice_ready",
+        "system",
+        "achievement",
+    ]
+
+    preferences = []
+    for notif_type in default_types:
+        pref = get_notification_preference(db, user_id, notif_type)
+        if not pref:
+            pref_data = NotificationPreferenceCreate(
+                notification_type=notif_type,  # type: ignore[arg-type]
+                enabled=True,
+                in_app_enabled=True,
+                email_enabled=False,
+                push_enabled=False,
+            )
+            pref = create_notification_preference(db, pref_data, user_id)
+        preferences.append(pref)
+
+    return preferences

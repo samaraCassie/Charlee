@@ -1068,3 +1068,129 @@ class AttachmentListResponse(BaseModel):
 
     total: int
     attachments: list[AttachmentResponse]
+
+
+# ==================== Notification Schemas ====================
+
+
+class NotificationBase(BaseModel):
+    """Base schema for Notification."""
+
+    type: Literal[
+        "task_due_soon",
+        "capacity_overload",
+        "cycle_phase_change",
+        "freelance_invoice_ready",
+        "system",
+        "achievement",
+    ]
+    title: str = Field(..., min_length=1, max_length=200)
+    message: str = Field(..., min_length=1)
+    metadata: Optional[dict] = None
+
+    @field_validator("title")
+    @classmethod
+    def sanitize_title(cls, v: str) -> str:
+        """Sanitize title to prevent XSS."""
+        if not v:
+            raise ValueError("Title cannot be empty")
+        sanitized = sanitize_string(v, max_length=200, allow_newlines=False)
+        if not sanitized.strip():
+            raise ValueError("Title cannot be empty after sanitization")
+        return sanitized
+
+    @field_validator("message")
+    @classmethod
+    def sanitize_message(cls, v: str) -> str:
+        """Sanitize message to prevent XSS."""
+        if not v:
+            raise ValueError("Message cannot be empty")
+        sanitized = sanitize_string(v, max_length=2000, allow_newlines=True)
+        if not sanitized.strip():
+            raise ValueError("Message cannot be empty after sanitization")
+        return sanitized
+
+
+class NotificationCreate(NotificationBase):
+    """Schema for creating a Notification."""
+
+    user_id: int = Field(..., gt=0)
+
+
+class NotificationUpdate(BaseModel):
+    """Schema for updating a Notification."""
+
+    read: Optional[bool] = None
+
+
+class NotificationResponse(NotificationBase):
+    """Schema for Notification response."""
+
+    id: int
+    user_id: int
+    read: bool
+    created_at: datetime
+    read_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationListResponse(BaseModel):
+    """Schema for list of notifications."""
+
+    total: int
+    unread_count: int
+    notifications: list[NotificationResponse]
+
+
+class NotificationPreferenceBase(BaseModel):
+    """Base schema for NotificationPreference."""
+
+    notification_type: Literal[
+        "task_due_soon",
+        "capacity_overload",
+        "cycle_phase_change",
+        "freelance_invoice_ready",
+        "system",
+        "achievement",
+        "all",
+    ]
+    enabled: bool = True
+    in_app_enabled: bool = True
+    email_enabled: bool = False
+    push_enabled: bool = False
+    settings: Optional[dict] = None
+
+
+class NotificationPreferenceCreate(NotificationPreferenceBase):
+    """Schema for creating a NotificationPreference."""
+
+    pass
+
+
+class NotificationPreferenceUpdate(BaseModel):
+    """Schema for updating a NotificationPreference."""
+
+    enabled: Optional[bool] = None
+    in_app_enabled: Optional[bool] = None
+    email_enabled: Optional[bool] = None
+    push_enabled: Optional[bool] = None
+    settings: Optional[dict] = None
+
+
+class NotificationPreferenceResponse(NotificationPreferenceBase):
+    """Schema for NotificationPreference response."""
+
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationPreferenceListResponse(BaseModel):
+    """Schema for list of notification preferences."""
+
+    total: int
+    preferences: list[NotificationPreferenceResponse]

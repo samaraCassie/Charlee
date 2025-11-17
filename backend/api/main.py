@@ -19,6 +19,7 @@ from api.middleware.request_logging import RequestLoggingMiddleware
 from api.routes import (
     agent as agent_routes,
 )
+from api.websockets import websocket_endpoint
 from api.routes import (
     analytics,
     attachments,
@@ -30,6 +31,7 @@ from api.routes import (
     freelancer,
     inbox,
     multimodal,
+    notifications,
     oauth_routes,
     priorizacao,
     projects,
@@ -156,6 +158,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "name": "Calendar Integration (V3)",
             "description": "Google Calendar and Microsoft Outlook synchronization with bidirectional sync",
         },
+        {
+            "name": "Notifications (V3)",
+            "description": "In-app notification system with real-time WebSocket updates and user preferences",
+        },
     ],
 )
 
@@ -243,6 +249,19 @@ app.include_router(attachments.router, prefix="/api/v2", tags=["Attachments (V2)
 # ROUTERS V3
 # ========================================
 app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["Calendar Integration (V3)"])
+app.include_router(notifications.router, prefix="/api/v2/notifications", tags=["Notifications (V3)"])
+
+# ========================================
+# WEBSOCKET ENDPOINTS
+# ========================================
+from fastapi import WebSocket
+
+
+@app.websocket("/ws/notifications")
+async def websocket_notifications(websocket: WebSocket):
+    """WebSocket endpoint for real-time notifications."""
+    await websocket_endpoint(websocket)
+
 
 # ========================================
 # PROMETHEUS METRICS
