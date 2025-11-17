@@ -148,6 +148,55 @@ def exchange_code_for_tokens(code: str, redirect_uri: str) -> dict[str, Any]:
         raise MicrosoftCalendarAuthError(f"Failed to exchange code for tokens: {e}") from e
 
 
+def get_calendar_info(access_token: str, calendar_id: str = "primary") -> dict[str, Any]:
+    """
+    Get information about a specific calendar from Microsoft Graph API.
+
+    Args:
+        access_token: Microsoft access token
+        calendar_id: Calendar ID (default: "primary" for user's default calendar)
+
+    Returns:
+        dict: Calendar information with id, name, etc.
+
+    Raises:
+        MicrosoftCalendarSyncError: If fetching calendar info fails
+    """
+    try:
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Get default calendar if primary is requested
+        if calendar_id == "primary":
+            url = f"{GRAPH_API_ENDPOINT}/me/calendar"
+        else:
+            url = f"{GRAPH_API_ENDPOINT}/me/calendars/{calendar_id}"
+
+        with httpx.Client(timeout=30.0) as client:
+            response = client.get(url, headers=headers)
+            response.raise_for_status()
+            calendar_data = response.json()
+
+        return {
+            "id": calendar_data.get("id"),
+            "name": calendar_data.get("name", ""),
+            "color": calendar_data.get("color", ""),
+            "owner": calendar_data.get("owner", {}),
+        }
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "Failed to get calendar info from Microsoft Graph",
+            extra={"status_code": e.response.status_code, "error": str(e)},
+            exc_info=True,
+        )
+        raise MicrosoftCalendarSyncError(f"Failed to get calendar info: {e}") from e
+    except Exception as e:
+        logger.error("Failed to get calendar info", extra={"error": str(e)}, exc_info=True)
+        raise MicrosoftCalendarSyncError(f"Failed to get calendar info: {e}") from e
+
+
 def refresh_access_token(connection: CalendarConnection) -> str:
     """
     Refresh expired access token using refresh token.
