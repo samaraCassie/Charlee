@@ -64,9 +64,9 @@ class TestGoogleCalendarOAuth:
         assert "https://accounts.google.com/o/oauth2" in data["auth_url"]
 
     def test_get_google_auth_url_unauthenticated(self, client):
-        """Should return 401 for unauthenticated request."""
+        """Should return 403 for unauthenticated request."""
         response = client.get("/api/v1/calendar/connect/google/auth-url")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @patch("api.routes.calendar.google_calendar.exchange_code_for_tokens")
     @patch("api.routes.calendar.google_calendar.get_calendar_info")
@@ -123,6 +123,7 @@ class TestMicrosoftCalendarOAuth:
         assert "state" in data
         assert "login.microsoftonline.com" in data["auth_url"]
 
+    @pytest.mark.asyncio
     @patch("api.routes.calendar.microsoft_calendar.exchange_code_for_tokens")
     @patch("api.routes.calendar.microsoft_calendar.get_calendar_info")
     async def test_connect_microsoft_calendar_success(

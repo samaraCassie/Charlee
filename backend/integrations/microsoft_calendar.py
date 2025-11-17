@@ -22,10 +22,10 @@ GRAPH_API_ENDPOINT = "https://graph.microsoft.com/v1.0"
 AUTHORITY = "https://login.microsoftonline.com/common"
 
 # OAuth 2.0 scopes required for calendar access
+# Note: offline_access is reserved and automatically added by MSAL
 SCOPES = [
     "Calendars.ReadWrite",
     "Calendars.ReadWrite.Shared",
-    "offline_access",
 ]
 
 
