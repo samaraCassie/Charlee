@@ -27,19 +27,25 @@ import {
   Clock,
   Trash2,
   AlertCircle,
-  Pencil
+  Pencil,
+  Mic,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useTaskStore } from '@/stores/taskStore';
 import { useBigRockStore } from '@/stores/bigRockStore';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isPast, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { VoiceInput } from '@/components/VoiceInput';
+import { ImageUpload } from '@/components/ImageUpload';
 
 export default function Tasks() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
+  const [showVoiceInput, setShowVoiceInput] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<1 | 2 | 3>(2);
@@ -102,6 +108,40 @@ export default function Tasks() {
     noDeadline: filteredTasks.filter(t => !t.deadline),
   };
 
+  const handleVoiceTranscription = (transcription: { text: string; language: string }) => {
+    setNewTaskTitle(transcription.text);
+    setShowVoiceInput(false);
+    toast({
+      title: 'Transcrição concluída',
+      description: 'Áudio transcrito com sucesso!',
+    });
+  };
+
+  const handleImageAnalysis = (analysis: { analysis: string; tasks: string[] }) => {
+    if (analysis.tasks && analysis.tasks.length > 0) {
+      setNewTaskTitle(analysis.tasks[0]);
+      toast({
+        title: 'Análise concluída',
+        description: `${analysis.tasks.length} tarefa(s) encontrada(s) na imagem.`,
+      });
+    } else {
+      setNewTaskTitle(analysis.analysis.substring(0, 200));
+      toast({
+        title: 'Análise concluída',
+        description: 'Imagem analisada com sucesso!',
+      });
+    }
+    setShowImageUpload(false);
+  };
+
+  const handleMultimodalError = (error: string) => {
+    toast({
+      title: 'Erro',
+      description: error,
+      variant: 'destructive',
+    });
+  };
+
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
       toast({
@@ -130,6 +170,8 @@ export default function Tasks() {
       setNewTaskPriority(2);
       setNewTaskDeadline('');
       setNewTaskBigRock('');
+      setShowVoiceInput(false);
+      setShowImageUpload(false);
       setNewTaskDialogOpen(false);
     } catch {
       toast({
@@ -492,6 +534,58 @@ export default function Tasks() {
                 placeholder="Ex: Revisar código do projeto"
                 className="w-full px-3 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
+
+              {/* Multimodal Input Buttons */}
+              <div className="flex gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowVoiceInput(!showVoiceInput);
+                    setShowImageUpload(false);
+                  }}
+                  className="flex-1"
+                >
+                  <Mic className="mr-2 h-4 w-4" />
+                  {showVoiceInput ? 'Fechar Voz' : 'Adicionar por Voz'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowImageUpload(!showImageUpload);
+                    setShowVoiceInput(false);
+                  }}
+                  className="flex-1"
+                >
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  {showImageUpload ? 'Fechar Imagem' : 'Adicionar por Imagem'}
+                </Button>
+              </div>
+
+              {/* Voice Input Component */}
+              {showVoiceInput && (
+                <div className="mt-3 p-4 border rounded-md bg-muted/50">
+                  <VoiceInput
+                    onTranscription={handleVoiceTranscription}
+                    onError={handleMultimodalError}
+                    language="pt"
+                  />
+                </div>
+              )}
+
+              {/* Image Upload Component */}
+              {showImageUpload && (
+                <div className="mt-3 p-4 border rounded-md bg-muted/50">
+                  <ImageUpload
+                    onAnalysis={handleImageAnalysis}
+                    onError={handleMultimodalError}
+                    autoAnalyze={true}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
