@@ -69,6 +69,9 @@ class CharleeAgent(Agent):
                 self.criar_tarefa,
                 self.marcar_tarefa_concluida,
                 self.atualizar_tarefa,
+                self.listar_notificacoes,
+                self.marcar_notificacao_lida,
+                self.marcar_todas_notificacoes_lidas,
             ],
         )
 
@@ -262,6 +265,165 @@ class CharleeAgent(Agent):
 
         except Exception as e:
             return f"❌ Erro ao atualizar tarefa: {str(e)}"
+
+    # ==================== Notifications Tools ====================
+
+    def listar_notificacoes(self, apenas_nao_lidas: bool = True, limit: int = 10) -> str:
+        """
+        Lista notificações do usuário.
+
+        Args:
+            apenas_nao_lidas: Se True, lista apenas notificações não lidas
+            limit: Número máximo de notificações a retornar
+        """
+        try:
+            from database.models import UserNotification
+
+            # Get numeric user_id for notifications
+            try:
+                numeric_user_id = (
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
+                )
+            except (ValueError, AttributeError):
+                numeric_user_id = 1
+
+            query = self.database.query(UserNotification).filter(
+                UserNotification.user_id == numeric_user_id
+            )
+
+            if apenas_nao_lidas:
+                query = query.filter(UserNotification.read == False)  # noqa: E712
+
+            notifications = query.order_by(UserNotification.created_at.desc()).limit(limit).all()
+
+            if not notifications:
+                return "📭 Você não tem notificações não lidas."
+
+            # Format notifications by priority
+            high_priority = [n for n in notifications if n.priority == "high"]
+            medium_priority = [n for n in notifications if n.priority == "medium"]
+            low_priority = [n for n in notifications if n.priority == "low"]
+
+            result = f"📬 **Você tem {len(notifications)} notificações:**\n\n"
+
+            # Show high priority first
+            if high_priority:
+                result += "🔴 **ALTA PRIORIDADE:**\n"
+                for n in high_priority:
+                    result += f"\n**{n.title}** (ID: {n.id})\n{n.message}\n"
+                    result += f"_Recebida em: {n.created_at.strftime('%d/%m/%Y %H:%M')}_\n"
+
+            # Then medium
+            if medium_priority:
+                result += "\n🟡 **PRIORIDADE MÉDIA:**\n"
+                for n in medium_priority:
+                    result += f"\n**{n.title}** (ID: {n.id})\n{n.message}\n"
+                    result += f"_Recebida em: {n.created_at.strftime('%d/%m/%Y %H:%M')}_\n"
+
+            # Then low
+            if low_priority:
+                result += "\n🟢 **PRIORIDADE BAIXA:**\n"
+                for n in low_priority:
+                    result += f"\n**{n.title}** (ID: {n.id})\n{n.message}\n"
+                    result += f"_Recebida em: {n.created_at.strftime('%d/%m/%Y %H:%M')}_\n"
+
+            result += "\n💡 _Use 'marcar notificação X como lida' para marcar como lida._"
+
+            return result
+
+        except Exception as e:
+            return f"❌ Erro ao listar notificações: {str(e)}"
+
+    def marcar_notificacao_lida(self, notificacao_id: int) -> str:
+        """
+        Marca uma notificação como lida.
+
+        Args:
+            notificacao_id: ID da notificação
+        """
+        try:
+            from database.models import UserNotification
+            from datetime import datetime, timezone
+
+            # Get numeric user_id
+            try:
+                numeric_user_id = (
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
+                )
+            except (ValueError, AttributeError):
+                numeric_user_id = 1
+
+            notification = (
+                self.database.query(UserNotification)
+                .filter(
+                    UserNotification.id == notificacao_id,
+                    UserNotification.user_id == numeric_user_id,
+                )
+                .first()
+            )
+
+            if not notification:
+                return f"❌ Notificação {notificacao_id} não encontrada."
+
+            if notification.read:
+                return f"ℹ️ Notificação **'{notification.title}'** já estava marcada como lida."
+
+            notification.read = True
+            notification.read_at = datetime.now(timezone.utc)
+            self.database.commit()
+
+            return f"✅ Notificação **'{notification.title}'** marcada como lida!"
+
+        except Exception as e:
+            return f"❌ Erro ao marcar notificação como lida: {str(e)}"
+
+    def marcar_todas_notificacoes_lidas(self) -> str:
+        """
+        Marca todas as notificações não lidas como lidas.
+        """
+        try:
+            from database.models import UserNotification
+            from datetime import datetime, timezone
+
+            # Get numeric user_id
+            try:
+                numeric_user_id = (
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
+                )
+            except (ValueError, AttributeError):
+                numeric_user_id = 1
+
+            unread_notifications = (
+                self.database.query(UserNotification)
+                .filter(
+                    UserNotification.user_id == numeric_user_id,
+                    UserNotification.read == False,  # noqa: E712
+                )
+                .all()
+            )
+
+            if not unread_notifications:
+                return "ℹ️ Você não tem notificações não lidas."
+
+            count = len(unread_notifications)
+            now = datetime.now(timezone.utc)
+
+            for notification in unread_notifications:
+                notification.read = True
+                notification.read_at = now
+
+            self.database.commit()
+
+            return f"✅ {count} notificações marcadas como lidas!"
+
+        except Exception as e:
+            return f"❌ Erro ao marcar notificações como lidas: {str(e)}"
 
 
 def create_charlee_agent(

@@ -76,30 +76,43 @@ class AgentOrchestrator:
         Returns:
             Response from the appropriate agent
         """
+        # Check for unread notifications proactively
+        unread_count = self._get_unread_notifications_count()
+        notification_context = ""
+
+        if unread_count > 0:
+            # Add notification context to message
+            notification_context = f"\n\n[SISTEMA: Usuário tem {unread_count} notificações não lidas. Se relevante, mencione isso proativamente.]"
+
         # Analyze message to determine intent
         intent = self._analyze_intent(message)
 
+        # Add notification context if present
+        enhanced_message = message + notification_context if notification_context else message
+
         # Route to appropriate agent based on intent
-        if intent == "dashboard":
-            response = self._handle_dashboard(message)
+        if intent == "notifications":
+            response = self._handle_notifications(enhanced_message)
+        elif intent == "dashboard":
+            response = self._handle_dashboard(enhanced_message)
         elif intent == "daily_tracking":
-            response = self._handle_daily_tracking(message)
+            response = self._handle_daily_tracking(enhanced_message)
         elif intent == "freelancer":
-            response = self._handle_freelancer(message)
+            response = self._handle_freelancer(enhanced_message)
         elif intent == "career_insights":
-            response = self._handle_career_insights(message)
+            response = self._handle_career_insights(enhanced_message)
         elif intent == "portfolio":
-            response = self._handle_portfolio(message)
+            response = self._handle_portfolio(enhanced_message)
         elif intent == "wellness" or intent == "cycle":
-            response = self._handle_wellness(message)
+            response = self._handle_wellness(enhanced_message)
         elif intent == "capacity" or intent == "workload":
-            response = self._handle_capacity(message)
+            response = self._handle_capacity(enhanced_message)
         elif intent == "tasks":
             # Para tarefas, sempre consultar capacidade antes
-            response = self._handle_tasks_with_capacity_check(message)
+            response = self._handle_tasks_with_capacity_check(enhanced_message)
         else:
             # Default to core agent for general queries
-            response = self._handle_core(message)
+            response = self._handle_core(enhanced_message)
 
         return response
 
@@ -278,7 +291,28 @@ class AgentOrchestrator:
             "meu status",
         ]
 
-        # Check for dashboard intent (highest priority - multi-agent)
+        # Notification keywords
+        notification_keywords = [
+            "notificações",
+            "notificação",
+            "alertas",
+            "alerta",
+            "avisos",
+            "aviso",
+            "minhas notificações",
+            "ver notificações",
+            "listar notificações",
+            "notificações não lidas",
+            "marcar como lida",
+            "marcar lida",
+            "limpar notificações",
+        ]
+
+        # Check for notification intent (highest priority)
+        if any(keyword in message_lower for keyword in notification_keywords):
+            return "notifications"
+
+        # Check for dashboard intent (multi-agent summary)
         if any(keyword in message_lower for keyword in dashboard_keywords):
             return "dashboard"
 
@@ -312,6 +346,19 @@ class AgentOrchestrator:
 
         # Default to general
         return "general"
+
+    def _handle_notifications(self, message: str) -> str:
+        """Handle notification-related queries."""
+        self.context["last_agent_used"] = "core_notifications"
+        self.context["conversation_topic"] = "notifications"
+
+        # Core agent has notification tools, so just route to it
+        response = self.core_agent.print_response(message)  # type: ignore[func-returns-value]
+
+        # Extract text from response if it's a RunResponse object
+        if hasattr(response, "content"):
+            return response.content
+        return str(response)
 
     def _handle_daily_tracking(self, message: str) -> str:
         """Handle daily tracking and pattern analysis queries."""
@@ -473,6 +520,40 @@ class AgentOrchestrator:
         if hasattr(response, "content"):
             return response.content
         return str(response)
+
+    def _get_unread_notifications_count(self) -> int:
+        """
+        Get count of unread notifications for the user.
+
+        Returns:
+            Number of unread notifications
+        """
+        try:
+            from database.models import UserNotification
+
+            # Get numeric user_id
+            try:
+                numeric_user_id = (
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
+                )
+            except (ValueError, AttributeError):
+                numeric_user_id = 1
+
+            count = (
+                self.database.query(UserNotification)
+                .filter(
+                    UserNotification.user_id == numeric_user_id,
+                    UserNotification.read == False,  # noqa: E712
+                )
+                .count()
+            )
+
+            return count
+
+        except Exception:
+            return 0
 
     def _detect_career_stagnation(self) -> str:
         """
