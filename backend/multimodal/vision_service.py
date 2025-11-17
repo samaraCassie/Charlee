@@ -132,7 +132,7 @@ class VisionService:
         """
         try:
             logger.info(
-                "Analyzing image", extra={"filename": filename, "has_custom_prompt": bool(prompt)}
+                "Analyzing image", extra={"file_name": filename, "has_custom_prompt": bool(prompt)}
             )
 
             # Encode image
