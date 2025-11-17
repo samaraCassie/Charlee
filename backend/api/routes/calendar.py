@@ -37,7 +37,14 @@ from database.schemas import (
     MicrosoftCalendarAuthUrl,
 )
 from integrations import google_calendar, microsoft_calendar
-from tasks.calendar_sync import sync_connection
+
+try:
+    from tasks import calendar_sync
+
+    sync_connection = calendar_sync.sync_connection
+except ImportError:
+    calendar_sync = None  # type: ignore
+    sync_connection = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -514,6 +521,12 @@ async def trigger_connection_sync(
         )
 
     # Trigger async sync task
+    if sync_connection is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Celery tasks not available",
+        )
+
     task = sync_connection.delay(connection_id, sync_request.direction)
 
     logger.info(
