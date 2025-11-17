@@ -20,20 +20,20 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
       }
       stopRecording();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startRecording = async () => {
@@ -59,7 +59,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       // Handle recording stop
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(blob);
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop());
@@ -74,7 +73,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       setRecordingTime(0);
 
       // Start timer
-      timerRef.current = setInterval(() => {
+      timerRef.current = window.setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (error) {
@@ -88,8 +87,8 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       mediaRecorderRef.current.stop();
       setIsRecording(false);
 
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
     }
@@ -109,7 +108,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       onTranscription(result.text);
 
       // Reset state
-      setAudioBlob(null);
       setRecordingTime(0);
     } catch (error) {
       console.error('Error processing audio:', error);
