@@ -256,4 +256,135 @@ describe('attachmentsService', () => {
       expect(attachmentsService.formatDuration(undefined)).toBe('—');
     });
   });
+
+  describe('getAllAttachments', () => {
+    it('should fetch all attachments without filters', async () => {
+      const mockAttachments = [
+        {
+          id: 1,
+          task_id: 123,
+          file_name: 'audio.mp3',
+          file_type: 'audio',
+          file_path: '/uploads/audio.mp3',
+          processed_text: 'Text',
+          file_metadata: { size: 1024000 },
+          created_at: '2025-11-17T10:00:00Z',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAttachments });
+
+      const result = await attachmentsService.getAllAttachments();
+
+      expect(api.get).toHaveBeenCalledWith('/v2/attachments');
+      expect(result).toEqual(mockAttachments);
+    });
+
+    it('should fetch attachments filtered by file type', async () => {
+      const mockAttachments = [
+        {
+          id: 1,
+          task_id: 123,
+          file_name: 'audio.mp3',
+          file_type: 'audio',
+          file_path: '/uploads/audio.mp3',
+          processed_text: 'Text',
+          file_metadata: { size: 1024000 },
+          created_at: '2025-11-17T10:00:00Z',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAttachments });
+
+      const result = await attachmentsService.getAllAttachments({ fileType: 'audio' });
+
+      expect(api.get).toHaveBeenCalledWith('/v2/attachments?file_type=audio');
+      expect(result).toEqual(mockAttachments);
+    });
+
+    it('should fetch attachments filtered by task ID', async () => {
+      const mockAttachments = [
+        {
+          id: 2,
+          task_id: 456,
+          file_name: 'image.png',
+          file_type: 'image',
+          file_path: '/uploads/image.png',
+          processed_text: 'Analysis',
+          file_metadata: { size: 2048000 },
+          created_at: '2025-11-17T11:00:00Z',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAttachments });
+
+      const result = await attachmentsService.getAllAttachments({ taskId: 456 });
+
+      expect(api.get).toHaveBeenCalledWith('/v2/attachments?task_id=456');
+      expect(result).toEqual(mockAttachments);
+    });
+
+    it('should fetch attachments with pagination', async () => {
+      const mockAttachments = [
+        {
+          id: 3,
+          task_id: 789,
+          file_name: 'test.mp3',
+          file_type: 'audio',
+          file_path: '/uploads/test.mp3',
+          processed_text: 'Text',
+          file_metadata: { size: 1024000 },
+          created_at: '2025-11-17T12:00:00Z',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAttachments });
+
+      const result = await attachmentsService.getAllAttachments({
+        limit: 10,
+        offset: 5,
+      });
+
+      expect(api.get).toHaveBeenCalledWith('/v2/attachments?limit=10&offset=5');
+      expect(result).toEqual(mockAttachments);
+    });
+
+    it('should fetch attachments with multiple filters', async () => {
+      const mockAttachments = [
+        {
+          id: 4,
+          task_id: 100,
+          file_name: 'recording.mp3',
+          file_type: 'audio',
+          file_path: '/uploads/recording.mp3',
+          processed_text: 'Transcription',
+          file_metadata: { size: 1024000 },
+          created_at: '2025-11-17T13:00:00Z',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({ data: mockAttachments });
+
+      const result = await attachmentsService.getAllAttachments({
+        fileType: 'audio',
+        taskId: 100,
+        limit: 20,
+        offset: 10,
+      });
+
+      const callUrl = vi.mocked(api.get).mock.calls[0][0];
+      expect(callUrl).toContain('/v2/attachments?');
+      expect(callUrl).toContain('file_type=audio');
+      expect(callUrl).toContain('task_id=100');
+      expect(callUrl).toContain('limit=20');
+      expect(callUrl).toContain('offset=10');
+      expect(result).toEqual(mockAttachments);
+    });
+
+    it('should handle errors when fetching all attachments', async () => {
+      vi.mocked(api.get).mockRejectedValue(new Error('Failed to fetch'));
+
+      await expect(attachmentsService.getAllAttachments()).rejects.toThrow('Failed to fetch');
+    });
+  });
 });

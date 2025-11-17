@@ -1,8 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { multimodalService } from '@/services/multimodalService';
 import api from '@/services/api';
+import * as retryModule from '@/lib/retry';
 
 vi.mock('@/services/api');
+vi.mock('@/lib/retry', () => ({
+  retryWithBackoff: vi.fn((fn) => fn()),
+  isOnline: vi.fn(() => true),
+  OfflineQueue: {
+    enqueue: vi.fn(),
+  },
+}));
 
 describe('multimodalService', () => {
   beforeEach(() => {
@@ -296,6 +304,92 @@ describe('multimodalService', () => {
         });
         expect(multimodalService.validateFile(smallFile, 'image')).toBe(true);
       });
+
+      it('should reject files with no extension', () => {
+        const fileNoExt = new File(['fake content'], 'noextension', { type: 'image/png' });
+        expect(() => multimodalService.validateFile(fileNoExt, 'image')).toThrow(
+          'Unsupported image format'
+        );
+      });
+    });
+  });
+
+  describe('getSupportedFormats', () => {
+    it('should return audio formats', () => {
+      const formats = multimodalService.getSupportedFormats('audio');
+      expect(formats).toEqual(['mp3', 'wav', 'm4a', 'webm', 'ogg', 'flac']);
+    });
+
+    it('should return image formats', () => {
+      const formats = multimodalService.getSupportedFormats('image');
+      expect(formats).toEqual(['png', 'jpg', 'jpeg', 'heic', 'webp']);
+    });
+  });
+
+  describe('offline mode', () => {
+    it('should queue transcribeAudio when offline', async () => {
+      // Mock offline state
+      vi.mocked(retryModule.isOnline).mockReturnValue(false);
+
+      const audioFile = new File(['fake audio'], 'test.mp3', { type: 'audio/mp3' });
+
+      await expect(multimodalService.transcribeAudio(audioFile, 'pt')).rejects.toThrow(
+        'Sem conexão'
+      );
+
+      expect(retryModule.OfflineQueue.enqueue).toHaveBeenCalledWith({
+        endpoint: '/v2/multimodal/transcribe',
+        method: 'POST',
+        data: { file: 'test.mp3', language: 'pt' },
+      });
+
+      // Restore online state
+      vi.mocked(retryModule.isOnline).mockReturnValue(true);
+    });
+
+    it('should queue analyzeImage when offline', async () => {
+      // Mock offline state
+      vi.mocked(retryModule.isOnline).mockReturnValue(false);
+
+      const imageFile = new File(['fake image'], 'test.png', { type: 'image/png' });
+      const customPrompt = 'Analyze this';
+
+      await expect(multimodalService.analyzeImage(imageFile, customPrompt)).rejects.toThrow(
+        'Sem conexão'
+      );
+
+      expect(retryModule.OfflineQueue.enqueue).toHaveBeenCalledWith({
+        endpoint: '/v2/multimodal/analyze-image',
+        method: 'POST',
+        data: { file: 'test.png', prompt: customPrompt },
+      });
+
+      // Restore online state
+      vi.mocked(retryModule.isOnline).mockReturnValue(true);
+    });
+
+    it('should queue processMultimodal when offline', async () => {
+      // Mock offline state
+      vi.mocked(retryModule.isOnline).mockReturnValue(false);
+
+      const audioFile = new File(['fake audio'], 'test.mp3', { type: 'audio/mp3' });
+
+      await expect(
+        multimodalService.processMultimodal(audioFile, { autoCreateTasks: true, bigRockId: 123 })
+      ).rejects.toThrow('Sem conexão');
+
+      expect(retryModule.OfflineQueue.enqueue).toHaveBeenCalledWith({
+        endpoint: '/v2/multimodal/process',
+        method: 'POST',
+        data: {
+          file: 'test.mp3',
+          auto_create_tasks: true,
+          big_rock_id: 123,
+        },
+      });
+
+      // Restore online state
+      vi.mocked(retryModule.isOnline).mockReturnValue(true);
     });
   });
 });

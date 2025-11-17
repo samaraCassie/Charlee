@@ -342,4 +342,99 @@ describe('ImageUpload', () => {
       vi.clearAllMocks();
     }
   });
+
+  it('should handle drag leave event', () => {
+    const onAnalysis = vi.fn();
+    const onError = vi.fn();
+
+    render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
+
+    const dropZone = screen.getByText('Upload image').closest('div');
+    expect(dropZone).toBeTruthy();
+
+    // Trigger drag over
+    fireEvent.dragOver(dropZone!, new Event('dragover', { bubbles: true }));
+
+    // Trigger drag leave
+    fireEvent.dragLeave(dropZone!, new Event('dragleave', { bubbles: true }));
+
+    // Component should handle drag leave (no errors)
+    expect(dropZone).toBeInTheDocument();
+  });
+
+  it('should clear image when X button is clicked', async () => {
+    const onAnalysis = vi.fn();
+    const onError = vi.fn();
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
+    vi.mocked(multimodalService.multimodalService.analyzeImage).mockResolvedValue({
+      analysis: 'Test',
+      tasks: [],
+    });
+
+    render(<ImageUpload onAnalysis={onAnalysis} onError={onError} autoAnalyze={false} />);
+
+    const file = new File(['fake image'], 'test.png', { type: 'image/png' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    selectFile(input, file);
+
+    // Wait for preview to appear
+    await waitFor(() => {
+      expect(screen.getByAltText('Preview')).toBeInTheDocument();
+    });
+
+    // Find and click the X button
+    const clearButton = screen.getByRole('button', { name: '' });
+    fireEvent.click(clearButton);
+
+    // Preview should be removed
+    await waitFor(() => {
+      expect(screen.queryByAltText('Preview')).not.toBeInTheDocument();
+      expect(screen.getByText('Upload image')).toBeInTheDocument();
+    });
+
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
+  });
+
+  it('should handle error without Error instance', async () => {
+    const onAnalysis = vi.fn();
+    const onError = vi.fn();
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
+    // Mock analyzeImage to reject with string instead of Error
+    vi.mocked(multimodalService.multimodalService.analyzeImage).mockRejectedValue(
+      'Generic error string'
+    );
+
+    render(<ImageUpload onAnalysis={onAnalysis} onError={onError} autoAnalyze={true} />);
+
+    const file = new File(['fake image'], 'test.png', { type: 'image/png' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    selectFile(input, file);
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith('Failed to analyze image. Please try again.');
+    });
+  });
+
+  it('should trigger file input when clicking upload area', () => {
+    const onAnalysis = vi.fn();
+    const onError = vi.fn();
+
+    render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, 'click');
+
+    const dropZone = screen.getByText('Upload image').closest('div');
+    fireEvent.click(dropZone!);
+
+    expect(clickSpy).toHaveBeenCalled();
+  });
 });
