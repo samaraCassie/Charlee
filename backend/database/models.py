@@ -1607,7 +1607,7 @@ class CalendarEvent(Base):
 
     # Charlee task reference
     task_id = Column(
-        Integer, ForeignKey("tarefas.id", ondelete="SET NULL"), nullable=True, index=True
+        Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     # Event details

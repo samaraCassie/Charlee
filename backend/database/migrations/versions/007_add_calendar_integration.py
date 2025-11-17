@@ -35,7 +35,7 @@ def upgrade():
         sa.Column("access_token", sa.Text(), nullable=False),
         sa.Column("refresh_token", sa.Text(), nullable=True),
         sa.Column("token_expires_at", sa.DateTime(), nullable=True),
-        sa.Column("sync_enabled", sa.Boolean(), server_default="true"),
+        sa.Column("sync_enabled", sa.Boolean(), server_default=sa.text("1")),
         sa.Column(
             "sync_direction",
             sa.String(length=20),
@@ -46,8 +46,12 @@ def upgrade():
         sa.Column("sync_token", sa.String(length=500), nullable=True),
         sa.Column("webhook_id", sa.String(length=255), nullable=True),
         sa.Column("webhook_expires_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=True, server_default=sa.text("CURRENT_TIMESTAMP")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(), nullable=True, server_default=sa.text("CURRENT_TIMESTAMP")
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "provider", "calendar_id", name="uq_user_provider_calendar"),
@@ -113,7 +117,7 @@ def upgrade():
         sa.Column("updated_at", sa.DateTime(), nullable=True, server_default=sa.text("now()")),
         sa.ForeignKeyConstraint(["connection_id"], ["calendar_connections.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["task_id"], ["tarefas.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["task_id"], ["tasks.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "connection_id",
