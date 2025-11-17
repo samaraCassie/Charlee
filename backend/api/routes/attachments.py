@@ -87,7 +87,7 @@ async def get_all_user_attachments(
 
     # Apply filters
     if file_type:
-        if file_type not in ['audio', 'image']:
+        if file_type not in ["audio", "image"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="file_type must be 'audio' or 'image'",
@@ -134,9 +134,7 @@ async def get_attachment(
     """
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
     # Verify user owns the task that this attachment belongs to
     task = db.query(Task).filter(Task.id == attachment.task_id).first()
@@ -167,9 +165,7 @@ async def delete_attachment(
     """
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
     # Verify user owns the task
     task = db.query(Task).filter(Task.id == attachment.task_id).first()
@@ -209,9 +205,7 @@ async def reprocess_attachment(
 
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
     # Verify user owns the task
     task = db.query(Task).filter(Task.id == attachment.task_id).first()
@@ -233,9 +227,7 @@ async def reprocess_attachment(
         if attachment.file_type == "audio":
             audio_service = get_audio_service()
             with open(attachment.file_path, "rb") as f:
-                result = audio_service.transcribe_audio(
-                    f, attachment.file_name, language=None
-                )
+                result = audio_service.transcribe_audio(f, attachment.file_name, language=None)
                 attachment.processed_text = result["text"]
 
         elif attachment.file_type == "image":
@@ -286,9 +278,7 @@ async def download_attachment(
 
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
     # Verify user owns the task
     task = db.query(Task).filter(Task.id == attachment.task_id).first()

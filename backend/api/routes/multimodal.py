@@ -81,7 +81,7 @@ async def transcribe_audio(
             "Audio transcription requested",
             extra={
                 "user_id": current_user.id,
-                "filename": file.filename,
+                "file_name": file.filename,
                 "content_type": file.content_type,
             },
         )
@@ -158,7 +158,7 @@ async def analyze_image(
             "Image analysis requested",
             extra={
                 "user_id": current_user.id,
-                "filename": file.filename,
+                "file_name": file.filename,
                 "content_type": file.content_type,
                 "has_custom_prompt": bool(prompt),
             },
@@ -242,7 +242,7 @@ async def process_multimodal(
             "Multimodal processing requested",
             extra={
                 "user_id": current_user.id,
-                "filename": file.filename,
+                "file_name": file.filename,
                 "content_type": file.content_type,
                 "auto_create": auto_create_tasks,
             },
