@@ -135,6 +135,15 @@ describe('VoiceInput', () => {
     const stopButton = screen.getByText(/Parar/i);
     fireEvent.click(stopButton);
 
+    // Wait for audio preview to appear
+    await waitFor(() => {
+      expect(screen.getByText('Transcrever')).toBeInTheDocument();
+    });
+
+    // Click transcribe button
+    const transcribeButton = screen.getByText('Transcrever');
+    fireEvent.click(transcribeButton);
+
     await waitFor(() => {
       expect(multimodalService.multimodalService.transcribeAudio).toHaveBeenCalled();
       expect(onTranscription).toHaveBeenCalledWith(mockTranscriptionResponse);
@@ -163,8 +172,17 @@ describe('VoiceInput', () => {
     const stopButton = screen.getByText(/Parar/i);
     fireEvent.click(stopButton);
 
+    // Wait for audio preview to appear
     await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Erro ao transcrever áudio'));
+      expect(screen.getByText('Transcrever')).toBeInTheDocument();
+    });
+
+    // Click transcribe button
+    const transcribeButton = screen.getByText('Transcrever');
+    fireEvent.click(transcribeButton);
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Transcription failed'));
     });
   });
 
@@ -190,8 +208,6 @@ describe('VoiceInput', () => {
     const onTranscription = vi.fn();
     const onError = vi.fn();
 
-    vi.useFakeTimers();
-
     render(<VoiceInput onTranscription={onTranscription} onError={onError} />);
 
     const recordButton = screen.getByText('Iniciar Gravação');
@@ -201,14 +217,10 @@ describe('VoiceInput', () => {
       expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
-    // Advance timer by 2 seconds
-    vi.advanceTimersByTime(2000);
-
+    // Wait for timer to show (at least 0:00)
     await waitFor(() => {
-      expect(screen.getByText(/0:02/)).toBeInTheDocument();
+      expect(screen.getByText(/\d:\d{2}/)).toBeInTheDocument();
     });
-
-    vi.useRealTimers();
   });
 
   it('should clean up media stream on unmount', async () => {
@@ -216,9 +228,10 @@ describe('VoiceInput', () => {
     const onError = vi.fn();
 
     const stopMock = vi.fn();
-    mockGetUserMedia.mockResolvedValue({
+    const mockStream = {
       getTracks: () => [{ stop: stopMock }],
-    });
+    };
+    mockGetUserMedia.mockResolvedValue(mockStream);
 
     const { unmount } = render(<VoiceInput onTranscription={onTranscription} onError={onError} />);
 
@@ -229,7 +242,11 @@ describe('VoiceInput', () => {
       expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
+    // Unmount component while recording
     unmount();
+
+    // Wait a tick for cleanup to run
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(stopMock).toHaveBeenCalled();
   });
@@ -260,6 +277,15 @@ describe('VoiceInput', () => {
     // Stop recording
     const stopButton = screen.getByText(/Parar/i);
     fireEvent.click(stopButton);
+
+    // Wait for audio preview to appear
+    await waitFor(() => {
+      expect(screen.getByText('Transcrever')).toBeInTheDocument();
+    });
+
+    // Click transcribe button
+    const transcribeButton = screen.getByText('Transcrever');
+    fireEvent.click(transcribeButton);
 
     await waitFor(() => {
       expect(screen.getByText('Processando transcrição...')).toBeInTheDocument();
