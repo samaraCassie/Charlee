@@ -37,10 +37,11 @@ from database.schemas import (
     MicrosoftCalendarAuthUrl,
 )
 from integrations import google_calendar, microsoft_calendar
+from tasks.calendar_sync import sync_connection
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v2/calendar", tags=["Calendar Integration"])
+router = APIRouter()  # Prefix defined in main.py
 
 
 # ==================== OAuth Authorization ====================
@@ -468,6 +469,67 @@ async def delete_connection(
         "Deleted calendar connection",
         extra={"user_id": current_user.id, "connection_id": connection_id},
     )
+
+
+@router.post(
+    "/connections/{connection_id}/sync",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Trigger manual sync for connection",
+)
+async def trigger_connection_sync(
+    connection_id: int,
+    sync_request: CalendarSyncRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Manually trigger sync for a specific calendar connection.
+
+    Args:
+        connection_id: Connection ID to sync
+        sync_request: Sync direction and options
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict: Task status with task_id
+
+    Raises:
+        HTTPException 404: If connection not found
+        HTTPException 403: If connection doesn't belong to user
+        HTTPException 400: If sync is disabled for this connection
+    """
+    connection = db.query(CalendarConnection).filter(CalendarConnection.id == connection_id).first()
+
+    if not connection:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connection not found")
+
+    if connection.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    if not connection.sync_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sync is disabled for this connection",
+        )
+
+    # Trigger async sync task
+    task = sync_connection.delay(connection_id, sync_request.direction)
+
+    logger.info(
+        "Manual sync triggered",
+        extra={
+            "user_id": current_user.id,
+            "connection_id": connection_id,
+            "task_id": task.id,
+        },
+    )
+
+    return {
+        "message": "Sync started",
+        "task_id": task.id,
+        "connection_id": connection_id,
+    }
 
 
 # ==================== Calendar Events ====================
