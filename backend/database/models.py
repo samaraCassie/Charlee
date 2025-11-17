@@ -1677,6 +1677,7 @@ class CalendarEvent(Base):
             "location": self.location,
             "attendees": self.attendees,
             "status": self.status,
+            "source": self.source,
         }
 
 
