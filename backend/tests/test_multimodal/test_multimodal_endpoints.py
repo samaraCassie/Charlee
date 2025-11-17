@@ -1,6 +1,5 @@
 """Tests for multimodal API endpoints."""
 
-import os
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 

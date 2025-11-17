@@ -68,7 +68,7 @@ class TestAudioService:
         """Test audio transcription with language specified."""
         audio_file = BytesIO(b"fake audio data")
 
-        result = audio_service.transcribe_audio(audio_file, "test.mp3", language="pt")
+        audio_service.transcribe_audio(audio_file, "test.mp3", language="pt")
 
         # Verify language was passed to API
         call_args = mock_openai_client.audio.transcriptions.create.call_args
