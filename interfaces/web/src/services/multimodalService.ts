@@ -1,4 +1,5 @@
 import api from './api';
+import { retryWithBackoff, isOnline, OfflineQueue } from '@/lib/retry';
 
 // ==================== Types ====================
 
@@ -38,6 +39,18 @@ export const multimodalService = {
     file: File,
     language?: string
   ): Promise<TranscriptionResponse> {
+    // Check if online
+    if (!isOnline()) {
+      OfflineQueue.enqueue({
+        endpoint: '/v2/multimodal/transcribe',
+        method: 'POST',
+        data: { file: file.name, language },
+      });
+      throw new Error(
+        'Sem conexão. A requisição foi salva e será enviada quando você voltar online.'
+      );
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -45,11 +58,25 @@ export const multimodalService = {
       formData.append('language', language);
     }
 
-    const response = await api.post('/v2/multimodal/transcribe', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Wrap API call with retry logic
+    const response = await retryWithBackoff(
+      () =>
+        api.post('/v2/multimodal/transcribe', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }),
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        onRetry: (attempt, error) => {
+          console.warn(
+            `Retrying transcribeAudio (attempt ${attempt}):`,
+            error.message
+          );
+        },
+      }
+    );
 
     return response.data;
   },
@@ -69,6 +96,18 @@ export const multimodalService = {
     file: File,
     prompt?: string
   ): Promise<ImageAnalysisResponse> {
+    // Check if online
+    if (!isOnline()) {
+      OfflineQueue.enqueue({
+        endpoint: '/v2/multimodal/analyze-image',
+        method: 'POST',
+        data: { file: file.name, prompt },
+      });
+      throw new Error(
+        'Sem conexão. A requisição foi salva e será enviada quando você voltar online.'
+      );
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -76,11 +115,22 @@ export const multimodalService = {
       formData.append('prompt', prompt);
     }
 
-    const response = await api.post('/v2/multimodal/analyze-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Wrap API call with retry logic
+    const response = await retryWithBackoff(
+      () =>
+        api.post('/v2/multimodal/analyze-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }),
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        onRetry: (attempt, error) => {
+          console.warn(`Retrying analyzeImage (attempt ${attempt}):`, error.message);
+        },
+      }
+    );
 
     return response.data;
   },
@@ -102,6 +152,22 @@ export const multimodalService = {
       bigRockId?: number;
     }
   ): Promise<MultimodalProcessResponse> {
+    // Check if online
+    if (!isOnline()) {
+      OfflineQueue.enqueue({
+        endpoint: '/v2/multimodal/process',
+        method: 'POST',
+        data: {
+          file: file.name,
+          auto_create_tasks: options?.autoCreateTasks ?? true,
+          big_rock_id: options?.bigRockId,
+        },
+      });
+      throw new Error(
+        'Sem conexão. A requisição foi salva e será enviada quando você voltar online.'
+      );
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('auto_create_tasks', String(options?.autoCreateTasks ?? true));
@@ -110,11 +176,25 @@ export const multimodalService = {
       formData.append('big_rock_id', String(options.bigRockId));
     }
 
-    const response = await api.post('/v2/multimodal/process', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Wrap API call with retry logic
+    const response = await retryWithBackoff(
+      () =>
+        api.post('/v2/multimodal/process', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }),
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        onRetry: (attempt, error) => {
+          console.warn(
+            `Retrying processMultimodal (attempt ${attempt}):`,
+            error.message
+          );
+        },
+      }
+    );
 
     return response.data;
   },

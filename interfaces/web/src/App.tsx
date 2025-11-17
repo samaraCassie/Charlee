@@ -9,6 +9,7 @@ import BigRockAnalytics from './pages/BigRockAnalytics';
 import Chat from './pages/Chat';
 import Tasks from './pages/Tasks';
 import Wellness from './pages/Wellness';
+import TranscriptionHistory from './pages/TranscriptionHistory';
 import { Button } from './components/ui/button';
 import {
   Sheet,
@@ -97,6 +98,14 @@ function AppContent() {
             >
               Chat
             </Link>
+            <Link
+              to="/transcriptions"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive('/transcriptions') ? '' : 'text-muted-foreground'
+              }`}
+            >
+              Histórico
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -128,6 +137,7 @@ function AppContent() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/wellness" element={<Wellness />} />
+          <Route path="/transcriptions" element={<TranscriptionHistory />} />
         </Routes>
       </main>
 
@@ -191,6 +201,15 @@ function AppContent() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Chat
+            </Link>
+            <Link
+              to="/transcriptions"
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent ${
+                isActive('/transcriptions') ? '' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Histórico
             </Link>
           </nav>
         </SheetContent>

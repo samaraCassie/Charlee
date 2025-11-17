@@ -21,6 +21,7 @@ from api.routes import (
 )
 from api.routes import (
     analytics,
+    attachments,
     auth,
     big_rocks,
     calendar,
@@ -236,6 +237,7 @@ app.include_router(
 app.include_router(freelancer.router, prefix="/api/v2/freelancer", tags=["Freelancer (V2)"])
 app.include_router(projects.router, prefix="/api/v2/projects", tags=["Projects Intelligence (V2)"])
 app.include_router(multimodal.router, prefix="/api/v2/multimodal", tags=["Multimodal Input (V2)"])
+app.include_router(attachments.router, prefix="/api/v2", tags=["Attachments (V2)"])
 
 # ========================================
 # ROUTERS V3
