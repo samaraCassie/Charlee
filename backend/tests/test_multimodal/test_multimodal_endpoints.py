@@ -13,12 +13,6 @@ class TestMultimodalEndpoints:
     """Test suite for multimodal API endpoints."""
 
     @pytest.fixture
-    def auth_headers(self, sample_user):
-        """Create authentication headers for testing."""
-        # This is a simplified version - in real tests you'd need to generate a proper JWT
-        return {"Authorization": "Bearer test_token"}
-
-    @pytest.fixture
     def mock_audio_service(self):
         """Mock AudioService for testing."""
         with patch("api.routes.multimodal.get_audio_service") as mock:
@@ -64,10 +58,6 @@ class TestMultimodalEndpoints:
         self, client, sample_user, auth_headers, mock_audio_service, sample_audio_file
     ):
         """Test POST /api/v2/multimodal/transcribe endpoint."""
-        # Note: This test requires proper authentication setup
-        # For now, we'll skip it unless auth is properly configured
-        pytest.skip("Requires authentication setup")
-
         response = client.post(
             "/api/v2/multimodal/transcribe",
             files={"file": sample_audio_file},
@@ -84,7 +74,6 @@ class TestMultimodalEndpoints:
         self, client, sample_user, auth_headers, mock_audio_service, sample_audio_file
     ):
         """Test audio transcription with language parameter."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/transcribe",
@@ -100,7 +89,6 @@ class TestMultimodalEndpoints:
         self, client, sample_user, auth_headers, mock_vision_service, sample_image_file
     ):
         """Test POST /api/v2/multimodal/analyze-image endpoint."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/analyze-image",
@@ -119,7 +107,6 @@ class TestMultimodalEndpoints:
         self, client, sample_user, auth_headers, mock_vision_service, sample_image_file
     ):
         """Test image analysis with custom prompt."""
-        pytest.skip("Requires authentication setup")
 
         custom_prompt = "Extract only high priority tasks"
 
@@ -144,7 +131,6 @@ class TestMultimodalEndpoints:
         sample_audio_file,
     ):
         """Test POST /api/v2/multimodal/process with audio file."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/process",
@@ -169,7 +155,6 @@ class TestMultimodalEndpoints:
         self, client, db, sample_user, auth_headers, mock_vision_service, sample_image_file
     ):
         """Test POST /api/v2/multimodal/process with image file."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/process",
@@ -193,7 +178,6 @@ class TestMultimodalEndpoints:
         self, client, sample_user, auth_headers, mock_audio_service, sample_audio_file
     ):
         """Test multimodal processing without auto-creating tasks."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/process",
@@ -211,7 +195,6 @@ class TestMultimodalEndpoints:
         self, client, db, sample_user, auth_headers, mock_audio_service, sample_audio_file
     ):
         """Test multimodal processing with big rock association."""
-        pytest.skip("Requires authentication setup")
 
         # Create a big rock
         from database.models import BigRock
@@ -236,7 +219,6 @@ class TestMultimodalEndpoints:
 
     def test_unsupported_file_format(self, client, sample_user, auth_headers):
         """Test error for unsupported file format."""
-        pytest.skip("Requires authentication setup")
 
         # Create unsupported file
         unsupported_file = ("test.xyz", BytesIO(b"fake data"), "application/octet-stream")
@@ -252,7 +234,6 @@ class TestMultimodalEndpoints:
 
     def test_missing_file(self, client, sample_user, auth_headers):
         """Test error when no file is provided."""
-        pytest.skip("Requires authentication setup")
 
         response = client.post(
             "/api/v2/multimodal/process",
