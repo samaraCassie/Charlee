@@ -28,6 +28,7 @@ from api.routes import (
     daily_tracking,
     freelancer,
     inbox,
+    multimodal,
     oauth_routes,
     priorizacao,
     projects,
@@ -147,6 +148,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "description": "AI-powered freelance opportunity analysis, semantic search, and strategic pricing",
         },
         {
+            "name": "Multimodal Input (V2)",
+            "description": "Voice and image input processing with AI transcription and analysis",
+        },
+        {
             "name": "Calendar Integration (V3)",
             "description": "Google Calendar and Microsoft Outlook synchronization with bidirectional sync",
         },
@@ -230,6 +235,7 @@ app.include_router(
 )
 app.include_router(freelancer.router, prefix="/api/v2/freelancer", tags=["Freelancer (V2)"])
 app.include_router(projects.router, prefix="/api/v2/projects", tags=["Projects Intelligence (V2)"])
+app.include_router(multimodal.router, prefix="/api/v2/multimodal", tags=["Multimodal Input (V2)"])
 
 # ========================================
 # ROUTERS V3
