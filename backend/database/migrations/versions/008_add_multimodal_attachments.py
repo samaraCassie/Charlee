@@ -46,7 +46,7 @@ def upgrade():
         ),
         sa.Column("error_message", sa.Text(), nullable=True),
         # Additional metadata (JSON)
-        sa.Column("metadata", sa.JSON(), nullable=True),  # Language, detected entities, etc.
+        sa.Column("file_metadata", sa.JSON(), nullable=True),  # Language, detected entities, etc.
         # Timestamps
         sa.Column(
             "created_at", sa.DateTime(), nullable=True, server_default=sa.text("CURRENT_TIMESTAMP")

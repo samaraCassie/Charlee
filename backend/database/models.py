@@ -298,7 +298,7 @@ class Attachment(Base):
     error_message = Column(Text, nullable=True)
 
     # Additional metadata (JSON)
-    metadata = Column(JSON, nullable=True)  # Language, detected entities, etc.
+    file_metadata = Column(JSON, nullable=True)  # Language, detected entities, etc.
 
     # Timestamps
     created_at = Column(DateTime, default=utc_now)
