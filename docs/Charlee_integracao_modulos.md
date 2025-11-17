@@ -5,22 +5,23 @@
 ### 19.1 Visão Geral da Integração
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CHARLEE CORE (Orquestrador)                  │
-│              Agente Central que coordena tudo                   │
-└────────────┬────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    CHARLEE CORE (Orquestrador)                      │
+│              Agente Central que coordena tudo                       │
+└────────────┬────────────────────────────────────────────────────────┘
              │
-    ┌────────┼────────┬──────────┬──────────┬───────────┬──────────┐
-    │        │        │          │          │           │          │
-    ▼        ▼        ▼          ▼          ▼           ▼          ▼
-┌────────┐┌────────┐┌─────────┐┌─────────┐┌──────────┐┌─────────┐┌─────────┐
-│ Task   ││Wellness││Capacity ││  OKR    ││  Focus   ││Projects ││Calendar │
-│Manager ││ Coach  ││Guardian ││Dashboard││  Module  ││ Module  ││ Module  │
-└────┬───┘└───┬────┘└────┬────┘└────┬────┘└────┬─────┘└────┬────┘└────┬────┘
-     │        │          │          │          │           │          │
-     └────────┴──────────┴──────────┴──────────┴───────────┴──────────┘
-                              │
-         ┌────────────────────┼────────────────────┐
+    ┌────────┼────────┬──────────┬──────────┬───────────┬──────────┬─────────┐
+    │        │        │          │          │           │          │         │
+    ▼        ▼        ▼          ▼          ▼           ▼          ▼         ▼
+┌────────┐┌────────┐┌─────────┐┌─────────┐┌──────────┐┌─────────┐┌─────────┐┌─────────┐
+│ Task   ││Wellness││Capacity ││  OKR    ││  Focus   ││Projects ││Calendar ││LISTENER │
+│Manager ││ Coach  ││Guardian ││Dashboard││  Module  ││ Module  ││ Module  ││ (V5.0)  │
+└────┬───┘└───┬────┘└────┬────┘└────┬────┘└────┬─────┘└────┬────┘└────┬────┘└────┬────┘
+     │        │          │          │          │           │          │         │
+     │        │          │          │          │           │          │         │
+     └────────┴──────────┴──────────┴──────────┴───────────┴──────────┴─────────┘
+                              │                                        │
+         ┌────────────────────┼────────────────────┬──────────────────┘
          │                    │                    │
          ▼                    ▼                    ▼
     ┌─────────┐      ┌──────────────┐      ┌──────────┐
@@ -256,6 +257,36 @@ class EventType(Enum):
     INTERACTION_LOGGED = "diplomat.interaction_logged"
     PUPIL_MILESTONE_REACHED = "diplomat.pupil_milestone"
     NETWORKING_OPPORTUNITY = "diplomat.networking_opportunity"
+
+    # === LISTENER MODULE V5.0 ===
+
+    # Transcrições e Detecção
+    TRANSCRIPTION_READY = "listener.transcription_ready"
+    INTENT_DETECTED = "listener.intent_detected"
+
+    # Compromissos e Tarefas
+    COMMITMENT_CREATED = "listener.commitment_created"
+    TASK_VERBAL_DETECTED = "listener.task_verbal_detected"
+    PLANNING_DETECTED = "listener.planning_detected"
+
+    # Informação e Pesquisa
+    INFORMATION_GAP_DETECTED = "listener.information_gap_detected"
+    WEB_SEARCH_COMPLETED = "listener.web_search_completed"
+
+    # Análise de Soberania
+    SOVEREIGNTY_REPORT_READY = "listener.sovereignty_report_ready"
+    SOVEREIGNTY_PATTERN_POSITIVE = "listener.sovereignty_pattern_positive"
+    SOVEREIGNTY_PATTERN_ATTENTION = "listener.sovereignty_pattern_attention"
+
+    # Detecção Emocional via Voz
+    EMOTION_DETECTED_VOICE = "listener.emotion_detected_voice"
+    HIGH_STRESS_VOICE = "listener.high_stress_voice"
+
+    # Interações Sociais Detectadas
+    SOCIAL_INTERACTION_DETECTED = "listener.social_interaction_detected"
+
+    # Privacidade
+    PRIVACY_MODE_TOGGLED = "listener.privacy_mode_toggled"
 
     # System
     CONTEXT_UPDATED = "context_updated"
@@ -1669,6 +1700,11 @@ class CharleeOrchestrator(Agent):
         self.wardrobe = WardrobeOrchestrator(db_connection, event_bus)
         self.diplomat = DiplomatOrchestrator(db_connection, event_bus, context_manager)
 
+        # === LISTENER MODULE (V5.0) ===
+        from backend.modules.listener.orchestrator import ListenerOrchestrator
+
+        self.listener = ListenerOrchestrator(db_connection, event_bus, context_manager)
+
         # === INTEGRAÇÕES CORE ===
         self.task_project_integration = TaskProjectIntegration(
             db_connection, event_bus, context_manager
@@ -1692,6 +1728,17 @@ class CharleeOrchestrator(Agent):
         )
         self.diplomat_integration = DiplomatIntegration(
             db_connection, event_bus, context_manager
+        )
+
+        # === INTEGRAÇÕES LISTENER (V5.0) ===
+        self.listener_calendar_integration = ListenerCalendarIntegration(
+            event_bus, self.calendar
+        )
+        self.listener_diplomat_integration = ListenerDiplomatIntegration(
+            event_bus, self.diplomat
+        )
+        self.listener_wellness_integration = ListenerWellnessIntegration(
+            event_bus, self.wellness_coach
         )
         
         super().__init__(
@@ -3409,3 +3456,455 @@ def can_access_info(user_id: int, info_type: str) -> bool:
 **Status**: 📋 Auto-Conhecimento Documentado
 **Acesso**: USER (tutoriais) + ADMIN (arquitetura completa)
 **Objetivo**: Charlee consciente de si mesmo para ensinar usuários e auxiliar desenvolvimento
+
+---
+
+## 19.18 Integração do Charlee Listener (V5.0)
+
+### 19.18.1 Visão Geral
+
+O **Charlee Listener** é o módulo de escuta ativa contínua que monitora conversas via microfone do celular para:
+- ✅ Capturar compromissos automaticamente
+- ✅ Criar tarefas quando você se comprometer verbalmente
+- ✅ Analisar evolução como "imperatriz graciosa/soberana"
+- ✅ Detectar lacunas de informação e pesquisar proativamente
+- ✅ Tomar ações autônomas sem confirmação explícita
+
+### 19.18.2 Arquitetura de Integração
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CHARLEE LISTENER SYSTEM                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────────┐         ┌──────────────────┐             │
+│  │  Mobile Audio    │────────▶│  Audio Stream    │             │
+│  │  Capture Service │  WebS   │  Buffer (Redis)  │             │
+│  │  (React Native)  │  ocket  └──────────────────┘             │
+│  └──────────────────┘                  │                        │
+│                                        ▼                        │
+│                     ┌───────────────────────────────┐           │
+│                     │  Whisper Transcription        │           │
+│                     │  + Speaker Diarization        │           │
+│                     └───────────────────────────────┘           │
+│                                        │                        │
+│                                        ▼                        │
+│                     ┌───────────────────────────────┐           │
+│                     │  NLP Intent Detection         │           │
+│                     │  • CommitmentDetector         │           │
+│                     │  • InformationGapDetector     │           │
+│                     │  • PersonalityAnalyzer        │           │
+│                     └───────────────────────────────┘           │
+│                                        │                        │
+│        ┌───────────────────────────────┼───────────────────┐   │
+│        ▼                               ▼                   ▼   │
+│  ┌──────────┐                   ┌──────────┐        ┌─────────┐│
+│  │ CALENDAR │◀── cria eventos ──│ LISTENER │────────│DIPLOMAT ││
+│  │  MODULE  │                   │  ORCHEST │  registra│ MODULE ││
+│  └──────────┘                   └──────────┘  interação└────────┘│
+│        │                               │                   │    │
+│        │                               ▼                   │    │
+│        │                        ┌──────────┐              │    │
+│        └────────────────────────│ WELLNESS │◀─────────────┘    │
+│                    detecta      │  MODULE  │  detecta          │
+│                    emoções      └──────────┘  stress           │
+│                                        │                        │
+└────────────────────────────────────────┼────────────────────────┘
+                                         │
+                                         ▼
+                                  ┌─────────────┐
+                                  │  EVENT BUS  │
+                                  │  (Pub/Sub)  │
+                                  └─────────────┘
+```
+
+### 19.18.3 Fluxo de Dados Detalhado
+
+**Fluxo 1: Detecção de Compromisso → Evento no Calendar**
+
+```
+1. Usuária diz: "Vamos marcar um café terça às 15h"
+   │
+   ├─▶ Audio capturado pelo React Native
+   │
+   ├─▶ Enviado via WebSocket para backend
+   │
+   ├─▶ Whisper transcreve: "Vamos marcar um café terça às 15h"
+   │
+   ├─▶ CommitmentDetector analisa:
+   │   └─▶ Detecta padrão "vamos marcar"
+   │   └─▶ Extrai: data="terça", hora="15h", tipo="café"
+   │   └─▶ Confidence: 0.92 (auto action)
+   │
+   ├─▶ AutonomousActionOrchestrator decide:
+   │   └─▶ Confidence > 0.85 → Criar automaticamente
+   │
+   ├─▶ Emite evento: COMMITMENT_CREATED
+   │   └─▶ ListenerCalendarIntegration recebe evento
+   │       └─▶ Chama calendar.create_event()
+   │
+   └─▶ Notificação push enviada:
+       "✅ Compromisso adicionado: Café - Terça 15h"
+```
+
+**Fluxo 2: Lacuna de Informação → Web Search**
+
+```
+1. Usuária diz: "Não sei se o clima em Salvador é bom em março"
+   │
+   ├─▶ Transcrição: "Não sei se o clima em Salvador é bom em março"
+   │
+   ├─▶ InformationGapDetector analisa:
+   │   └─▶ Detecta "não sei"
+   │   └─▶ Extrai query: "clima Salvador março"
+   │   └─▶ Confidence: 0.85 (auto search)
+   │
+   ├─▶ AutonomousActionOrchestrator:
+   │   └─▶ Chama web_search_agent.search()
+   │   └─▶ Resultados: [links...]
+   │
+   ├─▶ Sintetiza resposta com LLM
+   │
+   ├─▶ Emite evento: WEB_SEARCH_COMPLETED
+   │
+   └─▶ Notificação push com resumo:
+       "🔍 Março em Salvador: 28-32°C, chance chuva 40%"
+```
+
+**Fluxo 3: Análise de Soberania → Wellness Integration**
+
+```
+1. Todas as transcrições da semana são analisadas
+   │
+   ├─▶ PersonalityAnalyzer processa com LLM:
+   │   └─▶ Identifica padrões positivos (tom calmo, decisões claras)
+   │   └─▶ Identifica áreas de atenção (justificativas excessivas)
+   │   └─▶ Calcula Sovereignty Score: 8.2/10
+   │
+   ├─▶ Emite evento: SOVEREIGNTY_REPORT_READY
+   │
+   ├─▶ Se detectar ansiedade alta:
+   │   └─▶ Emite HIGH_STRESS_VOICE
+   │       └─▶ ListenerWellnessIntegration recebe
+   │           └─▶ Registra no Wellness Module
+   │               └─▶ Pode trigger ajustes na Capacity
+   │
+   └─▶ Relatório semanal enviado via notificação
+```
+
+### 19.18.4 Integrações Específicas
+
+#### Listener → Calendar
+
+```python
+# backend/modules/listener/integrations/calendar.py
+
+class ListenerCalendarIntegration:
+    """
+    Integração entre Listener e Calendar
+    """
+
+    def __init__(self, event_bus: EventBus, calendar: CalendarOrchestrator):
+        self.event_bus = event_bus
+        self.calendar = calendar
+
+        # Subscribe to listener events
+        self.event_bus.subscribe(
+            EventType.COMMITMENT_CREATED,
+            self.on_commitment_created
+        )
+
+    async def on_commitment_created(self, event_data: dict):
+        """
+        Quando compromisso é detectado, criar evento no Calendar
+        """
+
+        intent = event_data["intent"]
+        user_id = event_data["user_id"]
+
+        # Criar evento
+        calendar_event = await self.calendar.create_event(
+            user_id=user_id,
+            title=intent["entities"]["descricao"],
+            start_time=intent["entities"]["data_hora"],
+            attendees=intent["entities"].get("pessoas", []),
+            location=intent["entities"].get("local"),
+            source="listener",
+            metadata={
+                "transcription_id": intent.get("transcription_id"),
+                "confidence": intent["confidence"]
+            }
+        )
+
+        # Enviar notificação
+        await self._send_notification(
+            user_id,
+            f"✅ Compromisso adicionado: {intent['entities']['descricao']}"
+        )
+```
+
+#### Listener → Diplomat
+
+```python
+# backend/modules/listener/integrations/diplomat.py
+
+class ListenerDiplomatIntegration:
+    """
+    Registra interações sociais automaticamente
+    """
+
+    def __init__(self, event_bus: EventBus, diplomat: DiplomatOrchestrator):
+        self.event_bus = event_bus
+        self.diplomat = diplomat
+
+        self.event_bus.subscribe(
+            EventType.SOCIAL_INTERACTION_DETECTED,
+            self.on_social_interaction
+        )
+
+    async def on_social_interaction(self, event_data: dict):
+        """
+        Analisa transcrição para detectar interações sociais
+        """
+
+        interaction = event_data["interaction"]
+
+        # Registrar no Diplomat
+        await self.diplomat.log_interaction(
+            user_id=event_data["user_id"],
+            pessoa_id=interaction["pessoa_id"],
+            tipo="conversa_presencial",
+            qualidade=interaction["qualidade"],  # "positiva" | "neutra" | "negativa"
+            topicos=interaction["topicos"],
+            timestamp=event_data["timestamp"],
+            metadata={
+                "transcription_id": event_data["transcription_id"],
+                "duracao_estimada": interaction["duracao"]
+            }
+        )
+```
+
+#### Listener → Wellness
+
+```python
+# backend/modules/listener/integrations/wellness.py
+
+class ListenerWellnessIntegration:
+    """
+    Detecta estado emocional via tom de voz
+    """
+
+    def __init__(self, event_bus: EventBus, wellness: WellnessCoachAgent):
+        self.event_bus = event_bus
+        self.wellness = wellness
+
+        self.event_bus.subscribe(
+            EventType.EMOTION_DETECTED_VOICE,
+            self.on_emotion_detected
+        )
+
+    async def on_emotion_detected(self, event_data: dict):
+        """
+        Registra emoção detectada no Wellness
+        """
+
+        emotion = event_data["emotion"]
+
+        # Registrar no Wellness
+        await self.wellness.log_emotional_state(
+            user_id=event_data["user_id"],
+            emocao=emotion["tipo"],  # "ansiedade", "frustração", "alegria"
+            intensidade=emotion["intensidade"],
+            gatilho=emotion.get("gatilho"),
+            timestamp=event_data["timestamp"],
+            fonte="listener_voice"
+        )
+
+        # Se stress alto, emitir alerta
+        if emotion["tipo"] in ["ansiedade", "stress"] and emotion["intensidade"] > 0.7:
+            await self.event_bus.emit(
+                EventType.WELLNESS_ALERT,
+                {
+                    "user_id": event_data["user_id"],
+                    "tipo": "high_stress_voice",
+                    "intensidade": emotion["intensidade"]
+                }
+            )
+```
+
+### 19.18.5 Schemas de Banco de Dados
+
+```sql
+-- Transcrições de áudio
+CREATE TABLE listener_transcriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES usuarios(id),
+
+    -- Dados da transcrição
+    text TEXT NOT NULL,
+    speaker VARCHAR(20) NOT NULL,  -- 'user' | 'other'
+    confidence DECIMAL(3,2),
+
+    -- Temporal
+    timestamp TIMESTAMP NOT NULL,
+    audio_segment_id VARCHAR(255),
+
+    -- Contexto
+    conversation_context JSONB,
+
+    criado_em TIMESTAMP DEFAULT NOW(),
+
+    INDEX idx_user_timestamp (user_id, timestamp)
+);
+
+-- Intenções detectadas
+CREATE TABLE listener_detected_intents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES usuarios(id),
+    transcription_id UUID REFERENCES listener_transcriptions(id),
+
+    -- Intent
+    intent_type VARCHAR(50) NOT NULL,
+    confidence DECIMAL(3,2) NOT NULL,
+
+    -- Entidades extraídas
+    entities JSONB NOT NULL,
+
+    -- Ação tomada
+    suggested_action JSONB NOT NULL,
+    action_taken VARCHAR(20),  -- 'auto' | 'confirm' | 'ignored'
+    resulting_event_id UUID,
+
+    criado_em TIMESTAMP DEFAULT NOW(),
+
+    INDEX idx_user_intent (user_id, intent_type)
+);
+
+-- Relatórios de soberania
+CREATE TABLE listener_sovereignty_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES usuarios(id),
+
+    -- Período
+    periodo VARCHAR(20) NOT NULL,  -- 'week' | 'month'
+    data_inicio DATE NOT NULL,
+    data_fim DATE NOT NULL,
+
+    -- Métricas
+    score DECIMAL(3,1) NOT NULL,  -- 0.0 - 10.0
+    delta DECIMAL(3,1),
+
+    -- Análise completa
+    analysis_json JSONB NOT NULL,
+
+    criado_em TIMESTAMP DEFAULT NOW(),
+
+    INDEX idx_user_periodo (user_id, periodo, data_fim)
+);
+
+-- Segmentos de áudio (criptografados)
+CREATE TABLE listener_audio_segments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES usuarios(id),
+
+    segment_id VARCHAR(255) UNIQUE NOT NULL,
+    storage_path TEXT NOT NULL,
+
+    metadata JSONB,
+
+    criado_em TIMESTAMP DEFAULT NOW(),
+    expira_em TIMESTAMP DEFAULT NOW() + INTERVAL '7 days',
+
+    INDEX idx_expiration (expira_em)
+);
+
+-- Pesquisas realizadas
+CREATE TABLE listener_searches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES usuarios(id),
+
+    query TEXT NOT NULL,
+    results_json JSONB NOT NULL,
+
+    criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 19.18.6 Eventos Emitidos pelo Listener
+
+| Evento | Quando é Emitido | Payload | Módulos que Reagem |
+|--------|------------------|---------|-------------------|
+| `TRANSCRIPTION_READY` | Áudio transcrito com sucesso | `{text, speaker, confidence, timestamp}` | Todos os detectores (Commitment, InformationGap, etc.) |
+| `COMMITMENT_CREATED` | Compromisso detectado | `{intent, user_id, event_id}` | Calendar, Diplomat |
+| `INFORMATION_GAP_DETECTED` | Falta de informação identificada | `{query, context, user_id}` | WebSearchAgent |
+| `SOVEREIGNTY_REPORT_READY` | Relatório semanal gerado | `{score, delta, analysis, user_id}` | Wellness (correlação com bem-estar) |
+| `HIGH_STRESS_VOICE` | Stress alto detectado na voz | `{intensidade, timestamp, user_id}` | Wellness, Capacity (ajustar carga) |
+| `SOCIAL_INTERACTION_DETECTED` | Conversa com pessoa conhecida | `{pessoa_id, qualidade, topicos}` | Diplomat |
+
+### 19.18.7 Privacidade e Segurança
+
+**Políticas de Retenção:**
+- **Áudio bruto**: 7 dias (criptografado)
+- **Transcrições**: 90 dias
+- **Análises de soberania**: Permanente (anonimizadas após 90 dias)
+- **Intenções detectadas**: 180 dias
+
+**Controles de Privacidade:**
+```python
+# Modo privado: para de gravar temporariamente
+POST /api/listener/privacy/toggle
+{
+    "enabled": true
+}
+
+# Deletar TODOS os dados (GDPR compliance)
+DELETE /api/listener/data/transcriptions
+```
+
+**Criptografia:**
+- Todos os segmentos de áudio são criptografados com Fernet (AES)
+- Chaves armazenadas em variáveis de ambiente (nunca no código)
+- Apenas ADMIN pode acessar áudio bruto (para debugging)
+
+### 19.18.8 Métricas de Sucesso
+
+**OKRs do Listener:**
+
+**Objetivo 1:** Charlee se torna assistente proativo indispensável
+- **KR1:** 80% dos compromissos verbais capturados automaticamente
+- **KR2:** 30+ minutos/semana economizados via ações autônomas
+- **KR3:** NPS ≥ 9/10 para Listener
+
+**Objetivo 2:** Usuária evolui como "imperatriz graciosa"
+- **KR1:** Sovereignty score aumenta 15% em 3 meses
+- **KR2:** 80% reportam maior autoconsciência comunicacional
+- **KR3:** Redução de 30% em "justificativa excessiva"
+
+### 19.18.9 Roadmap de Implementação
+
+**Fase 1: MVP (2-3 meses)**
+- [ ] Audio streaming via WebSocket
+- [ ] Whisper transcription
+- [ ] CommitmentDetector básico
+- [ ] Criação automática de eventos
+
+**Fase 2: Análise de Soberania (1-2 meses)**
+- [ ] PersonalityAnalyzer
+- [ ] Relatórios semanais
+- [ ] Speaker diarization
+
+**Fase 3: Autonomia Avançada (2 meses)**
+- [ ] InformationGapDetector + Web Search
+- [ ] Integração completa com Diplomat e Wellness
+- [ ] Confidence scoring adaptativo
+
+**Fase 4: Privacidade & Compliance (1 mês)**
+- [ ] Criptografia E2E
+- [ ] Auto-deleção de dados
+- [ ] LGPD/GDPR compliance
+
+---
+
+**Status**: 🔴 Planejado (V5.0)
+**Impacto Esperado**: Transformação de assistente reativo → parceiro proativo
+**Documentação Completa**: [CHARLEE_LISTENER.md](./CHARLEE_LISTENER.md)
