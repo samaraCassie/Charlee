@@ -176,7 +176,6 @@ Documentação detalhada em [`docs/`](docs/):
   - [x] Sistema de anexos (attachments)
   - [x] 173 testes, 79.8% cobertura
 - [ ] V3.4: Notificações e Lembretes
-- [ ] V3.5: CLI interativo aprimorado
 - [ ] V4: Bot Telegram/WhatsApp
 
 ## 🤝 Contribuindo

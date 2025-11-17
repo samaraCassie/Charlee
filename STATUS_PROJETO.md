@@ -1213,13 +1213,6 @@ Total:
 - [ ] Email reminders (opcional)
 - [ ] Smart reminders baseados em padrões
 
-#### V3.5 - CLI Interativo Aprimorado
-- [ ] Interface TUI (Text User Interface) com Rich
-- [ ] Comandos rápidos para gestão de tarefas
-- [ ] Visualização de analytics no terminal
-- [ ] Modo watch para atualizações em tempo real
-- [ ] Integração com shell (autocompletion)
-
 ### V4.x - Expansão de Plataformas (Futuro)
 
 #### V4.0 - Bot Telegram
