@@ -34,14 +34,18 @@ def upgrade():
         sa.Column("file_name", sa.String(length=255), nullable=False),
         sa.Column("file_size", sa.Integer(), nullable=False),  # Size in bytes
         sa.Column("file_url", sa.String(length=500), nullable=True),  # URL or path to stored file
-        sa.Column("mime_type", sa.String(length=100), nullable=True),  # e.g., 'audio/mp3', 'image/png'
+        sa.Column(
+            "mime_type", sa.String(length=100), nullable=True
+        ),  # e.g., 'audio/mp3', 'image/png'
         # Processing metadata
         sa.Column("transcription", sa.Text(), nullable=True),  # For audio files
         sa.Column("analysis", sa.Text(), nullable=True),  # For image files
         sa.Column(
             "processing_status",
             sa.String(length=20),
-            sa.CheckConstraint("processing_status IN ('pending', 'processing', 'completed', 'failed')"),
+            sa.CheckConstraint(
+                "processing_status IN ('pending', 'processing', 'completed', 'failed')"
+            ),
             server_default="completed",
         ),
         sa.Column("error_message", sa.Text(), nullable=True),

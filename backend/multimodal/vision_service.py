@@ -131,7 +131,9 @@ class VisionService:
             Exception: If analysis fails
         """
         try:
-            logger.info("Analyzing image", extra={"filename": filename, "has_custom_prompt": bool(prompt)})
+            logger.info(
+                "Analyzing image", extra={"filename": filename, "has_custom_prompt": bool(prompt)}
+            )
 
             # Encode image
             base64_image = self._encode_image(image_file, filename)
