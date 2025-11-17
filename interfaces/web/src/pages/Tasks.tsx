@@ -30,7 +30,6 @@ import {
   Pencil,
   Mic,
   Image as ImageIcon,
-  ChevronDown,
   ChevronUp,
   Paperclip,
 } from 'lucide-react';
@@ -122,15 +121,15 @@ export default function Tasks() {
     });
   };
 
-  const handleImageAnalysis = (analysis: { analysis: string; tasks: string[] }) => {
-    if (analysis.tasks && analysis.tasks.length > 0) {
-      setNewTaskTitle(analysis.tasks[0]);
+  const handleImageAnalysis = (analysis: string, tasks: Array<{ description: string; source: string }>) => {
+    if (tasks && tasks.length > 0) {
+      setNewTaskTitle(tasks[0].description);
       toast({
         title: 'Análise concluída',
-        description: `${analysis.tasks.length} tarefa(s) encontrada(s) na imagem.`,
+        description: `${tasks.length} tarefa(s) encontrada(s) na imagem.`,
       });
     } else {
-      setNewTaskTitle(analysis.analysis.substring(0, 200));
+      setNewTaskTitle(analysis.substring(0, 200));
       toast({
         title: 'Análise concluída',
         description: 'Imagem analisada com sucesso!',

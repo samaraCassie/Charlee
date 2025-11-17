@@ -10,7 +10,7 @@ import {
   Clock,
   BarChart3,
 } from 'lucide-react';
-import { format, startOfWeek, startOfMonth, parseISO, differenceInDays } from 'date-fns';
+import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface MultimodalStats {
@@ -28,7 +28,6 @@ interface MultimodalStats {
 }
 
 export const MultimodalAnalytics = () => {
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [stats, setStats] = useState<MultimodalStats | null>(null);
   const [loading, setLoading] = useState(true);
 

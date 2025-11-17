@@ -14,8 +14,6 @@ import { attachmentsService, type Attachment } from '@/services/attachmentsServi
 import { AttachmentsList } from '@/components/AttachmentsList';
 import { LoadingState } from '@/components/LoadingState';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 export default function TranscriptionHistory() {
   const { toast } = useToast();

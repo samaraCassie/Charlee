@@ -1,12 +1,12 @@
 import React from 'react';
 import { FileAudio, FileImage, Download, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Attachment {
-  id: string;
+  id: number;
   file_name: string;
   file_type: string; // 'audio' | 'image'
   file_path: string;
@@ -22,9 +22,9 @@ interface Attachment {
 
 interface AttachmentsListProps {
   attachments: Attachment[];
-  onReprocess?: (attachmentId: string) => void;
-  onDelete?: (attachmentId: string) => void;
-  onDownload?: (attachmentId: string) => void;
+  onReprocess?: (attachmentId: number) => void;
+  onDelete?: (attachmentId: number) => void;
+  onDownload?: (attachmentId: number) => void;
 }
 
 export const AttachmentsList: React.FC<AttachmentsListProps> = ({
