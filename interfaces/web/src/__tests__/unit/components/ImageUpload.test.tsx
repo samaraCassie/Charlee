@@ -10,6 +10,16 @@ vi.mock('@/services/multimodalService');
 global.URL.createObjectURL = vi.fn(() => 'mock-object-url');
 global.URL.revokeObjectURL = vi.fn();
 
+// Helper function to simulate file selection
+const selectFile = (input: HTMLInputElement, file: File) => {
+  Object.defineProperty(input, 'files', {
+    value: [file],
+    writable: false,
+    configurable: true,
+  });
+  fireEvent.change(input);
+};
+
 describe('ImageUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,6 +37,9 @@ describe('ImageUpload', () => {
   it('should handle file selection via input', async () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
 
     const mockAnalysisResponse = {
       analysis: 'Test analysis',
@@ -67,6 +80,9 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
 
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
     vi.mocked(multimodalService.multimodalService.analyzeImage).mockResolvedValue({
       analysis: 'Test',
       tasks: [],
@@ -77,12 +93,7 @@ describe('ImageUpload', () => {
     const file = new File(['fake image'], 'test.png', { type: 'image/png' });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-    Object.defineProperty(input, 'files', {
-      value: [file],
-      writable: false,
-    });
-
-    fireEvent.change(input);
+    selectFile(input, file);
 
     await waitFor(() => {
       const img = screen.getByAltText('Preview');
@@ -107,9 +118,7 @@ describe('ImageUpload', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     // Simulate file selection
-    fireEvent.change(input, {
-      target: { files: [file] },
-    });
+    selectFile(input, file);
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalled();
@@ -135,9 +144,7 @@ describe('ImageUpload', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     // Simulate file selection
-    fireEvent.change(input, {
-      target: { files: [largeFile] },
-    });
+    selectFile(input, largeFile);
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalled();
@@ -147,6 +154,9 @@ describe('ImageUpload', () => {
   it('should handle drag and drop', async () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
 
     vi.mocked(multimodalService.multimodalService.analyzeImage).mockResolvedValue({
       analysis: 'Test analysis',
@@ -178,6 +188,9 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
 
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
     let resolveAnalysis: any;
     const analysisPromise = new Promise((resolve) => {
       resolveAnalysis = resolve;
@@ -192,12 +205,7 @@ describe('ImageUpload', () => {
     const file = new File(['fake image'], 'test.png', { type: 'image/png' });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-    Object.defineProperty(input, 'files', {
-      value: [file],
-      writable: false,
-    });
-
-    fireEvent.change(input);
+    selectFile(input, file);
 
     await waitFor(() => {
       expect(screen.getByText('Analyzing...')).toBeInTheDocument();
@@ -215,6 +223,9 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
 
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
     vi.mocked(multimodalService.multimodalService.analyzeImage).mockRejectedValue(
       new Error('Analysis failed')
     );
@@ -224,12 +235,7 @@ describe('ImageUpload', () => {
     const file = new File(['fake image'], 'test.png', { type: 'image/png' });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-    Object.defineProperty(input, 'files', {
-      value: [file],
-      writable: false,
-    });
-
-    fireEvent.change(input);
+    selectFile(input, file);
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith(expect.stringContaining('Analysis failed'));
@@ -240,6 +246,9 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
     const customPrompt = 'Describe this image in detail';
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
 
     vi.mocked(multimodalService.multimodalService.analyzeImage).mockResolvedValue({
       analysis: 'Detailed description',
@@ -259,9 +268,7 @@ describe('ImageUpload', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     // Simulate file selection
-    fireEvent.change(input, {
-      target: { files: [file] },
-    });
+    selectFile(input, file);
 
     // Wait for preview to appear
     await waitFor(() => {
@@ -285,15 +292,16 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
 
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
+
     const { unmount } = render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
 
     const file = new File(['fake image'], 'test.png', { type: 'image/png' });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
     // Simulate file selection
-    fireEvent.change(input, {
-      target: { files: [file] },
-    });
+    selectFile(input, file);
 
     await waitFor(() => {
       expect(URL.createObjectURL).toHaveBeenCalled();
@@ -307,6 +315,9 @@ describe('ImageUpload', () => {
   it('should support multiple image formats', async () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
+
+    // Mock validateFile to succeed
+    vi.mocked(multimodalService.multimodalService.validateFile).mockReturnValue(true);
 
     vi.mocked(multimodalService.multimodalService.analyzeImage).mockResolvedValue({
       analysis: 'Test',
@@ -322,9 +333,7 @@ describe('ImageUpload', () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
       // Simulate file selection
-      fireEvent.change(input, {
-        target: { files: [file] },
-      });
+      selectFile(input, file);
 
       await waitFor(() => {
         expect(multimodalService.multimodalService.analyzeImage).toHaveBeenCalled();
