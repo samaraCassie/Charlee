@@ -250,14 +250,14 @@ describe('multimodalService', () => {
 
       it('should reject unsupported audio formats', () => {
         const file = new File(['fake audio'], 'test.avi', { type: 'video/avi' });
-        expect(multimodalService.validateFile(file, 'audio')).toBe(false);
+        expect(() => multimodalService.validateFile(file, 'audio')).toThrow();
       });
 
       it('should reject audio files larger than 25MB', () => {
         const largeFile = new File(['x'.repeat(26 * 1024 * 1024)], 'large.mp3', {
           type: 'audio/mp3',
         });
-        expect(multimodalService.validateFile(largeFile, 'audio')).toBe(false);
+        expect(() => multimodalService.validateFile(largeFile, 'audio')).toThrow();
       });
 
       it('should accept audio files smaller than 25MB', () => {
@@ -280,14 +280,14 @@ describe('multimodalService', () => {
 
       it('should reject unsupported image formats', () => {
         const file = new File(['fake image'], 'test.gif', { type: 'image/gif' });
-        expect(multimodalService.validateFile(file, 'image')).toBe(false);
+        expect(() => multimodalService.validateFile(file, 'image')).toThrow();
       });
 
       it('should reject image files larger than 20MB', () => {
         const largeFile = new File(['x'.repeat(21 * 1024 * 1024)], 'large.png', {
           type: 'image/png',
         });
-        expect(multimodalService.validateFile(largeFile, 'image')).toBe(false);
+        expect(() => multimodalService.validateFile(largeFile, 'image')).toThrow();
       });
 
       it('should accept image files smaller than 20MB', () => {

@@ -104,7 +104,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
   });
 
@@ -128,7 +128,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
     // Stop recording
@@ -156,7 +156,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
     // Stop recording
@@ -181,7 +181,7 @@ describe('VoiceInput', () => {
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith(
-        expect.stringContaining('Erro ao acessar o microfone')
+        expect.stringContaining('Failed to access microphone')
       );
     });
   });
@@ -198,7 +198,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
     // Advance timer by 2 seconds
@@ -226,7 +226,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
     unmount();
@@ -254,7 +254,7 @@ describe('VoiceInput', () => {
     fireEvent.click(recordButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Gravando/i)).toBeInTheDocument();
+      expect(screen.getByText('Parar Gravação')).toBeInTheDocument();
     });
 
     // Stop recording
@@ -262,7 +262,7 @@ describe('VoiceInput', () => {
     fireEvent.click(stopButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Processando/i)).toBeInTheDocument();
+      expect(screen.getByText('Processando transcrição...')).toBeInTheDocument();
     });
 
     // Resolve transcription

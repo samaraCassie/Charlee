@@ -21,7 +21,7 @@ describe('ImageUpload', () => {
 
     render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
 
-    expect(screen.getByText(/Arraste uma imagem/i)).toBeInTheDocument();
+    expect(screen.getByText('Upload image')).toBeInTheDocument();
   });
 
   it('should handle file selection via input', async () => {
@@ -59,7 +59,7 @@ describe('ImageUpload', () => {
         file,
         undefined
       );
-      expect(onAnalysis).toHaveBeenCalledWith(mockAnalysisResponse);
+      expect(onAnalysis).toHaveBeenCalledWith(mockAnalysisResponse.analysis, mockAnalysisResponse.tasks);
     });
   });
 
@@ -109,7 +109,7 @@ describe('ImageUpload', () => {
     fireEvent.change(input);
 
     await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('formato'));
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('format'));
     });
   });
 
@@ -134,7 +134,7 @@ describe('ImageUpload', () => {
     fireEvent.change(input);
 
     await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('tamanho'));
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('size'));
     });
   });
 
@@ -149,7 +149,7 @@ describe('ImageUpload', () => {
 
     render(<ImageUpload onAnalysis={onAnalysis} onError={onError} autoAnalyze={true} />);
 
-    const dropZone = screen.getByText(/Arraste uma imagem/i).closest('div');
+    const dropZone = screen.getByText('Upload image').closest('div');
     expect(dropZone).toBeTruthy();
 
     const file = new File(['fake image'], 'test.png', { type: 'image/png' });
@@ -194,7 +194,7 @@ describe('ImageUpload', () => {
     fireEvent.change(input);
 
     await waitFor(() => {
-      expect(screen.getByText(/Analisando/i)).toBeInTheDocument();
+      expect(screen.getByText('Analyzing...')).toBeInTheDocument();
     });
 
     // Resolve analysis
@@ -226,7 +226,7 @@ describe('ImageUpload', () => {
     fireEvent.change(input);
 
     await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Erro ao analisar imagem'));
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('Analysis failed'));
     });
   });
 
@@ -265,7 +265,7 @@ describe('ImageUpload', () => {
     });
 
     // Click analyze button
-    const analyzeButton = screen.getByText(/Analisar/i);
+    const analyzeButton = screen.getByText('Analyze Image');
     fireEvent.click(analyzeButton);
 
     await waitFor(() => {
