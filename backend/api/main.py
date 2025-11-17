@@ -23,6 +23,7 @@ from api.routes import (
     analytics,
     auth,
     big_rocks,
+    calendar,
     capacity,
     daily_tracking,
     freelancer,
@@ -145,6 +146,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "name": "Projects Intelligence (V2)",
             "description": "AI-powered freelance opportunity analysis, semantic search, and strategic pricing",
         },
+        {
+            "name": "Calendar Integration (V3)",
+            "description": "Google Calendar and Microsoft Outlook synchronization with bidirectional sync",
+        },
     ],
 )
 
@@ -225,6 +230,11 @@ app.include_router(
 )
 app.include_router(freelancer.router, prefix="/api/v2/freelancer", tags=["Freelancer (V2)"])
 app.include_router(projects.router, prefix="/api/v2/projects", tags=["Projects Intelligence (V2)"])
+
+# ========================================
+# ROUTERS V3
+# ========================================
+app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["Calendar Integration (V3)"])
 
 # ========================================
 # PROMETHEUS METRICS

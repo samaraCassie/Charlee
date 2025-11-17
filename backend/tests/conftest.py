@@ -1,5 +1,6 @@
 """Pytest configuration and fixtures."""
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -11,6 +12,26 @@ from database.config import Base, get_db
 
 # Test database (in-memory SQLite)
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_env():
+    """Set up test environment variables."""
+    os.environ["GOOGLE_CLIENT_ID"] = "test_google_client_id"
+    os.environ["GOOGLE_CLIENT_SECRET"] = "test_google_client_secret"
+    os.environ["MICROSOFT_CLIENT_ID"] = "test_microsoft_client_id"
+    os.environ["MICROSOFT_CLIENT_SECRET"] = "test_microsoft_client_secret"
+    os.environ["MICROSOFT_TENANT_ID"] = "common"
+    yield
+    # Cleanup after all tests
+    for key in [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+    ]:
+        os.environ.pop(key, None)
 
 
 @pytest.fixture(scope="function")
