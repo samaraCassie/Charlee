@@ -30,12 +30,15 @@ class CalendarEventPublisher:
         self.db = db_session
         self.event_bus = event_bus or EventBus(db_session)
 
-    async def publish_connection_created(self, connection: CalendarConnection) -> None:
+    async def publish_connection_created(self, connection: CalendarConnection) -> int:
         """
         Publish event when calendar is connected.
 
         Args:
             connection: Calendar connection that was created
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_CONNECTED,
@@ -52,15 +55,16 @@ class CalendarEventPublisher:
             prioridade=7,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_CONNECTED event",
             extra={"connection_id": connection.id, "provider": connection.provider},
         )
+        return event_id
 
     async def publish_connection_deleted(
         self, connection_id: int, user_id: int, provider: str
-    ) -> None:
+    ) -> int:
         """
         Publish event when calendar is disconnected.
 
@@ -68,6 +72,9 @@ class CalendarEventPublisher:
             connection_id: Calendar connection ID
             user_id: User ID
             provider: Calendar provider
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_DISCONNECTED,
@@ -80,19 +87,23 @@ class CalendarEventPublisher:
             prioridade=6,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_DISCONNECTED event",
             extra={"connection_id": connection_id, "provider": provider},
         )
+        return event_id
 
-    async def publish_sync_completed(self, connection_id: int, stats: dict[str, Any]) -> None:
+    async def publish_sync_completed(self, connection_id: int, stats: dict[str, Any]) -> int:
         """
         Publish event when calendar sync completes.
 
         Args:
             connection_id: Calendar connection ID
             stats: Sync statistics
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_SYNCED,
@@ -107,19 +118,23 @@ class CalendarEventPublisher:
             prioridade=5,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_SYNCED event",
             extra={"connection_id": connection_id, "stats": stats},
         )
+        return event_id
 
-    async def publish_sync_failed(self, connection_id: int, error_message: str) -> None:
+    async def publish_sync_failed(self, connection_id: int, error_message: str) -> int:
         """
         Publish event when calendar sync fails.
 
         Args:
             connection_id: Calendar connection ID
             error_message: Error description
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_SYNC_FAILED,
@@ -131,18 +146,22 @@ class CalendarEventPublisher:
             prioridade=8,  # High priority for failures
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.warning(
             "Published CALENDAR_SYNC_FAILED event",
             extra={"connection_id": connection_id, "error": error_message},
         )
+        return event_id
 
-    async def publish_event_created(self, calendar_event: CalendarEvent) -> None:
+    async def publish_event_created(self, calendar_event: CalendarEvent) -> int:
         """
         Publish event when calendar event is created.
 
         Args:
             calendar_event: Calendar event that was created
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_EVENT_CREATED,
@@ -160,18 +179,22 @@ class CalendarEventPublisher:
             prioridade=6,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_EVENT_CREATED event",
             extra={"event_id": calendar_event.id, "title": calendar_event.title},
         )
+        return event_id
 
-    async def publish_event_updated(self, calendar_event: CalendarEvent) -> None:
+    async def publish_event_updated(self, calendar_event: CalendarEvent) -> int:
         """
         Publish event when calendar event is updated.
 
         Args:
             calendar_event: Calendar event that was updated
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_EVENT_UPDATED,
@@ -189,13 +212,14 @@ class CalendarEventPublisher:
             prioridade=5,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_EVENT_UPDATED event",
             extra={"event_id": calendar_event.id, "title": calendar_event.title},
         )
+        return event_id
 
-    async def publish_event_deleted(self, event_id: int, user_id: int, title: str) -> None:
+    async def publish_event_deleted(self, event_id: int, user_id: int, title: str) -> int:
         """
         Publish event when calendar event is deleted.
 
@@ -203,6 +227,9 @@ class CalendarEventPublisher:
             event_id: Calendar event ID
             user_id: User ID
             title: Event title
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_EVENT_DELETED,
@@ -215,18 +242,22 @@ class CalendarEventPublisher:
             prioridade=5,
         )
 
-        await self.event_bus.publish(event)
+        db_event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_EVENT_DELETED event",
             extra={"event_id": event_id, "title": title},
         )
+        return db_event_id
 
-    async def publish_conflict_detected(self, conflict: CalendarConflict) -> None:
+    async def publish_conflict_detected(self, conflict: CalendarConflict) -> int:
         """
         Publish event when calendar conflict is detected.
 
         Args:
             conflict: Calendar conflict that was detected
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_CONFLICT_DETECTED,
@@ -241,7 +272,7 @@ class CalendarEventPublisher:
             prioridade=8,  # High priority for conflicts
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.warning(
             "Published CALENDAR_CONFLICT_DETECTED event",
             extra={
@@ -249,13 +280,17 @@ class CalendarEventPublisher:
                 "conflict_type": conflict.conflict_type,
             },
         )
+        return event_id
 
-    async def publish_conflict_resolved(self, conflict: CalendarConflict) -> None:
+    async def publish_conflict_resolved(self, conflict: CalendarConflict) -> int:
         """
         Publish event when calendar conflict is resolved.
 
         Args:
             conflict: Calendar conflict that was resolved
+
+        Returns:
+            Event ID from database
         """
         event = Event(
             tipo=EventType.CALENDAR_CONFLICT_RESOLVED,
@@ -271,7 +306,7 @@ class CalendarEventPublisher:
             prioridade=6,
         )
 
-        await self.event_bus.publish(event)
+        event_id = await self.event_bus.publish(event)
         logger.info(
             "Published CALENDAR_CONFLICT_RESOLVED event",
             extra={
@@ -279,6 +314,7 @@ class CalendarEventPublisher:
                 "resolved_by": conflict.resolved_by,
             },
         )
+        return event_id
 
 
 def get_calendar_event_publisher(
