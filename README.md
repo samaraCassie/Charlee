@@ -8,6 +8,7 @@ Charlee é um sistema de inteligência pessoal desenvolvido com agentes AI que a
 
 ### ✨ Features Principais
 
+- **🎙️ Input Multimodal**: Transcrição de voz (Whisper) e análise de imagem (GPT-4o Vision) ✨ **NOVO!**
 - **🤖 Agente Conversacional com Memória**: Chat natural com contexto e aprendizado sobre preferências
 - **🎯 Big Rocks**: Gestão de pilares de vida (áreas importantes)
 - **📝 Tarefas Inteligentes**: Sistema de tarefas com priorização automática
@@ -151,16 +152,25 @@ Documentação detalhada em [`docs/`](docs/):
 - [x] V1: Sistema base (Big Rocks, Tarefas, CRUD)
 - [x] V2: Bem-estar consciente + Capacity Guard
 - [x] V2.1: Memória e sessões persistentes
-- [x] **V3.0: Frontend Web React** ✨ **NEW!**
+- [x] **V3.0: Frontend Web React**
   - [x] Dashboard com visão geral
   - [x] Gerenciamento de Big Rocks e Tasks
   - [x] Analytics e relatórios
   - [x] Chat interface com IA
   - [x] Wellness tracking
   - [x] Test coverage > 80%
-- [ ] V3.1: Integração Google Calendar
-- [ ] V3.2: Input multimodal (voz, imagens)
-- [ ] V3.3: CLI interativo aprimorado
+- [x] **V3.1: Agent Orchestration**
+  - [x] Sistema de roteamento automático
+  - [x] Análise de intenção do usuário
+  - [x] Consulta multi-agente
+- [x] **V3.2: Input Multimodal** ✨ **NOVO!**
+  - [x] Transcrição de voz (Whisper API)
+  - [x] Análise de imagem (GPT-4o Vision)
+  - [x] VoiceInput e ImageUpload components
+  - [x] Sistema de anexos (attachments)
+  - [x] 173 testes, 79.8% cobertura
+- [ ] V3.3: Integração Google Calendar
+- [ ] V3.4: CLI interativo aprimorado
 - [ ] V4: Bot Telegram/WhatsApp
 
 ## 🤝 Contribuindo
@@ -228,5 +238,5 @@ curl -X GET http://localhost:8000/api/v2/freelancer/projects/1/invoice \
 
 ---
 
-**Status**: 🎉 V2 - Freelancer System Complete!
-**Última atualização**: 2025-11-16
+**Status**: 🎉 V3.2 - Multimodal Input System Complete! ✨
+**Última atualização**: 2025-11-17
