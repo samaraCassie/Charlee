@@ -135,13 +135,19 @@ class TestVisionService:
 
     def test_supported_formats(self, vision_service, mock_openai_client):
         """Test all supported image formats are accepted."""
-        supported_formats = ["png", "jpg", "jpeg", "webp"]
+        # Map file extensions to PIL format names
+        format_map = {
+            "png": "PNG",
+            "jpg": "JPEG",
+            "jpeg": "JPEG",
+            "webp": "WEBP",
+        }
 
-        for fmt in supported_formats:
+        for fmt, pil_format in format_map.items():
             # Create image
             img = Image.new("RGB", (100, 100), color="green")
             img_bytes = BytesIO()
-            img.save(img_bytes, format=fmt.upper() if fmt != "jpeg" else "JPEG")
+            img.save(img_bytes, format=pil_format)
             img_bytes.seek(0)
 
             # Should not raise error for format validation

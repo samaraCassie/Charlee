@@ -105,7 +105,7 @@ class VisionService:
             return base64.b64encode(buffer.read()).decode("utf-8")
 
         except Exception as e:
-            logger.error("Error processing image", extra={"filename": filename, "error": str(e)})
+            logger.error("Error processing image", extra={"file_name": filename, "error": str(e)})
             raise ValueError(f"Invalid image file: {str(e)}") from e
 
     def analyze_image(
@@ -164,7 +164,7 @@ class VisionService:
             logger.info(
                 "Image analysis successful",
                 extra={
-                    "filename": filename,
+                    "file_name": filename,
                     "response_length": len(analysis_text) if analysis_text else 0,
                 },
             )
@@ -179,7 +179,7 @@ class VisionService:
         except Exception as e:
             logger.error(
                 "Error analyzing image",
-                extra={"filename": filename, "error": str(e)},
+                extra={"file_name": filename, "error": str(e)},
                 exc_info=True,
             )
             raise Exception(f"Failed to analyze image: {str(e)}") from e

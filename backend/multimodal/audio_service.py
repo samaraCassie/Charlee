@@ -73,7 +73,7 @@ class AudioService:
             logger.info(
                 "Transcribing audio file",
                 extra={
-                    "filename": filename,
+                    "file_name": filename,
                     "file_size_mb": file_size / 1024 / 1024,
                     "language": language,
                 },
@@ -90,7 +90,7 @@ class AudioService:
             logger.info(
                 "Audio transcription successful",
                 extra={
-                    "filename": filename,
+                    "file_name": filename,
                     "text_length": len(transcript.text),
                     "detected_language": getattr(transcript, "language", "unknown"),
                 },
@@ -104,7 +104,7 @@ class AudioService:
         except Exception as e:
             logger.error(
                 "Error transcribing audio",
-                extra={"filename": filename, "error": str(e)},
+                extra={"file_name": filename, "error": str(e)},
                 exc_info=True,
             )
             raise Exception(f"Failed to transcribe audio: {str(e)}") from e
