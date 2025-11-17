@@ -219,7 +219,8 @@ describe('VoiceInput', () => {
 
     // Wait for timer to show (at least 0:00)
     await waitFor(() => {
-      expect(screen.getByText(/\d:\d{2}/)).toBeInTheDocument();
+      const timer = screen.getByRole('timer');
+      expect(timer).toHaveTextContent(/\d:\d{2}/);
     });
   });
 

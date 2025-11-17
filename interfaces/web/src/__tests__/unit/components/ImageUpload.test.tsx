@@ -387,7 +387,7 @@ describe('ImageUpload', () => {
     });
 
     // Find and click the X button
-    const clearButton = screen.getByRole('button', { name: '' });
+    const clearButton = screen.getByRole('button', { name: 'Remove image' });
     fireEvent.click(clearButton);
 
     // Preview should be removed
