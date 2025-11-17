@@ -24,6 +24,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -37,6 +38,10 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
+      // Stop media stream tracks
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
       stopRecording();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,6 +51,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     try {
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
 
       // Create media recorder
       const mediaRecorder = new MediaRecorder(stream, {
@@ -67,7 +73,10 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
         // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
 
         // Save blob and create preview URL
         setAudioBlob(blob);

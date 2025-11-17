@@ -95,6 +95,11 @@ describe('ImageUpload', () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
 
+    // Mock validateFile to throw error for invalid file type
+    vi.mocked(multimodalService.multimodalService.validateFile).mockImplementation(() => {
+      throw new Error('Unsupported image format: txt');
+    });
+
     render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
 
     // Create an invalid file type
@@ -114,6 +119,11 @@ describe('ImageUpload', () => {
   it('should validate file size', async () => {
     const onAnalysis = vi.fn();
     const onError = vi.fn();
+
+    // Mock validateFile to throw error for file too large
+    vi.mocked(multimodalService.multimodalService.validateFile).mockImplementation(() => {
+      throw new Error('File size exceeds maximum allowed size (20 MB)');
+    });
 
     render(<ImageUpload onAnalysis={onAnalysis} onError={onError} />);
 
@@ -311,12 +321,10 @@ describe('ImageUpload', () => {
       const file = new File(['fake image'], `test.${format}`, { type: `image/${format}` });
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      Object.defineProperty(input, 'files', {
-        value: [file],
-        writable: false,
+      // Simulate file selection
+      fireEvent.change(input, {
+        target: { files: [file] },
       });
-
-      fireEvent.change(input);
 
       await waitFor(() => {
         expect(multimodalService.multimodalService.analyzeImage).toHaveBeenCalled();
