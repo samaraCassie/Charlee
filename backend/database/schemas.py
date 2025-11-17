@@ -1032,3 +1032,9 @@ class CalendarSyncRequest(BaseModel):
 
     connection_id: int = Field(..., gt=0)
     direction: Optional[Literal["to_calendar", "from_calendar", "both"]] = "both"
+
+
+class CalendarSyncDirection(BaseModel):
+    """Schema for sync direction only (when connection_id is in path)."""
+
+    direction: Optional[Literal["to_calendar", "from_calendar", "both"]] = "both"

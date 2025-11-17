@@ -9,7 +9,7 @@ import secrets
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from api.auth.dependencies import get_current_user
@@ -24,12 +24,14 @@ from database.models import (
 from database.schemas import (
     CalendarConflictListResponse,
     CalendarConflictResponse,
+    CalendarConflictUpdate,
     CalendarConnectionListResponse,
     CalendarConnectionResponse,
     CalendarConnectionUpdate,
     CalendarEventListResponse,
     CalendarEventResponse,
     CalendarOAuthCallback,
+    CalendarSyncDirection,
     CalendarSyncLogListResponse,
     CalendarSyncLogResponse,
     CalendarSyncRequest,
@@ -391,6 +393,11 @@ async def get_connection(
     response_model=CalendarConnectionResponse,
     summary="Update calendar connection",
 )
+@router.put(
+    "/connections/{connection_id}",
+    response_model=CalendarConnectionResponse,
+    summary="Update calendar connection",
+)
 async def update_connection(
     connection_id: int,
     update_data: CalendarConnectionUpdate,
@@ -485,7 +492,7 @@ async def delete_connection(
 )
 async def trigger_connection_sync(
     connection_id: int,
-    sync_request: CalendarSyncRequest,
+    sync_direction: CalendarSyncDirection,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
@@ -494,7 +501,7 @@ async def trigger_connection_sync(
 
     Args:
         connection_id: Connection ID to sync
-        sync_request: Sync direction and options
+        sync_direction: Sync direction (to_calendar, from_calendar, or both)
         current_user: Authenticated user
         db: Database session
 
@@ -527,7 +534,7 @@ async def trigger_connection_sync(
             detail="Celery tasks not available",
         )
 
-    task = sync_connection.delay(connection_id, sync_request.direction)
+    task = sync_connection.delay(connection_id, sync_direction.direction)
 
     logger.info(
         "Manual sync triggered",
@@ -829,3 +836,141 @@ async def get_conflict(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     return conflict
+
+
+@router.post(
+    "/conflicts/{conflict_id}/resolve",
+    response_model=CalendarConflictResponse,
+    summary="Resolve calendar conflict",
+)
+async def resolve_conflict(
+    conflict_id: int,
+    resolution_data: CalendarConflictUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> CalendarConflictResponse:
+    """
+    Resolve a calendar synchronization conflict.
+
+    Args:
+        conflict_id: Conflict ID
+        resolution_data: Resolution strategy and data
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        CalendarConflictResponse: Updated conflict with resolution
+
+    Raises:
+        HTTPException 404: If conflict not found
+        HTTPException 403: If conflict doesn't belong to user
+    """
+    conflict = db.query(CalendarConflict).filter(CalendarConflict.id == conflict_id).first()
+
+    if not conflict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conflict not found")
+
+    if conflict.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    # Update conflict with resolution data
+    update_dict = resolution_data.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        setattr(conflict, key, value)
+
+    # Mark as resolved
+    conflict.status = "resolved"
+    conflict.resolved_at = datetime.utcnow()
+    conflict.resolved_by = current_user.username
+    conflict.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(conflict)
+
+    logger.info(
+        "Conflict resolved",
+        extra={
+            "user_id": current_user.id,
+            "conflict_id": conflict_id,
+            "resolution_strategy": conflict.resolution_strategy,
+        },
+    )
+
+    return conflict
+
+
+# ==================== Webhooks ====================
+
+
+@router.post(
+    "/webhooks/google",
+    status_code=status.HTTP_200_OK,
+    summary="Google Calendar webhook notification",
+)
+async def google_webhook_notification(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Handle Google Calendar push notification webhook.
+
+    Google sends webhook notifications when calendar events change.
+    This triggers a sync to pull the latest changes.
+
+    Args:
+        request: FastAPI request with Google webhook headers
+        db: Database session
+
+    Returns:
+        dict: Acknowledgment response
+    """
+    # Get Google webhook headers
+    channel_id = request.headers.get("X-Goog-Channel-ID")
+    resource_state = request.headers.get("X-Goog-Resource-State")
+
+    logger.info(
+        "Google webhook received",
+        extra={"channel_id": channel_id, "resource_state": resource_state},
+    )
+
+    # Sync notifications are just to verify the webhook - acknowledge them
+    if resource_state == "sync":
+        logger.info("Google webhook sync verification received")
+        return {"status": "ok", "message": "Sync notification acknowledged"}
+
+    # For update/exists notifications, trigger a sync
+    if resource_state in ["update", "exists"] and channel_id:
+        try:
+            connection_id = int(channel_id)
+
+            # Verify connection exists
+            connection = (
+                db.query(CalendarConnection).filter(CalendarConnection.id == connection_id).first()
+            )
+
+            if connection and connection.sync_enabled:
+                # Trigger async sync task
+                if sync_connection is not None:
+                    task = sync_connection.delay(connection_id, "from_calendar")
+
+                    logger.info(
+                        "Webhook sync triggered",
+                        extra={
+                            "connection_id": connection_id,
+                            "task_id": task.id,
+                        },
+                    )
+
+                    return {
+                        "status": "ok",
+                        "message": "Sync triggered",
+                        "task_id": task.id,
+                    }
+
+        except (ValueError, TypeError) as e:
+            logger.warning(
+                "Invalid channel ID in webhook",
+                extra={"channel_id": channel_id, "error": str(e)},
+            )
+
+    return {"status": "ok", "message": "Webhook received"}
