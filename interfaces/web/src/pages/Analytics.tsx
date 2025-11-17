@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { analyticsService } from '@/services/analyticsService';
 import { useCycleStore } from '@/stores/cycleStore';
+import { MultimodalAnalytics } from '@/components/MultimodalAnalytics';
 import type {
   WeeklyStats,
   MonthlyStats,
@@ -350,6 +351,11 @@ export default function Analytics() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Multimodal Analytics */}
+      <div className="pt-8 border-t">
+        <MultimodalAnalytics />
       </div>
     </div>
   );

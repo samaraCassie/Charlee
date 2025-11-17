@@ -237,6 +237,7 @@ class Task(Base):
     # Relationships
     user = relationship("User", back_populates="tasks")
     big_rock = relationship("BigRock", back_populates="tasks")
+    attachments = relationship("Attachment", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Task(id={self.id}, description='{self.description[:30]}...', status='{self.status}', user_id={self.user_id})>"
@@ -252,6 +253,65 @@ class Task(Base):
         self.status = "pending"
         self.completed_at = None
         self.updated_at = datetime.now(timezone.utc)
+
+
+class Attachment(Base):
+    """
+    Attachment - Multimodal file attachments for tasks.
+
+    Stores audio, image, and document attachments with their processing results.
+    Supports:
+    - Audio: Transcription via OpenAI Whisper
+    - Image: Analysis via GPT-4o Vision
+    - Document: Future support for PDF/text extraction
+    """
+
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(
+        Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # File information
+    file_type = Column(
+        String(20),
+        CheckConstraint("file_type IN ('audio', 'image', 'document')"),
+        nullable=False,
+        index=True,
+    )
+    file_name = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)  # Size in bytes
+    file_url = Column(String(500), nullable=True)  # URL or path to stored file
+    mime_type = Column(String(100), nullable=True)  # e.g., 'audio/mp3', 'image/png'
+
+    # Processing results
+    transcription = Column(Text, nullable=True)  # For audio files
+    analysis = Column(Text, nullable=True)  # For image files
+    processing_status = Column(
+        String(20),
+        CheckConstraint("processing_status IN ('pending', 'processing', 'completed', 'failed')"),
+        default="completed",
+        index=True,
+    )
+    error_message = Column(Text, nullable=True)
+
+    # Additional metadata (JSON)
+    file_metadata = Column(JSON, nullable=True)  # Language, detected entities, etc.
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    task = relationship("Task", back_populates="attachments")
+
+    def __repr__(self):
+        return f"<Attachment(id={self.id}, task_id={self.task_id}, file_type='{self.file_type}', file_name='{self.file_name}')>"
 
 
 # Performance indexes (created via Alembic migrations)
