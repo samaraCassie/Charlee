@@ -1038,33 +1038,3 @@ class CalendarSyncDirection(BaseModel):
     """Schema for sync direction only (when connection_id is in path)."""
 
     direction: Optional[Literal["to_calendar", "from_calendar", "both"]] = "both"
-
-
-# ==================== Attachment Schemas ====================
-
-
-class AttachmentBase(BaseModel):
-    """Base schema for Attachment."""
-
-    file_name: str
-    file_type: str  # 'audio' | 'image'
-
-
-class AttachmentResponse(AttachmentBase):
-    """Schema for Attachment response."""
-
-    id: int
-    task_id: int
-    file_path: str
-    processed_text: Optional[str] = None
-    file_metadata: Optional[dict] = None
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class AttachmentListResponse(BaseModel):
-    """Schema for list of attachments."""
-
-    total: int
-    attachments: list[AttachmentResponse]
