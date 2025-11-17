@@ -9,6 +9,7 @@ Charlee é um sistema de inteligência pessoal desenvolvido com agentes AI que a
 ### ✨ Features Principais
 
 - **🎙️ Input Multimodal**: Transcrição de voz (Whisper) e análise de imagem (GPT-4o Vision) ✨ **NOVO!**
+- **📅 Calendar Integration**: Sincronização com Google Calendar e Microsoft Calendar ✨ **NOVO!**
 - **🤖 Agente Conversacional com Memória**: Chat natural com contexto e aprendizado sobre preferências
 - **🎯 Big Rocks**: Gestão de pilares de vida (áreas importantes)
 - **📝 Tarefas Inteligentes**: Sistema de tarefas com priorização automática
@@ -163,14 +164,19 @@ Documentação detalhada em [`docs/`](docs/):
   - [x] Sistema de roteamento automático
   - [x] Análise de intenção do usuário
   - [x] Consulta multi-agente
-- [x] **V3.2: Input Multimodal** ✨ **NOVO!**
+- [x] **V3.2: Calendar Integration**
+  - [x] Google Calendar sync (OAuth 2.0)
+  - [x] Microsoft Calendar sync
+  - [x] Sincronização bidirecional
+  - [x] Detecção de conflitos
+- [x] **V3.3: Input Multimodal** ✨ **NOVO!**
   - [x] Transcrição de voz (Whisper API)
   - [x] Análise de imagem (GPT-4o Vision)
   - [x] VoiceInput e ImageUpload components
   - [x] Sistema de anexos (attachments)
   - [x] 173 testes, 79.8% cobertura
-- [ ] V3.3: Integração Google Calendar
-- [ ] V3.4: CLI interativo aprimorado
+- [ ] V3.4: Notificações e Lembretes
+- [ ] V3.5: CLI interativo aprimorado
 - [ ] V4: Bot Telegram/WhatsApp
 
 ## 🤝 Contribuindo
@@ -238,5 +244,5 @@ curl -X GET http://localhost:8000/api/v2/freelancer/projects/1/invoice \
 
 ---
 
-**Status**: 🎉 V3.2 - Multimodal Input System Complete! ✨
+**Status**: 🎉 V3.3 - Multimodal Input System + Calendar Integration Complete! ✨
 **Última atualização**: 2025-11-17

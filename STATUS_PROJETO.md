@@ -1,7 +1,7 @@
 # 📊 Status Atual do Projeto Charlee
 
 > Documento atualizado em: 2025-11-17
-> Versão atual: V3.2 (Multimodal Input System)
+> Versão atual: V3.3 (Multimodal Input System)
 
 ## 🎯 Visão Geral Executiva
 
@@ -12,7 +12,8 @@ O **Charlee** é um sistema de inteligência pessoal completo e funcional, com b
 - **Backend**: ✅ Totalmente funcional e documentado
 - **Frontend**: ✅ V3.0 completo com interface React moderna
 - **AI Agents**: ✅ Sistema de orquestração inteligente implementado (V3.1)
-- **Multimodal**: ✅ Input de voz e imagem implementado (V3.2) ✨ **NOVO!**
+- **Calendar Integration**: ✅ Google + Microsoft Calendar sync (V3.2)
+- **Multimodal**: ✅ Input de voz e imagem implementado (V3.3) ✨ **NOVO!**
 - **Testes**: ✅ 79.8% de cobertura no frontend (173 testes), testes funcionais no backend
 - **Documentação**: ✅ Completa e atualizada
 - **DevOps**: ✅ Containerizado com Docker Compose
@@ -34,7 +35,9 @@ V3.0 (React Frontend) ← Completo em 2025-01-08
    ↓
 V3.1 (Agent Orchestration) ← Completo em 2025-11-10
    ↓
-V3.2 (Multimodal Input) ← Atual ✨ (merge recente - 2025-11-17)
+V3.2 (Calendar Integration) ← Completo em 2025-11-16
+   ↓
+V3.3 (Multimodal Input) ← Atual ✨ (merge recente - 2025-11-17)
    ↓
 V3.x (Roadmap futuro)
 ```
@@ -75,7 +78,17 @@ V3.x (Roadmap futuro)
 - 3 agentes especializados trabalhando em conjunto
 - Endpoints de debug para testar roteamento
 
-#### ✅ V3.2 - Input Multimodal (RECENTE! - 2025-11-17) ✨
+#### ✅ V3.2 - Integrações de Calendar (2025-11-16)
+- **Google Calendar Integration**: OAuth 2.0 + sincronização bidirecional
+- **Microsoft Calendar Integration**: Outlook/Office 365 support
+- **CalendarConnection**: Gerenciamento de conexões com calendários
+- **CalendarEvent**: Sincronização de eventos com tarefas
+- **CalendarConflict**: Detecção e resolução de conflitos
+- **API Routes completas**: 29KB de endpoints RESTful
+- **Event Bus Integration**: Sincronização automática via eventos
+- **Testes abrangentes**: Suite completa de testes de integração
+
+#### ✅ V3.3 - Input Multimodal (RECENTE! - 2025-11-17) ✨
 - **Transcrição de Voz**: Gravação e transcrição com OpenAI Whisper API
 - **Análise de Imagem**: Upload e análise com GPT-4o Vision API
 - **VoiceInput Component**: Gravação de áudio com preview e playback
@@ -409,7 +422,130 @@ curl -X POST http://localhost:8000/api/v1/agent/analyze-routing \
 
 ---
 
-## 🎙️ Sistema Multimodal (V3.2) ✨ **NOVO!**
+## 📅 Sistema de Integração de Calendários (V3.2)
+
+### Visão Geral
+
+O sistema de integração de calendários permite sincronização bidirecional completa entre o Charlee e serviços de calendário externos (**Google Calendar** e **Microsoft Calendar**). Implementado com OAuth 2.0 seguro e Event Bus para sincronização automática.
+
+### Integrações Suportadas
+
+#### 1. **Google Calendar**
+- ✅ OAuth 2.0 authentication
+- ✅ Leitura de eventos (`calendar.readonly`)
+- ✅ Criação/edição de eventos (`calendar.events`)
+- ✅ Sincronização bidirecional automática
+- ✅ Detecção de conflitos
+
+#### 2. **Microsoft Calendar** (Outlook/Office 365)
+- ✅ OAuth 2.0 authentication
+- ✅ Calendars.Read e Calendars.ReadWrite permissions
+- ✅ Sincronização com Outlook e Office 365
+- ✅ Suporte a múltiplas contas
+
+### Funcionalidades
+
+**CalendarConnection**:
+- Gerenciamento de conexões OAuth
+- Armazenamento seguro de tokens (criptografado)
+- Refresh automático de tokens expirados
+- Suporte a múltiplas conexões por usuário
+
+**CalendarEvent**:
+- Sincronização automática Tasks ↔ Events
+- Mapeamento bidirecional (event_id ↔ task_id)
+- Detecção de mudanças e sync incremental
+- Preservação de metadados (source, last_synced)
+
+**CalendarConflict**:
+- Detecção automática de conflitos de horário
+- Resolução manual ou automática
+- Priorização baseada em regras
+- Histórico de resoluções
+
+### API Endpoints
+
+```python
+# OAuth Authorization
+GET  /api/v1/calendar/connect/google/auth-url
+GET  /api/v1/calendar/connect/microsoft/auth-url
+POST /api/v1/calendar/oauth/callback
+
+# Connection Management
+GET    /api/v1/calendar/connections
+GET    /api/v1/calendar/connections/{id}
+PATCH  /api/v1/calendar/connections/{id}
+DELETE /api/v1/calendar/connections/{id}
+POST   /api/v1/calendar/connections/{id}/sync
+
+# Events
+GET /api/v1/calendar/events
+GET /api/v1/calendar/events/{id}
+
+# Conflicts
+GET   /api/v1/calendar/conflicts
+PATCH /api/v1/calendar/conflicts/{id}
+
+# Sync Logs
+GET /api/v1/calendar/sync-logs
+```
+
+### Event Bus Integration
+
+**Eventos Publicados**:
+- `calendar.connection.created` - Nova conexão criada
+- `calendar.connection.authorized` - Autorização OAuth concluída
+- `calendar.event.imported` - Evento importado do calendar
+- `calendar.event.exported` - Tarefa exportada como evento
+- `calendar.conflict.detected` - Conflito de horário detectado
+- `calendar.sync.completed` - Sincronização completa
+
+**Listeners**:
+- Task created/updated → Export to calendar
+- Event updated externally → Update task
+- Deadline changed → Update calendar event
+
+### Casos de Uso
+
+#### Sincronização Automática
+```
+Usuário cria tarefa com deadline
+         ↓
+Event Bus publica task.created
+         ↓
+Calendar Listener captura evento
+         ↓
+Verifica conexões ativas
+         ↓
+Exporta como evento no Google/Microsoft Calendar
+         ↓
+Retorna event_id para tracking
+```
+
+#### Importação de Eventos
+```
+Usuário autoriza Google Calendar
+         ↓
+Sync automático busca eventos futuros
+         ↓
+Para cada evento:
+   - Verifica se já existe tarefa linkada
+   - Se não, cria nova tarefa
+   - Mapeia event_id ↔ task_id
+         ↓
+Salva CalendarEvent para tracking
+```
+
+### Tecnologias
+
+- **Google**: `google-auth`, `google-auth-oauthlib`, `google-api-python-client`
+- **Microsoft**: `msal`, `requests` (Graph API)
+- **Segurança**: Tokens criptografados no banco
+- **Sync**: Celery tasks para sync assíncrono (opcional)
+
+---
+
+## 🎙️ Sistema Multimodal (V3.3) ✨ **NOVO!**
 
 ### Visão Geral
 
@@ -1046,7 +1182,18 @@ Total:
 
 ### V3.x - Melhorias e Integrações
 
-#### ✅ V3.2 - Input Multimodal (COMPLETO - 2025-11-17) ✨
+#### ✅ V3.2 - Calendar Integration (COMPLETO - 2025-11-16)
+- [x] OAuth 2.0 com Google Calendar
+- [x] OAuth 2.0 com Microsoft Calendar (Outlook/Office 365)
+- [x] Sincronização bidirecional (Calendar ↔ Tasks)
+- [x] Importar eventos como tarefas
+- [x] Exportar tarefas como eventos
+- [x] Detecção automática de conflitos de horário
+- [x] CalendarConnection, CalendarEvent, CalendarConflict models
+- [x] API REST completa (29KB de endpoints)
+- [x] Event Bus integration para sync automático
+
+#### ✅ V3.3 - Input Multimodal (COMPLETO - 2025-11-17) ✨
 - [x] Entrada de voz para criação de tarefas
 - [x] Transcrição automática de notas de voz (Whisper API)
 - [x] Upload e análise de imagens (GPT-4o Vision)
@@ -1059,14 +1206,14 @@ Total:
 - [x] Acessibilidade completa (ARIA, keyboard navigation)
 - [x] 173 testes com 79.8% de cobertura
 
-#### V3.3 - Integração Google Calendar (Próximo)
-- [ ] Sincronização bidirecional com Google Calendar
-- [ ] Importar eventos como tarefas
-- [ ] Exportar tarefas como eventos
-- [ ] Sincronização automática de deadlines
-- [ ] Detecção de conflitos de horário
+#### V3.4 - Notificações e Lembretes (Próximo)
+- [ ] Sistema de notificações push
+- [ ] Lembretes baseados em deadline
+- [ ] Integração com notificações de browser
+- [ ] Email reminders (opcional)
+- [ ] Smart reminders baseados em padrões
 
-#### V3.4 - CLI Interativo Aprimorado
+#### V3.5 - CLI Interativo Aprimorado
 - [ ] Interface TUI (Text User Interface) com Rich
 - [ ] Comandos rápidos para gestão de tarefas
 - [ ] Visualização de analytics no terminal
@@ -1442,7 +1589,7 @@ pytest
 
 ## 🎉 Conclusão
 
-O **Charlee V3.2** é um sistema maduro, completo e pronto para uso pessoal em produtividade consciente. Com uma arquitetura full-stack moderna, sistema de agentes inteligentes, entrada multimodal de última geração, e atenção ao bem-estar do usuário, representa um projeto sólido e bem arquitetado.
+O **Charlee V3.3** é um sistema maduro, completo e pronto para uso pessoal em produtividade consciente. Com uma arquitetura full-stack moderna, sistema de agentes inteligentes, integração com calendários, entrada multimodal de última geração, e atenção ao bem-estar do usuário, representa um projeto sólido e bem arquitetado.
 
 ### Destaques
 
@@ -1460,13 +1607,14 @@ O **Charlee V3.2** é um sistema maduro, completo e pronto para uso pessoal em p
 
 ```
 Status Geral: ✅ PRODUÇÃO
-Última Release: V3.2 - Multimodal Input System ✨
-Próxima Release: V3.3 - Google Calendar Integration
+Última Release: V3.3 - Multimodal Input System ✨
+Próxima Release: V3.4 - Notificações e Lembretes
 
 Funcionalidades Core: 100% ✅
 Frontend: 100% ✅
 Backend API: 100% ✅
 Agentes AI: 100% ✅
+Calendar Integration: 100% ✅ (Google + Microsoft)
 Multimodal Input: 100% ✅ NEW!
 Testes: 79.8% ✅ (173 testes)
 Documentação: 100% ✅
@@ -1479,5 +1627,5 @@ Acessibilidade: 100% ✅
 **Desenvolvido com ❤️ por Samara Cassie**
 
 *Este documento foi atualizado em: 2025-11-17*
-*Versão do documento: 2.0*
-*Versão do projeto: V3.2 - Multimodal Input System*
+*Versão do documento: 3.0*
+*Versão do projeto: V3.3 - Multimodal Input System + Calendar Integration*
