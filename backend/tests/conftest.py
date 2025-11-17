@@ -24,7 +24,13 @@ def setup_test_env():
     os.environ["MICROSOFT_TENANT_ID"] = "common"
     yield
     # Cleanup after all tests
-    for key in ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_TENANT_ID"]:
+    for key in [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+    ]:
         os.environ.pop(key, None)
 
 
