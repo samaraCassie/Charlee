@@ -303,10 +303,10 @@ export default function Tasks() {
       setShowAttachments(!showAttachments);
     };
 
-    const handleDownloadAttachment = async (attachmentId: string) => {
+    const handleDownloadAttachment = async (attachmentId: number) => {
       try {
-        const attachment = attachments.find(a => a.id === parseInt(attachmentId));
-        await attachmentsService.downloadAttachment(parseInt(attachmentId), attachment?.file_name);
+        const attachment = attachments.find(a => a.id === attachmentId);
+        await attachmentsService.downloadAttachment(attachmentId, attachment?.file_name);
         toast({
           title: 'Download iniciado',
           description: 'O arquivo está sendo baixado.',
@@ -320,9 +320,9 @@ export default function Tasks() {
       }
     };
 
-    const handleReprocessAttachment = async (attachmentId: string) => {
+    const handleReprocessAttachment = async (attachmentId: number) => {
       try {
-        const updated = await attachmentsService.reprocessAttachment(parseInt(attachmentId));
+        const updated = await attachmentsService.reprocessAttachment(attachmentId);
         setAttachments(prev => prev.map(a => a.id === updated.id ? updated : a));
         toast({
           title: 'Reprocessamento concluído',
@@ -337,10 +337,10 @@ export default function Tasks() {
       }
     };
 
-    const handleDeleteAttachment = async (attachmentId: string) => {
+    const handleDeleteAttachment = async (attachmentId: number) => {
       try {
-        await attachmentsService.deleteAttachment(parseInt(attachmentId));
-        setAttachments(prev => prev.filter(a => a.id !== parseInt(attachmentId)));
+        await attachmentsService.deleteAttachment(attachmentId);
+        setAttachments(prev => prev.filter(a => a.id !== attachmentId));
         toast({
           title: 'Anexo excluído',
           description: 'O anexo foi removido com sucesso.',

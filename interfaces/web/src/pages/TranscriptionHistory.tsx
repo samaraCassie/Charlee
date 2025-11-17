@@ -98,11 +98,11 @@ export default function TranscriptionHistory() {
     setFilteredAttachments(filtered);
   };
 
-  const handleDownload = async (attachmentId: string) => {
+  const handleDownload = async (attachmentId: number) => {
     try {
-      const attachment = attachments.find((a) => a.id === parseInt(attachmentId));
+      const attachment = attachments.find((a) => a.id === attachmentId);
       await attachmentsService.downloadAttachment(
-        parseInt(attachmentId),
+        attachmentId,
         attachment?.file_name
       );
       toast({
@@ -118,9 +118,9 @@ export default function TranscriptionHistory() {
     }
   };
 
-  const handleReprocess = async (attachmentId: string) => {
+  const handleReprocess = async (attachmentId: number) => {
     try {
-      const updated = await attachmentsService.reprocessAttachment(parseInt(attachmentId));
+      const updated = await attachmentsService.reprocessAttachment(attachmentId);
       setAttachments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
       toast({
         title: 'Reprocessamento concluído',
@@ -135,17 +135,17 @@ export default function TranscriptionHistory() {
     }
   };
 
-  const handleDelete = async (attachmentId: string) => {
+  const handleDelete = async (attachmentId: number) => {
     try {
-      await attachmentsService.deleteAttachment(parseInt(attachmentId));
-      setAttachments((prev) => prev.filter((a) => a.id !== parseInt(attachmentId)));
+      await attachmentsService.deleteAttachment(attachmentId);
+      setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
       toast({
         title: 'Anexo excluído',
         description: 'O anexo foi removido com sucesso.',
       });
 
       // Update stats
-      const deletedAttachment = attachments.find((a) => a.id === parseInt(attachmentId));
+      const deletedAttachment = attachments.find((a) => a.id === attachmentId);
       if (deletedAttachment) {
         setStats((prev) => ({
           total: prev.total - 1,

@@ -39,7 +39,6 @@ export const MultimodalAnalytics = () => {
     try {
       setLoading(true);
       const data = await attachmentsService.getAllAttachments({ limit: 500 });
-      setAttachments(data);
       calculateStats(data);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
