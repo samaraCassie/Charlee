@@ -287,6 +287,54 @@ def list_calendars(connection: CalendarConnection) -> list[dict[str, Any]]:
         raise GoogleCalendarSyncError(f"Failed to list calendars: {e}") from e
 
 
+def get_calendar_info(access_token: str, calendar_id: str = "primary") -> dict[str, Any]:
+    """
+    Get information about a specific calendar.
+
+    Args:
+        access_token: Google OAuth access token
+        calendar_id: Calendar ID to fetch (default: "primary")
+
+    Returns:
+        dict: Calendar information with id, summary, etc.
+
+    Raises:
+        GoogleCalendarSyncError: If fetching calendar info fails
+    """
+    try:
+        credentials = Credentials(
+            token=access_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=os.getenv("GOOGLE_CLIENT_ID"),
+            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        )
+
+        service = build("calendar", "v3", credentials=credentials)
+        calendar = service.calendars().get(calendarId=calendar_id).execute()
+
+        return {
+            "id": calendar.get("id"),
+            "summary": calendar.get("summary", ""),
+            "description": calendar.get("description", ""),
+            "timeZone": calendar.get("timeZone", ""),
+        }
+
+    except HttpError as e:
+        logger.error(
+            "HTTP error getting calendar info",
+            extra={"calendar_id": calendar_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise GoogleCalendarSyncError(f"Failed to get calendar info: {e}") from e
+    except Exception as e:
+        logger.error(
+            "Failed to get calendar info",
+            extra={"calendar_id": calendar_id, "error": str(e)},
+            exc_info=True,
+        )
+        raise GoogleCalendarSyncError(f"Failed to get calendar info: {e}") from e
+
+
 def sync_task_to_calendar(connection: CalendarConnection, task: Task, db: Session) -> CalendarEvent:
     """
     Sync Charlee task to Google Calendar event.
