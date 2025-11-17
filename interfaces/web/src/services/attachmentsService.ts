@@ -173,7 +173,7 @@ export const attachmentsService = {
    * @returns Formatted duration (e.g., "3:45", "0:12")
    */
   formatDuration(seconds?: number): string {
-    if (!seconds) return '—';
+    if (seconds === undefined || seconds === null) return '—';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
