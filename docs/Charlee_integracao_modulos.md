@@ -10,31 +10,51 @@
 │              Agente Central que coordena tudo                   │
 └────────────┬────────────────────────────────────────────────────┘
              │
-    ┌────────┼────────┬──────────┬──────────┬───────────┐
-    │        │        │          │          │           │
-    ▼        ▼        ▼          ▼          ▼           ▼
-┌────────┐┌────────┐┌─────────┐┌─────────┐┌──────────┐┌─────────┐
-│ Task   ││Wellness││Capacity ││  OKR    ││  Focus   ││Projects │
-│Manager ││ Coach  ││Guardian ││Dashboard││  Module  ││ Module  │
-└────┬───┘└───┬────┘└────┬────┘└────┬────┘└────┬─────┘└────┬────┘
-     │        │          │          │          │           │
-     └────────┴──────────┴──────────┴──────────┴───────────┘
+    ┌────────┼────────┬──────────┬──────────┬───────────┬──────────┐
+    │        │        │          │          │           │          │
+    ▼        ▼        ▼          ▼          ▼           ▼          ▼
+┌────────┐┌────────┐┌─────────┐┌─────────┐┌──────────┐┌─────────┐┌─────────┐
+│ Task   ││Wellness││Capacity ││  OKR    ││  Focus   ││Projects ││Calendar │
+│Manager ││ Coach  ││Guardian ││Dashboard││  Module  ││ Module  ││ Module  │
+└────┬───┘└───┬────┘└────┬────┘└────┬────┘└────┬─────┘└────┬────┘└────┬────┘
+     │        │          │          │          │           │          │
+     └────────┴──────────┴──────────┴──────────┴───────────┴──────────┘
                               │
-                    ┌─────────┴─────────┐
-                    │                   │
-                    ▼                   ▼
-          ┌──────────────────┐  ┌──────────────────┐
-          │  SHARED MEMORY   │  │  EVENT BUS       │
-          │  (Vector DB)     │  │  (Pub/Sub)       │
-          └──────────────────┘  └──────────────────┘
-                    │
-          ┌─────────┴─────────┐
-          │                   │
-          ▼                   ▼
-   ┌─────────────┐     ┌─────────────┐
-   │ PostgreSQL  │     │   Redis     │
-   │ (Relacional)│     │   (Cache)   │
-   └─────────────┘     └─────────────┘
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+         ▼                    ▼                    ▼
+    ┌─────────┐      ┌──────────────┐      ┌──────────┐
+    │ WEALTH  │      │   ROUTINES   │      │ WARDROBE │
+    │ MODULE  │      │    MODULE    │      │  MODULE  │
+    └────┬────┘      └──────┬───────┘      └────┬─────┘
+         │                  │                    │
+         └──────────────────┼────────────────────┘
+                            │
+                   ┌────────┴────────┐
+                   │                 │
+                   ▼                 ▼
+            ┌──────────┐    ┌───────────────┐
+            │ DIPLOMAT │    │  EVENT BUS    │
+            │  MODULE  │    │  (Pub/Sub)    │
+            └────┬─────┘    └───────┬───────┘
+                 │                  │
+                 └──────────────────┘
+                            │
+                  ┌─────────┴─────────┐
+                  │                   │
+                  ▼                   ▼
+        ┌──────────────────┐  ┌──────────────────┐
+        │  SHARED MEMORY   │  │  CONTEXT MANAGER │
+        │  (Vector DB)     │  │  (Global State)  │
+        └──────────────────┘  └──────────────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+        ▼                   ▼
+ ┌─────────────┐     ┌─────────────┐
+ │ PostgreSQL  │     │   Redis     │
+ │ (Relacional)│     │   (Cache)   │
+ └─────────────┘     └─────────────┘
 ```
 
 ### 19.2 Princípios de Integração
@@ -170,35 +190,73 @@ class EventType(Enum):
     TASK_CREATED = "task_created"
     TASK_COMPLETED = "task_completed"
     TASK_DEADLINE_APPROACHING = "task_deadline_approaching"
-    
+
     # Projects Module
     PROJECT_COLLECTED = "project_collected"
     PROJECT_ANALYZED = "project_analyzed"
     PROJECT_ACCEPTED = "project_accepted"
     PROJECT_REJECTED = "project_rejected"
     PROJECT_COMPLETED = "project_completed"
-    
+
     # Focus Module
     FOCUS_SESSION_STARTED = "focus_session_started"
     FOCUS_SESSION_ENDED = "focus_session_ended"
     NOTIFICATION_URGENT = "notification_urgent"
     INTERRUPTION_BLOCKED = "interruption_blocked"
-    
+
     # Wellness Coach
     CYCLE_PHASE_CHANGED = "cycle_phase_changed"
     ENERGY_LOW = "energy_low"
     WELLNESS_ALERT = "wellness_alert"
-    
+
     # Capacity Guardian
     CAPACITY_WARNING = "capacity_warning"
     CAPACITY_CRITICAL = "capacity_critical"
     OVERLOAD_DETECTED = "overload_detected"
-    
+
     # OKR Dashboard
     OKR_UPDATED = "okr_updated"
     OKR_AT_RISK = "okr_at_risk"
     MILESTONE_ACHIEVED = "milestone_achieved"
-    
+
+    # Calendar Module
+    CALENDAR_EVENT_CREATED = "calendar_event_created"
+    CALENDAR_EVENT_UPDATED = "calendar_event_updated"
+    CALENDAR_CONFLICT_DETECTED = "calendar_conflict_detected"
+
+    # === NOVOS MÓDULOS V4+ ===
+
+    # Wealth Module
+    EXPENSE_CREATED = "wealth.expense_created"
+    EXPENSE_PATTERN_DETECTED = "wealth.pattern_detected"
+    SAVINGS_GOAL_AT_RISK = "wealth.goal_at_risk"
+    IMPULSE_SPENDING_ALERT = "wealth.impulse_alert"
+    FINANCIAL_FORECAST_UPDATED = "wealth.forecast_updated"
+    SPENDING_BLOCK_ACTIVATED = "wealth.block_activated"
+
+    # Routines Module
+    ROUTINE_GENERATED = "routines.script_generated"
+    ROUTINE_STARTED = "routines.started"
+    ROUTINE_INTERRUPTED = "routines.interrupted"
+    ROUTINE_COMPLETED = "routines.completed"
+    DECISION_FATIGUE_HIGH = "routines.decision_fatigue_high"
+    MORNING_SCRIPT_READY = "routines.morning_ready"
+
+    # Wardrobe Module
+    WEEKLY_PLAN_GENERATED = "wardrobe.plan_generated"
+    OUTFIT_CHANGED = "wardrobe.outfit_changed"
+    WARDROBE_ITEM_ADDED = "wardrobe.item_added"
+    LAUNDRY_NEEDED = "wardrobe.laundry_needed"
+    STYLE_CONFLICT_DETECTED = "wardrobe.style_conflict"
+
+    # Diplomat Module
+    RELATIONSHIP_HEALTH_CHANGED = "diplomat.health_changed"
+    RECONNECTION_REMINDER = "diplomat.reconnection_due"
+    ONE_ON_ONE_SCHEDULED = "diplomat.meeting_scheduled"
+    INTERACTION_LOGGED = "diplomat.interaction_logged"
+    PUPIL_MILESTONE_REACHED = "diplomat.pupil_milestone"
+    NETWORKING_OPPORTUNITY = "diplomat.networking_opportunity"
+
     # System
     CONTEXT_UPDATED = "context_updated"
     DECISION_REQUIRED = "decision_required"
@@ -897,26 +955,721 @@ class WellnessProjectsIntegration:
 
 ---
 
-## 19.9 Orquestrador Central Integrado
+## 19.9 Integração: Wealth ↔ Wellness + Capacity
+
+```python
+class WealthWellnessIntegration:
+    """Integração entre finanças comportamentais e bem-estar"""
+
+    def __init__(self, db_connection, event_bus, context_manager):
+        self.db = db_connection
+        self.event_bus = event_bus
+        self.context = context_manager
+
+        # Subscriptions
+        self.event_bus.subscribe(
+            EventType.CYCLE_PHASE_CHANGED,
+            self.adjust_spending_guardrails
+        )
+        self.event_bus.subscribe(
+            EventType.OVERLOAD_DETECTED,
+            self.activate_impulse_protection
+        )
+        self.event_bus.subscribe(
+            EventType.EXPENSE_CREATED,
+            self.check_behavioral_context
+        )
+
+    async def adjust_spending_guardrails(self, event: Event):
+        """Ajusta proteções financeiras baseado na fase do ciclo"""
+
+        user_id = event.payload['user_id']
+        nova_fase = event.payload['nova_fase']
+
+        # TPM: ativa proteção máxima contra impulso
+        if nova_fase == 'pre_menstrual':
+            logger.info("🛡️ Ativando modo economia TPM")
+
+            # Reduz limite de gasto impulsivo
+            self.db.execute("""
+                UPDATE configuracoes_financeiras
+                SET limite_compra_sem_aprovacao = limite_compra_sem_aprovacao * 0.5,
+                    modo_protecao = 'tpm'
+                WHERE user_id = %s
+            """, (user_id,))
+
+            await self.event_bus.publish(Event(
+                tipo=EventType.SPENDING_BLOCK_ACTIVATED,
+                modulo_origem='wealth_wellness_integration',
+                payload={
+                    'motivo': 'fase_tpm',
+                    'nivel_protecao': 'alto',
+                    'mensagem': 'Proteção financeira TPM ativada. Compras > R$50 precisam de reflexão de 24h.'
+                }
+            ))
+
+        # Fase folicular: mais flexível
+        elif nova_fase == 'folicular':
+            self.db.execute("""
+                UPDATE configuracoes_financeiras
+                SET modo_protecao = 'normal'
+                WHERE user_id = %s
+            """, (user_id,))
+
+    async def activate_impulse_protection(self, event: Event):
+        """Quando sobrecarga detectada, bloqueia gastos não-essenciais"""
+
+        user_id = event.payload['user_id']
+        carga = event.payload['percentual_carga']
+
+        if carga > 90:
+            logger.warn("💰 Bloqueando compras impulsivas durante sobrecarga")
+
+            # Busca padrão histórico: stress → gasto
+            pattern = self.db.execute("""
+                SELECT AVG(valor) as media_gasto_stress
+                FROM despesas
+                WHERE user_id = %s
+                  AND contexto_comportamental->>'stress_nivel' = 'alto'
+                  AND categoria IN ('lazer', 'restaurante', 'shopping')
+                  AND criado_em > NOW() - INTERVAL '90 days'
+            """, (user_id,)).fetchone()
+
+            if pattern and pattern['media_gasto_stress'] > 100:
+                await self.event_bus.publish(Event(
+                    tipo=EventType.IMPULSE_SPENDING_ALERT,
+                    modulo_origem='wealth_wellness_integration',
+                    payload={
+                        'risco': 'alto',
+                        'contexto': 'sobrecarga_critica',
+                        'historico_gasto_stress': pattern['media_gasto_stress'],
+                        'recomendacao': 'Compras não-essenciais bloqueadas até redução de carga'
+                    },
+                    prioridade=1
+                ))
+
+    async def check_behavioral_context(self, event: Event):
+        """Quando despesa criada, analisa contexto comportamental"""
+
+        despesa_id = event.payload['despesa_id']
+
+        # Busca contexto atual
+        context = self.context.get_context()
+
+        # Enriquece despesa com contexto comportamental
+        self.db.execute("""
+            UPDATE despesas
+            SET contexto_comportamental = jsonb_build_object(
+                'fase_ciclo', %s,
+                'energia_nivel', %s,
+                'stress_nivel', CASE
+                    WHEN %s >= 8 THEN 'alto'
+                    WHEN %s >= 5 THEN 'medio'
+                    ELSE 'baixo'
+                END,
+                'carga_trabalho', %s,
+                'em_foco', %s
+            )
+            WHERE id = %s
+        """, (
+            context['fase_ciclo'],
+            context['energia_atual'],
+            context['nivel_stress'],
+            context['nivel_stress'],
+            context['carga_trabalho_percentual'],
+            context['em_sessao_foco'],
+            despesa_id
+        ))
+
+        logger.info(f"💡 Despesa enriquecida com contexto comportamental")
+```
+
+---
+
+## 19.10 Integração: Routines ↔ Wellness + Wardrobe + Calendar
+
+```python
+class RoutinesIntegration:
+    """Integração do módulo de rotinas com outros sistemas"""
+
+    def __init__(self, db_connection, event_bus, context_manager):
+        self.db = db_connection
+        self.event_bus = event_bus
+        self.context = context_manager
+
+        # Subscriptions
+        self.event_bus.subscribe(
+            EventType.CYCLE_PHASE_CHANGED,
+            self.adjust_routine_timing
+        )
+        self.event_bus.subscribe(
+            EventType.CALENDAR_EVENT_CREATED,
+            self.check_routine_conflict
+        )
+        self.event_bus.subscribe(
+            EventType.WEEKLY_PLAN_GENERATED,
+            self.integrate_outfit_selection
+        )
+
+    async def adjust_routine_timing(self, event: Event):
+        """Ajusta timing de rotinas baseado na fase do ciclo"""
+
+        user_id = event.payload['user_id']
+        nova_fase = event.payload['nova_fase']
+        energia_esperada = event.payload['energia_esperada']
+
+        # Busca rotina ativa
+        rotina_hoje = self.db.execute("""
+            SELECT * FROM roteiros_diarios
+            WHERE user_id = %s
+              AND data = CURRENT_DATE
+              AND status = 'pendente'
+        """, (user_id,)).fetchone()
+
+        if not rotina_hoje:
+            return
+
+        adjustments = {}
+
+        # Menstruação: mais tempo para tudo
+        if nova_fase == 'menstruacao':
+            adjustments = {
+                'wake_time_adjustment': '+15min',
+                'task_buffer': '+5min',
+                'rest_periods': 'increased',
+                'exercise': 'optional'
+            }
+
+            logger.info("🌸 Rotina ajustada para fase menstrual: +15min geral")
+
+        # Fase folicular: otimizada
+        elif nova_fase == 'folicular':
+            adjustments = {
+                'wake_time_adjustment': 'normal',
+                'task_buffer': 'normal',
+                'deep_work_blocks': '+30min',
+                'exercise': 'encouraged'
+            }
+
+        # Atualiza rotina
+        self.db.execute("""
+            UPDATE roteiros_diarios
+            SET roteiro = roteiro || %s::jsonb,
+                energia_percentual = %s
+            WHERE id = %s
+        """, (
+            json.dumps({'adjustments': adjustments}),
+            energia_esperada * 100,
+            rotina_hoje['id']
+        ))
+
+        await self.event_bus.publish(Event(
+            tipo=EventType.ROUTINE_GENERATED,
+            modulo_origem='routines_integration',
+            payload={
+                'rotina_id': rotina_hoje['id'],
+                'adjustments': adjustments,
+                'motivo': f'fase_{nova_fase}'
+            }
+        ))
+
+    async def check_routine_conflict(self, event: Event):
+        """Verifica se evento de calendário conflita com rotina"""
+
+        calendar_event = event.payload['event']
+        user_id = event.payload['user_id']
+
+        # Busca rotina do dia
+        event_date = calendar_event['start_time'].date()
+
+        rotina = self.db.execute("""
+            SELECT * FROM roteiros_diarios
+            WHERE user_id = %s
+              AND data = %s
+        """, (user_id, event_date)).fetchone()
+
+        if not rotina:
+            return
+
+        # Verifica conflito de horário
+        event_start = calendar_event['start_time'].time()
+        event_end = calendar_event['end_time'].time()
+
+        roteiro = rotina['roteiro']
+        conflicting_activities = []
+
+        for activity in roteiro.get('activities', []):
+            act_start = datetime.strptime(activity['start'], '%H:%M').time()
+            act_end = datetime.strptime(activity['end'], '%H:%M').time()
+
+            # Overlap check
+            if (act_start < event_end and act_end > event_start):
+                conflicting_activities.append(activity)
+
+        if conflicting_activities:
+            logger.warn(f"⚠️ Conflito detectado: evento sobrepõe {len(conflicting_activities)} atividades")
+
+            # Propõe ajuste
+            await self.event_bus.publish(Event(
+                tipo=EventType.ROUTINE_INTERRUPTED,
+                modulo_origem='routines_integration',
+                payload={
+                    'rotina_id': rotina['id'],
+                    'conflicting_event': calendar_event,
+                    'affected_activities': conflicting_activities,
+                    'requires_decision': True,
+                    'options': self.generate_conflict_options(rotina, calendar_event)
+                }
+            ))
+
+    def generate_conflict_options(self, rotina, calendar_event):
+        """Gera opções para resolver conflito"""
+
+        return [
+            {
+                'option': 'reschedule_routine',
+                'description': 'Mover atividades da rotina para depois do evento',
+                'impact': 'Rotina termina 1h mais tarde'
+            },
+            {
+                'option': 'skip_non_essential',
+                'description': 'Pular atividades não-essenciais da rotina',
+                'impact': 'Economiza 20min, mas algumas tarefas ficam pendentes'
+            },
+            {
+                'option': 'decline_calendar_event',
+                'description': 'Recusar evento do calendário',
+                'impact': 'Mantém rotina, mas compromisso externo cancelado'
+            }
+        ]
+
+    async def integrate_outfit_selection(self, event: Event):
+        """Integra seleção de roupa no roteiro matinal"""
+
+        user_id = event.payload['user_id']
+        plano_semanal = event.payload['plano_semanal']
+
+        # Para cada dia da semana, adiciona outfit à rotina
+        for dia, outfit in plano_semanal.items():
+            rotina = self.db.execute("""
+                SELECT * FROM roteiros_diarios
+                WHERE user_id = %s
+                  AND data = %s
+            """, (user_id, dia)).fetchone()
+
+            if rotina:
+                # Adiciona etapa de vestir com outfit pré-selecionado
+                roteiro = rotina['roteiro']
+
+                # Encontra atividade "Roupa" e enriquece
+                for activity in roteiro.get('activities', []):
+                    if activity['name'] == 'Vestir roupa':
+                        activity['outfit'] = outfit
+                        activity['duration'] = 5  # Reduz tempo pois já está decidido
+                        activity['note'] = f"Outfit pré-planejado: {outfit['descricao']}"
+
+                self.db.execute("""
+                    UPDATE roteiros_diarios
+                    SET roteiro = %s
+                    WHERE id = %s
+                """, (json.dumps(roteiro), rotina['id']))
+
+        logger.info("👔 Outfits integrados nas rotinas da semana")
+```
+
+---
+
+## 19.11 Integração: Wardrobe ↔ Calendar + Wellness
+
+```python
+class WardrobeIntegration:
+    """Integração do guarda-roupa com calendário e bem-estar"""
+
+    def __init__(self, db_connection, event_bus):
+        self.db = db_connection
+        self.event_bus = event_bus
+
+        # Subscriptions
+        self.event_bus.subscribe(
+            EventType.CALENDAR_EVENT_CREATED,
+            self.check_outfit_appropriateness
+        )
+        self.event_bus.subscribe(
+            EventType.CYCLE_PHASE_CHANGED,
+            self.adjust_comfort_priorities
+        )
+
+    async def check_outfit_appropriateness(self, event: Event):
+        """Verifica se outfit planejado é apropriado para evento"""
+
+        calendar_event = event.payload['event']
+        user_id = event.payload['user_id']
+        event_date = calendar_event['start_time'].date()
+
+        # Busca outfit planejado para o dia
+        plano = self.db.execute("""
+            SELECT * FROM plano_semanal_looks
+            WHERE user_id = %s
+              AND semana_inicio <= %s
+              AND semana_inicio + INTERVAL '7 days' > %s
+        """, (user_id, event_date, event_date)).fetchone()
+
+        if not plano:
+            return
+
+        dia_semana = event_date.weekday()
+        outfit_planejado = plano['plano'][str(dia_semana)]
+
+        # Analisa tipo de evento
+        event_type = self.classify_event_formality(calendar_event)
+
+        # Verifica compatibilidade
+        outfit_details = self.get_outfit_details(outfit_planejado)
+        is_appropriate = self.check_outfit_event_match(outfit_details, event_type)
+
+        if not is_appropriate:
+            logger.warn(f"👔 Outfit planejado inadequado para evento {event_type}")
+
+            # Sugere alternativa
+            alternative = self.suggest_appropriate_outfit(
+                user_id,
+                event_type,
+                event_date
+            )
+
+            await self.event_bus.publish(Event(
+                tipo=EventType.OUTFIT_CHANGED,
+                modulo_origem='wardrobe_integration',
+                payload={
+                    'date': str(event_date),
+                    'reason': f"Evento {event_type}: {calendar_event['title']}",
+                    'original_outfit': outfit_planejado,
+                    'suggested_outfit': alternative,
+                    'requires_approval': True
+                }
+            ))
+
+    def classify_event_formality(self, calendar_event):
+        """Classifica formalidade do evento"""
+
+        title = calendar_event['title'].lower()
+
+        if any(w in title for w in ['apresentação', 'cliente', 'reunião importante']):
+            return 'profissional'
+        elif any(w in title for w in ['casual', 'café', 'almoço informal']):
+            return 'casual'
+        elif any(w in title for w in ['evento', 'networking', 'conferência']):
+            return 'business_casual'
+        else:
+            return 'casual'
+
+    def check_outfit_event_match(self, outfit, event_type):
+        """Verifica se outfit combina com tipo de evento"""
+
+        compatibility_matrix = {
+            'profissional': ['profissional', 'business_casual'],
+            'business_casual': ['profissional', 'business_casual', 'casual'],
+            'casual': ['casual', 'business_casual']
+        }
+
+        outfit_occasions = outfit.get('ocasioes', ['casual'])
+        compatible = compatibility_matrix.get(event_type, ['casual'])
+
+        return any(occ in compatible for occ in outfit_occasions)
+
+    async def adjust_comfort_priorities(self, event: Event):
+        """Ajusta prioridades de conforto baseado em fase do ciclo"""
+
+        user_id = event.payload['user_id']
+        nova_fase = event.payload['nova_fase']
+
+        # Menstruação: prioriza conforto máximo
+        if nova_fase == 'menstruacao':
+            logger.info("🌸 Ajustando guarda-roupa para conforto máximo")
+
+            # Marca preferências temporárias
+            self.db.execute("""
+                UPDATE configuracoes_guarda_roupa
+                SET preferencias_temporarias = jsonb_build_object(
+                    'prioridade_conforto', 10,
+                    'evitar_calcas_apertadas', true,
+                    'preferir_vestidos_soltos', true,
+                    'cores_preferidas', ARRAY['preto', 'cinza', 'azul-marinho']
+                )
+                WHERE user_id = %s
+            """, (user_id,))
+
+            # Regenera plano semanal com novas prioridades
+            await self.event_bus.publish(Event(
+                tipo=EventType.WEEKLY_PLAN_GENERATED,
+                modulo_origem='wardrobe_integration',
+                payload={
+                    'user_id': user_id,
+                    'regenerate': True,
+                    'reason': 'cycle_phase_comfort_adjustment'
+                }
+            ))
+```
+
+---
+
+## 19.12 Integração: Diplomat ↔ Calendar + Tasks
+
+```python
+class DiplomatIntegration:
+    """Integração do módulo de relacionamentos"""
+
+    def __init__(self, db_connection, event_bus, context_manager):
+        self.db = db_connection
+        self.event_bus = event_bus
+        self.context = context_manager
+
+        # Subscriptions
+        self.event_bus.subscribe(
+            EventType.CALENDAR_EVENT_CREATED,
+            self.check_if_one_on_one
+        )
+        self.event_bus.subscribe(
+            EventType.TASK_COMPLETED,
+            self.check_relationship_commitment
+        )
+        self.event_bus.subscribe(
+            EventType.OVERLOAD_DETECTED,
+            self.postpone_non_critical_networking
+        )
+
+    async def check_if_one_on_one(self, event: Event):
+        """Verifica se evento é 1:1 e prepara automaticamente"""
+
+        calendar_event = event.payload['event']
+        user_id = event.payload['user_id']
+
+        # Identifica se é 1:1 (2 participantes)
+        attendees = calendar_event.get('attendees', [])
+
+        if len(attendees) == 2:
+            # Identifica a outra pessoa
+            other_person_email = next(
+                (a['email'] for a in attendees if a.get('self') is not True),
+                None
+            )
+
+            if not other_person_email:
+                return
+
+            # Busca pessoa no banco de relacionamentos
+            pessoa = self.db.execute("""
+                SELECT * FROM pessoas_chave
+                WHERE email = %s
+            """, (other_person_email,)).fetchone()
+
+            if pessoa:
+                logger.info(f"🤝 Detectado 1:1 com {pessoa['nome']}")
+
+                # Prepara reunião
+                prep = await self.prepare_one_on_one(pessoa, calendar_event)
+
+                # Cria task de preparação
+                prep_task_id = self.db.execute("""
+                    INSERT INTO tarefas
+                    (descricao, tipo, deadline, big_rock_id, tags, fonte)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                """, (
+                    f"Preparar 1:1 com {pessoa['nome']}",
+                    'Tarefa',
+                    calendar_event['start_time'] - timedelta(hours=2),
+                    None,
+                    ['relacionamento', '1:1', 'preparacao'],
+                    'diplomat_module'
+                )).fetchone()['id']
+
+                await self.event_bus.publish(Event(
+                    tipo=EventType.ONE_ON_ONE_SCHEDULED,
+                    modulo_origem='diplomat_integration',
+                    payload={
+                        'pessoa_id': pessoa['id'],
+                        'meeting': calendar_event,
+                        'preparation': prep,
+                        'prep_task_id': prep_task_id
+                    }
+                ))
+
+    async def prepare_one_on_one(self, pessoa, meeting):
+        """Prepara contexto para 1:1"""
+
+        # Busca última interação
+        last_interaction = self.db.execute("""
+            SELECT * FROM interacoes
+            WHERE pessoa_id = %s
+            ORDER BY data DESC
+            LIMIT 1
+        """, (pessoa['id'],)).fetchone()
+
+        # Busca follow-ups pendentes
+        pending_followups = self.db.execute("""
+            SELECT proximos_passos FROM interacoes
+            WHERE pessoa_id = %s
+              AND proximos_passos IS NOT NULL
+              AND proximos_passos != '[]'
+            ORDER BY data DESC
+            LIMIT 5
+        """, (pessoa['id'],)).fetchall()
+
+        # Calcula health do relacionamento
+        health = self.calculate_relationship_health(pessoa['id'])
+
+        return {
+            'last_interaction_summary': last_interaction['resumo'] if last_interaction else None,
+            'pending_followups': [item for row in pending_followups for item in row['proximos_passos']],
+            'relationship_health': health,
+            'suggested_topics': self.generate_talking_points(pessoa, health)
+        }
+
+    async def check_relationship_commitment(self, event: Event):
+        """Verifica se task completada está relacionada a compromisso"""
+
+        task = event.payload['task']
+
+        # Verifica se task tem pessoa_id no metadata
+        pessoa_id = task.get('metadata', {}).get('pessoa_id')
+
+        if pessoa_id:
+            # Loga como interação
+            self.db.execute("""
+                INSERT INTO interacoes
+                (pessoa_id, data, tipo, resumo, sentimento)
+                VALUES (%s, NOW(), %s, %s, %s)
+            """, (
+                pessoa_id,
+                'acao_completada',
+                f"Completou compromisso: {task['descricao']}",
+                'positivo'
+            ))
+
+            # Atualiza health
+            new_health = self.calculate_relationship_health(pessoa_id)
+
+            await self.event_bus.publish(Event(
+                tipo=EventType.RELATIONSHIP_HEALTH_CHANGED,
+                modulo_origem='diplomat_integration',
+                payload={
+                    'pessoa_id': pessoa_id,
+                    'new_health': new_health,
+                    'trigger': 'commitment_fulfilled'
+                }
+            ))
+
+    async def postpone_non_critical_networking(self, event: Event):
+        """Adia networking não-crítico durante sobrecarga"""
+
+        user_id = event.payload['user_id']
+        carga = event.payload['percentual_carga']
+
+        if carga > 90:
+            logger.info("🤝 Adiando networking não-crítico durante sobrecarga")
+
+            # Busca relacionamentos em "atenção" mas não "crítico"
+            non_critical_people = self.db.execute("""
+                SELECT * FROM pessoas_chave
+                WHERE user_id = %s
+                  AND importancia != 'critica'
+                  AND health_status = 'atencao'
+            """, (user_id,)).fetchall()
+
+            if non_critical_people:
+                await self.event_bus.publish(Event(
+                    tipo=EventType.RECONNECTION_REMINDER,
+                    modulo_origem='diplomat_integration',
+                    payload={
+                        'suggestion': f'Você está sobrecarregada. Vou adiar {len(non_critical_people)} reconexões não-urgentes.',
+                        'postponed_people': [p['nome'] for p in non_critical_people],
+                        'new_reminder_date': (datetime.now() + timedelta(days=7)).date()
+                    }
+                ))
+
+    def calculate_relationship_health(self, pessoa_id):
+        """Calcula saúde do relacionamento"""
+
+        # Busca última interação
+        last_contact = self.db.execute("""
+            SELECT data FROM interacoes
+            WHERE pessoa_id = %s
+            ORDER BY data DESC
+            LIMIT 1
+        """, (pessoa_id,)).fetchone()
+
+        if not last_contact:
+            return {'score': 0, 'status': 'critico'}
+
+        # Calcula dias desde último contato
+        days_since = (datetime.now().date() - last_contact['data'].date()).days
+
+        # Busca frequência ideal
+        pessoa = self.db.execute("""
+            SELECT frequencia_contato_ideal FROM pessoas_chave
+            WHERE id = %s
+        """, (pessoa_id,)).fetchone()
+
+        ideal_days = {
+            'semanal': 7,
+            'quinzenal': 14,
+            'mensal': 30,
+            'trimestral': 90
+        }.get(pessoa['frequencia_contato_ideal'], 30)
+
+        # Calcula score
+        ratio = days_since / ideal_days
+
+        if ratio <= 1.0:
+            score = 100
+            status = 'excelente'
+        elif ratio <= 1.5:
+            score = 75
+            status = 'bom'
+        elif ratio <= 2.0:
+            score = 50
+            status = 'atencao'
+        else:
+            score = 25
+            status = 'critico'
+
+        return {'score': score, 'status': status, 'days_since': days_since}
+```
+
+---
+
+## 19.13 Orquestrador Central Integrado (ATUALIZADO)
 
 ```python
 class CharleeOrchestrator(Agent):
     """Agente Central que coordena todos os módulos"""
-    
+
     def __init__(self, db_connection, vector_db, event_bus, context_manager):
         self.db = db_connection
         self.vector_db = vector_db
         self.event_bus = event_bus
         self.context = context_manager
-        
-        # Inicializa módulos especializados
+
+        # === MÓDULOS CORE (V1-V3) ===
         self.wellness_coach = WellnessCoachAgent(db_connection)
         self.capacity_guardian = CapacityGuardianAgent(db_connection)
         self.focus_guard = FocusGuardAgent(db_connection)
         self.okr_dashboard = OKRDashboardAgent(db_connection)
         self.projects_orchestrator = ProjectsOrchestrator(db_connection, event_bus)
-        
-        # Inicializa integrações
+
+        # === NOVOS MÓDULOS (V4+) ===
+        from backend.modules.wealth.orchestrator import WealthOrchestrator
+        from backend.modules.routines.orchestrator import RoutinesOrchestrator
+        from backend.modules.wardrobe.orchestrator import WardrobeOrchestrator
+        from backend.modules.diplomat.orchestrator import DiplomatOrchestrator
+
+        self.wealth = WealthOrchestrator(db_connection, event_bus, context_manager)
+        self.routines = RoutinesOrchestrator(db_connection, event_bus, context_manager)
+        self.wardrobe = WardrobeOrchestrator(db_connection, event_bus)
+        self.diplomat = DiplomatOrchestrator(db_connection, event_bus, context_manager)
+
+        # === INTEGRAÇÕES CORE ===
         self.task_project_integration = TaskProjectIntegration(
             db_connection, event_bus, context_manager
         )
@@ -925,6 +1678,20 @@ class CharleeOrchestrator(Agent):
         )
         self.wellness_projects_integration = WellnessProjectsIntegration(
             db_connection, event_bus, self.wellness_coach
+        )
+
+        # === INTEGRAÇÕES NOVOS MÓDULOS ===
+        self.wealth_wellness_integration = WealthWellnessIntegration(
+            db_connection, event_bus, context_manager
+        )
+        self.routines_integration = RoutinesIntegration(
+            db_connection, event_bus, context_manager
+        )
+        self.wardrobe_integration = WardrobeIntegration(
+            db_connection, event_bus
+        )
+        self.diplomat_integration = DiplomatIntegration(
+            db_connection, event_bus, context_manager
         )
         
         super().__init__(
@@ -1022,9 +1789,9 @@ Retorne JSON estruturado.
     
     def morning_briefing_integrated(self):
         """Briefing matinal considerando TODOS os módulos"""
-        
+
         context = self.context.get_context()
-        
+
         briefing = f"""
 ☀️ BOM DIA, SAMARA!
 
@@ -1035,6 +1802,12 @@ Retorne JSON estruturado.
 • Energia esperada: {context['energia_atual']}/10
 • Recomendação: {self.wellness_coach.get_daily_recommendation()}
 
+📅 ROTINA DO DIA
+{self.routines.get_today_summary()}
+
+👔 OUTFIT DO DIA
+{self.wardrobe.get_today_outfit()}
+
 ⚡ FOCO DO DIA
 {self.get_daily_focus()}
 
@@ -1043,6 +1816,12 @@ Retorne JSON estruturado.
 
 💼 PROJETOS FREELANCE
 {self.projects_orchestrator.get_project_summary()}
+
+💰 FINANÇAS
+{self.wealth.get_daily_financial_summary()}
+
+🤝 RELACIONAMENTOS
+{self.diplomat.get_relationship_summary()}
 
 📬 NOTIFICAÇÕES
 {self.focus_guard.comm_manager.format_inbox_summary()}
@@ -1058,7 +1837,7 @@ Retorne JSON estruturado.
 
 ❓ Pronta para começar?
 """
-        
+
         return briefing
     
     def get_daily_focus(self):
@@ -1253,14 +2032,327 @@ Agora todos os módulos estão **completamente integrados**:
 ✅ **CLI unificado** para controle total  
 ✅ **Métricas** de saúde da integração  
 
-**Próximos passos:**
+---
 
-Quer que eu gere agora:
+## 19.14 Fluxos End-to-End com Novos Módulos
 
-1. ✅ **Docker Compose completo** (todos os serviços)
-2. ✅ **Script de setup inicial** (one-command install)
-3. ✅ **Testes de integração** (end-to-end)
-4. ✅ **Dashboard web** (Streamlit) mostrando tudo
-5. ✅ **Guia de deploy** (local + cloud)
+### Fluxo 1: Início da Manhã (Todos os módulos)
 
-**Ou começamos a implementar?** 🚀
+```
+7:00 AM - Samara acorda
+
+┌─────────────────────────────────────────────────────────┐
+│ 1. ROUTINES MODULE                                      │
+│    └─> Gera roteiro matinal baseado em:                │
+│        • Fase do ciclo (energia disponível)             │
+│        • Eventos do calendário hoje                     │
+│        • Carga de trabalho atual                        │
+│        ↓                                                │
+│    Event: ROUTINE_GENERATED                             │
+└─────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────┐
+│ 2. WARDROBE MODULE (subscribed to ROUTINE_GENERATED)    │
+│    └─> Confirma outfit do dia:                         │
+│        • Verifica eventos do calendário                 │
+│        • Ajusta por fase do ciclo (conforto?)          │
+│        • Integra no passo "Vestir" da rotina           │
+│        ↓                                                │
+│    Event: WEEKLY_PLAN_CONFIRMED                         │
+└─────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────┐
+│ 3. WEALTH MODULE (subscribed to ROUTINE_STARTED)        │
+│    └─> Verifica orçamento do dia:                      │
+│        • Modo proteção ativo? (TPM ou overload)        │
+│        • Gastos planejados hoje                        │
+│        • Alerta se meta em risco                       │
+│        ↓                                                │
+│    Event: FINANCIAL_FORECAST_UPDATED                    │
+└─────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────┐
+│ 4. DIPLOMAT MODULE (subscribed to MORNING_SCRIPT_READY) │
+│    └─> Verifica reuniões do dia:                       │
+│        • 1:1s agendados?                               │
+│        • Cria tasks de preparação                      │
+│        • Alerta reconexões pendentes                   │
+│        ↓                                                │
+│    Event: ONE_ON_ONE_SCHEDULED (se aplicável)           │
+└─────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────┐
+│ 5. ORCHESTRATOR                                         │
+│    └─> Sintetiza briefing completo:                    │
+│        • Bem-estar (fase, energia)                     │
+│        • Rotina do dia                                 │
+│        • Outfit escolhido                              │
+│        • Foco prioritário                              │
+│        • Situação financeira                           │
+│        • Relacionamentos que precisam atenção          │
+│        ↓                                                │
+│    Apresenta briefing matinal unificado                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Fluxo 2: Detecção de Sobrecarga (Multi-módulo)
+
+```
+Usuario completa 10ª tarefa do dia → Capacity Guardian detecta overload (95%)
+
+┌─────────────────────────────────────────────────────────┐
+│ Event: OVERLOAD_DETECTED                                │
+└─────────────────────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┬───────────────┐
+        │           │           │               │
+        ▼           ▼           ▼               ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+│ WEALTH   │ │ DIPLOMAT │ │ FOCUS    │ │ ROUTINES     │
+│          │ │          │ │          │ │              │
+│ Ativa    │ │ Adia     │ │ Bloqueia │ │ Adiciona     │
+│ proteção │ │ networking│ │ notifs   │ │ pausas       │
+│ impulso  │ │ não-crítico│ │ não-    │ │ obrigatórias │
+│ spending │ │          │ │ urgentes │ │              │
+└────┬─────┘ └────┬─────┘ └────┬─────┘ └──────┬───────┘
+     │            │            │               │
+     └────────────┴────────────┴───────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │  Context Manager       │
+        │  atualiza:             │
+        │  • stress_nivel = 9    │
+        │  • necessita_pausa =   │
+        │    TRUE                │
+        └───────────┬───────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │  ORCHESTRATOR          │
+        │  Sintetiza ação:       │
+        │  "Modo proteção ativo" │
+        │  + Lista de ações      │
+        │    tomadas             │
+        └───────────────────────┘
+```
+
+### Fluxo 3: Mudança de Fase do Ciclo (Cascata de ajustes)
+
+```
+Wellness Coach detecta: Fase mudou para "pre_menstrual" (TPM)
+
+┌─────────────────────────────────────────────────────────┐
+│ Event: CYCLE_PHASE_CHANGED                              │
+│ payload: { nova_fase: "pre_menstrual",                  │
+│            energia_esperada: 0.60 }                     │
+└─────────────────────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┬───────────────┐
+        │           │           │               │
+        ▼           ▼           ▼               ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+│ WEALTH   │ │ ROUTINES │ │ WARDROBE │ │ CAPACITY     │
+│          │ │          │ │          │ │              │
+│ • Limite │ │ • +15min │ │ • Priori-│ │ • Reduz      │
+│   impulso│ │   buffer │ │   za con-│ │   threshold  │
+│   = 50%  │ │ • Exercise│ │   forto  │ │   de alerta  │
+│ • Modo   │ │   optional│ │ • Evita  │ │   (mais      │
+│   TPM    │ │ • Mais   │ │   calcas │ │   protetor)  │
+│   ativo  │ │   pausas │ │   apertad│ │              │
+│          │ │          │ │   as     │ │              │
+└────┬─────┘ └────┬─────┘ └────┬─────┘ └──────┬───────┘
+     │            │            │               │
+     │            │            │               │
+     └────────────┴────────────┴───────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │  Context Manager       │
+        │  atualiza:             │
+        │  • fase_ciclo = TPM    │
+        │  • energia = 6/10      │
+        └───────────┬───────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │  Todos módulos agora   │
+        │  operam com awareness  │
+        │  de TPM                │
+        └───────────────────────┘
+
+Resultado para usuária:
+• Rotinas ajustadas automaticamente
+• Proteção financeira ativada
+• Outfits mais confortáveis priorizados
+• Menor threshold para pausas obrigatórias
+```
+
+---
+
+## 19.15 Tabela de Status de Integração
+
+| Módulo | Status | Eventos Publicados | Eventos Subscritos | Integrado com | Prioridade V4 |
+|--------|--------|-------------------|-------------------|---------------|---------------|
+| **Task Manager** | ✅ V1 | task_created, task_completed | capacity_warning, overload_detected | Todos | - |
+| **Wellness Coach** | ✅ V1 | cycle_phase_changed, energy_low | - | Todos | - |
+| **Capacity Guardian** | ✅ V2 | overload_detected, capacity_warning | task_created, focus_ended | Todos | - |
+| **Focus Module** | ✅ V2 | focus_started, interruption_blocked | capacity_critical | Capacity, Tasks | - |
+| **OKR Dashboard** | ✅ V2 | okr_updated, milestone_achieved | task_completed | Tasks | - |
+| **Projects Module** | ✅ V2 | project_accepted, project_completed | cycle_phase_changed | Tasks, Wellness | - |
+| **Calendar Integration** | ✅ V3.2 | calendar_event_created | - | Todos | - |
+| **Multimodal Input** | ✅ V3.3 | - | - | Task Manager | - |
+| **Wealth Module** | 📋 V4 | expense_created, impulse_alert, goal_at_risk | cycle_phase_changed, overload_detected | Wellness, Capacity | 🔥 Alta |
+| **Routines Module** | 📋 V4 | routine_generated, routine_interrupted | cycle_phase_changed, calendar_event_created | Wellness, Calendar, Wardrobe | 🔥 Alta |
+| **Wardrobe Module** | 📋 V4 | weekly_plan_generated, outfit_changed | calendar_event_created, cycle_phase_changed | Calendar, Wellness, Routines | 🟡 Média |
+| **Diplomat Module** | 📋 V4 | one_on_one_scheduled, relationship_health_changed | calendar_event_created, task_completed | Calendar, Tasks | 🟡 Média |
+
+### Legenda
+- ✅ Implementado
+- 📋 Documentado, pronto para implementação
+- 🔥 Alta prioridade
+- 🟡 Média prioridade
+
+---
+
+## 19.16 Métricas de Integração Consolidadas
+
+```python
+def get_consolidated_integration_metrics():
+    """Métricas consolidadas de todos os módulos"""
+
+    return {
+        'eventos': {
+            'processados_24h': db.execute("""
+                SELECT COUNT(*) FROM system_events
+                WHERE criado_em > NOW() - INTERVAL '24 hours'
+                  AND processado = TRUE
+            """).fetchone()['count'],
+
+            'por_modulo': db.execute("""
+                SELECT modulo_origem, COUNT(*) as total
+                FROM system_events
+                WHERE criado_em > NOW() - INTERVAL '24 hours'
+                GROUP BY modulo_origem
+                ORDER BY total DESC
+            """).fetchall(),
+
+            'latencia_media_ms': db.execute("""
+                SELECT AVG(EXTRACT(EPOCH FROM (processado_em - criado_em)) * 1000)
+                FROM system_events
+                WHERE processado_em IS NOT NULL
+                  AND criado_em > NOW() - INTERVAL '24 hours'
+            """).fetchone()['avg']
+        },
+
+        'cross_module_decisions': {
+            'ultimas_24h': db.execute("""
+                SELECT COUNT(*) FROM decisoes_integradas
+                WHERE criado_em > NOW() - INTERVAL '24 hours'
+            """).fetchone()['count'],
+
+            'taxa_sucesso': db.execute("""
+                SELECT
+                    COUNT(*) FILTER (WHERE executado = TRUE) * 100.0 / COUNT(*)
+                FROM decisoes_integradas
+                WHERE criado_em > NOW() - INTERVAL '7 days'
+            """).fetchone()['?column?']
+        },
+
+        'modulos_novos': {
+            'wealth': {
+                'expenses_tracked': db.execute("""
+                    SELECT COUNT(*) FROM despesas
+                    WHERE criado_em > NOW() - INTERVAL '7 days'
+                """).fetchone()['count'],
+
+                'impulse_blocks': db.execute("""
+                    SELECT COUNT(*) FROM system_events
+                    WHERE tipo = 'wealth.impulse_alert'
+                      AND criado_em > NOW() - INTERVAL '7 days'
+                """).fetchone()['count']
+            },
+
+            'routines': {
+                'routines_generated': db.execute("""
+                    SELECT COUNT(*) FROM roteiros_diarios
+                    WHERE criado_em > NOW() - INTERVAL '7 days'
+                """).fetchone()['count'],
+
+                'completion_rate': db.execute("""
+                    SELECT
+                        COUNT(*) FILTER (WHERE status = 'completo') * 100.0 / COUNT(*)
+                    FROM roteiros_diarios
+                    WHERE data > CURRENT_DATE - INTERVAL '7 days'
+                """).fetchone()['?column?']
+            },
+
+            'wardrobe': {
+                'weekly_plans_active': db.execute("""
+                    SELECT COUNT(*) FROM plano_semanal_looks
+                    WHERE semana_inicio <= CURRENT_DATE
+                      AND semana_inicio + INTERVAL '7 days' > CURRENT_DATE
+                """).fetchone()['count'],
+
+                'outfit_changes': db.execute("""
+                    SELECT COUNT(*) FROM system_events
+                    WHERE tipo = 'wardrobe.outfit_changed'
+                      AND criado_em > NOW() - INTERVAL '7 days'
+                """).fetchone()['count']
+            },
+
+            'diplomat': {
+                'relationships_tracked': db.execute("""
+                    SELECT COUNT(*) FROM pessoas_chave
+                """).fetchone()['count'],
+
+                'interactions_logged': db.execute("""
+                    SELECT COUNT(*) FROM interacoes
+                    WHERE data > NOW() - INTERVAL '7 days'
+                """).fetchone()['count'],
+
+                'health_critical': db.execute("""
+                    SELECT COUNT(*) FROM pessoas_chave
+                    WHERE health_status = 'critico'
+                """).fetchone()['count']
+            }
+        },
+
+        'health_geral': {
+            'context_freshness': db.execute("""
+                SELECT EXTRACT(EPOCH FROM (NOW() - atualizado_em)) / 60
+                FROM contexto_global
+                ORDER BY atualizado_em DESC LIMIT 1
+            """).fetchone()['?column?'],  # minutos desde última atualização
+
+            'modules_active': 11,  # Core (7) + New (4)
+            'integrations_active': 7
+        }
+    }
+```
+
+---
+
+**Pronto!** 🎉
+
+Agora o arquivo **`Charlee_integracao_modulos.md`** está **completamente atualizado** com:
+
+✅ **Arquitetura expandida** incluindo os 4 novos módulos
+✅ **Event Bus atualizado** com 18 novos tipos de eventos
+✅ **4 novas seções de integração**:
+   - Wealth ↔ Wellness + Capacity
+   - Routines ↔ Wellness + Wardrobe + Calendar
+   - Wardrobe ↔ Calendar + Wellness
+   - Diplomat ↔ Calendar + Tasks
+
+✅ **Orquestrador atualizado** com todos os módulos V4+
+✅ **Briefing matinal expandido** incluindo finanças, rotinas, outfit e relacionamentos
+✅ **3 fluxos end-to-end** mostrando coordenação multi-módulo
+✅ **Tabela de status** de integração de todos os módulos
+✅ **Métricas consolidadas** incluindo estatísticas dos novos módulos
+
+**Todos os módulos agora estão integrados ao orquestrador central via Event Bus!** 🚀
