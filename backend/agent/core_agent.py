@@ -268,9 +268,7 @@ class CharleeAgent(Agent):
 
     # ==================== Notifications Tools ====================
 
-    def listar_notificacoes(
-        self, apenas_nao_lidas: bool = True, limit: int = 10
-    ) -> str:
+    def listar_notificacoes(self, apenas_nao_lidas: bool = True, limit: int = 10) -> str:
         """
         Lista notificações do usuário.
 
@@ -284,7 +282,9 @@ class CharleeAgent(Agent):
             # Get numeric user_id for notifications
             try:
                 numeric_user_id = (
-                    int(self.user_id) if isinstance(self.user_id, str) and self.user_id.isdigit() else 1
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
                 )
             except (ValueError, AttributeError):
                 numeric_user_id = 1
@@ -296,9 +296,7 @@ class CharleeAgent(Agent):
             if apenas_nao_lidas:
                 query = query.filter(UserNotification.read == False)  # noqa: E712
 
-            notifications = (
-                query.order_by(UserNotification.created_at.desc()).limit(limit).all()
-            )
+            notifications = query.order_by(UserNotification.created_at.desc()).limit(limit).all()
 
             if not notifications:
                 return "📭 Você não tem notificações não lidas."
@@ -352,7 +350,9 @@ class CharleeAgent(Agent):
             # Get numeric user_id
             try:
                 numeric_user_id = (
-                    int(self.user_id) if isinstance(self.user_id, str) and self.user_id.isdigit() else 1
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
                 )
             except (ValueError, AttributeError):
                 numeric_user_id = 1
@@ -392,7 +392,9 @@ class CharleeAgent(Agent):
             # Get numeric user_id
             try:
                 numeric_user_id = (
-                    int(self.user_id) if isinstance(self.user_id, str) and self.user_id.isdigit() else 1
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
                 )
             except (ValueError, AttributeError):
                 numeric_user_id = 1

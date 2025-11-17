@@ -534,7 +534,9 @@ class AgentOrchestrator:
             # Get numeric user_id
             try:
                 numeric_user_id = (
-                    int(self.user_id) if isinstance(self.user_id, str) and self.user_id.isdigit() else 1
+                    int(self.user_id)
+                    if isinstance(self.user_id, str) and self.user_id.isdigit()
+                    else 1
                 )
             except (ValueError, AttributeError):
                 numeric_user_id = 1
