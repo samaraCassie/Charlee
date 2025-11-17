@@ -4,15 +4,52 @@ import { Button } from './ui/button';
 import { multimodalService } from '@/services/multimodalService';
 import { cn } from '@/lib/utils';
 
+/**
+ * Props for the ImageUpload component
+ */
 interface ImageUploadProps {
+  /** Callback fired when image analysis completes successfully */
   onAnalysis: (analysis: string, tasks: Array<{ description: string; source: string }>) => void;
+  /** Callback fired when an error occurs during upload or analysis */
   onError?: (error: string) => void;
+  /** Custom prompt to use for image analysis (overrides default prompt) */
   customPrompt?: string;
+  /** Additional CSS classes to apply to the component */
   className?: string;
-  autoAnalyze?: boolean; // Automatically analyze on upload
+  /** Whether to automatically analyze the image upon upload (default: true) */
+  autoAnalyze?: boolean;
 }
 
-export const ImageUpload: React.FC<ImageUploadProps> = ({
+/**
+ * ImageUpload Component
+ *
+ * A fully accessible image upload component with drag-and-drop support and
+ * AI-powered image analysis using GPT-4o Vision API.
+ *
+ * @example
+ * ```tsx
+ * <ImageUpload
+ *   onAnalysis={(analysis, tasks) => {
+ *     console.log('Analysis:', analysis);
+ *     console.log('Extracted tasks:', tasks);
+ *   }}
+ *   onError={(error) => console.error(error)}
+ *   autoAnalyze={true}
+ * />
+ * ```
+ *
+ * @features
+ * - Drag and drop support
+ * - Image preview before analysis
+ * - File validation (size, format)
+ * - Keyboard accessible (Enter/Space to trigger)
+ * - Screen reader friendly with ARIA labels
+ * - Auto-analyze or manual trigger
+ *
+ * @supported-formats PNG, JPG, JPEG, HEIC, WEBP
+ * @max-file-size 20MB
+ */
+const ImageUploadComponent: React.FC<ImageUploadProps> = ({
   onAnalysis,
   onError,
   customPrompt,
@@ -247,3 +284,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     </div>
   );
 };
+
+/**
+ * Memoized ImageUpload component to prevent unnecessary re-renders.
+ * Only re-renders when props change.
+ */
+export const ImageUpload = React.memo(ImageUploadComponent);

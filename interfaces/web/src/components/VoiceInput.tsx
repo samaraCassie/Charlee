@@ -4,14 +4,51 @@ import { Button } from './ui/button';
 import { multimodalService } from '@/services/multimodalService';
 import { cn } from '@/lib/utils';
 
+/**
+ * Props for the VoiceInput component
+ */
 interface VoiceInputProps {
+  /** Callback fired when audio transcription completes successfully */
   onTranscription: (result: { text: string; language: string }) => void;
+  /** Callback fired when an error occurs during recording or transcription */
   onError?: (error: string) => void;
-  language?: string; // Optional language code (e.g., 'en', 'pt')
+  /** Language code for transcription (e.g., 'en', 'pt'). If not specified, auto-detects */
+  language?: string;
+  /** Additional CSS classes to apply to the component */
   className?: string;
 }
 
-export const VoiceInput: React.FC<VoiceInputProps> = ({
+/**
+ * VoiceInput Component
+ *
+ * A fully accessible voice recording and transcription component using
+ * OpenAI Whisper API for speech-to-text conversion.
+ *
+ * @example
+ * ```tsx
+ * <VoiceInput
+ *   onTranscription={(result) => {
+ *     console.log('Text:', result.text);
+ *     console.log('Language:', result.language);
+ *   }}
+ *   onError={(error) => console.error(error)}
+ *   language="pt"
+ * />
+ * ```
+ *
+ * @features
+ * - Browser-based audio recording (MediaRecorder API)
+ * - Real-time recording timer
+ * - Audio preview with playback controls
+ * - Re-record functionality
+ * - Keyboard accessible with ARIA labels
+ * - Screen reader announcements
+ * - Automatic cleanup of media resources
+ *
+ * @supported-formats Recorded as WebM audio
+ * @max-file-size 25MB (enforced by multimodalService)
+ */
+const VoiceInputComponent: React.FC<VoiceInputProps> = ({
   onTranscription,
   onError,
   language,
@@ -262,3 +299,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     </div>
   );
 };
+
+/**
+ * Memoized VoiceInput component to prevent unnecessary re-renders.
+ * Only re-renders when props change.
+ */
+export const VoiceInput = React.memo(VoiceInputComponent);
