@@ -312,7 +312,6 @@ class SlackCollector(SourceCollector):
 
             token = credentials.get("token")
             channels = settings.get("channels", [])  # Channel IDs to monitor
-            include_dms = settings.get("include_dms", True)
             max_messages = settings.get("max_messages_per_sync", 50)
 
             headers = {"Authorization": f"Bearer {token}"}
@@ -826,7 +825,6 @@ class NotionCollector(SourceCollector):
 
             token = credentials.get("token")
             database_ids = settings.get("database_ids", [])
-            page_ids = settings.get("page_ids", [])
 
             headers = {
                 "Authorization": f"Bearer {token}",
@@ -933,12 +931,8 @@ class WhatsAppCollector(SourceCollector):
 
         try:
             credentials = self.source.credentials
-            settings = self.source.settings or {}
 
             access_token = credentials.get("access_token")
-            phone_number_id = credentials.get("phone_number_id")
-
-            headers = {"Authorization": f"Bearer {access_token}"}
 
             # Note: WhatsApp Cloud API primarily uses webhooks
             # This is a placeholder implementation

@@ -11,7 +11,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from api.auth.jwt import get_current_user
+from api.auth.dependencies import get_current_user
 from database import crud, schemas
 from database.config import get_db
 from database.models import User

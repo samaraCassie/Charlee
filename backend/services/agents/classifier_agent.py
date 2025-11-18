@@ -15,7 +15,7 @@ import openai
 from sqlalchemy.orm import Session
 
 from database import crud
-from database.models import Notification, NotificationPattern, User
+from database.models import Notification, NotificationPattern
 
 logger = logging.getLogger(__name__)
 

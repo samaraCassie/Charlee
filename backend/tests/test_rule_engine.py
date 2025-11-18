@@ -1,12 +1,9 @@
 """Tests for RuleEngine - automated notification filtering."""
 
-from datetime import datetime, timezone
-
 import pytest
 from sqlalchemy.orm import Session
 
 from database.models import Notification, NotificationRule, User
-from database.schemas import NotificationCreate
 from services.rule_engine import RuleEngine
 
 

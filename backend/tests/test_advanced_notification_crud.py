@@ -9,14 +9,12 @@ from database import crud
 from database.models import User
 from database.schemas import (
     FocusSessionCreate,
-    FocusSessionUpdate,
     NotificationDigestBase,
     NotificationRuleCreate,
     NotificationRuleUpdate,
     NotificationSourceCreate,
     NotificationSourceUpdate,
     ResponseTemplateCreate,
-    ResponseTemplateUpdate,
 )
 
 

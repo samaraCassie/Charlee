@@ -10,7 +10,6 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
-from database import crud
 from database.config import SessionLocal
 from database.models import Notification
 
