@@ -2378,10 +2378,7 @@ class ResponseTemplate(Base):
     user = relationship("User")
 
     def __repr__(self):
-        return (
-            f"<ResponseTemplate(id={self.id}, name='{self.name}', "
-            f"category='{self.category}')>"
-        )
+        return f"<ResponseTemplate(id={self.id}, name='{self.name}', category='{self.category}')>"
 
 
 # Additional indexes for Advanced Notification System

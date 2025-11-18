@@ -72,9 +72,7 @@ class NotificationCleanupService:
 
         return {"archived": archived_count, "total_processed": len(spam_notifications)}
 
-    def delete_old_archived(
-        self, user_id: int | None = None, retention_days: int = 30
-    ) -> dict:
+    def delete_old_archived(self, user_id: int | None = None, retention_days: int = 30) -> dict:
         """
         Delete archived notifications older than retention period.
 
@@ -113,9 +111,7 @@ class NotificationCleanupService:
             "cutoff_date": cutoff_date.isoformat(),
         }
 
-    def archive_old_read(
-        self, user_id: int | None = None, archive_after_days: int = 7
-    ) -> dict:
+    def archive_old_read(self, user_id: int | None = None, archive_after_days: int = 7) -> dict:
         """
         Archive read notifications older than specified days.
 
@@ -156,9 +152,7 @@ class NotificationCleanupService:
             "cutoff_date": cutoff_date.isoformat(),
         }
 
-    def cleanup_informativo(
-        self, user_id: int | None = None, archive_after_days: int = 3
-    ) -> dict:
+    def cleanup_informativo(self, user_id: int | None = None, archive_after_days: int = 3) -> dict:
         """
         Archive informational notifications after a short period.
 

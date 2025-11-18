@@ -361,9 +361,7 @@ class NotificationAgent:
                 )
 
                 if existing:
-                    logger.debug(
-                        f"Skipping duplicate notification: {notif_dict['external_id']}"
-                    )
+                    logger.debug(f"Skipping duplicate notification: {notif_dict['external_id']}")
                     continue
 
                 # Create notification
