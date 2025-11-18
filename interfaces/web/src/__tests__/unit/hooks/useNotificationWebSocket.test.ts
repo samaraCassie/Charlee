@@ -86,12 +86,13 @@ describe('useNotificationWebSocket', () => {
     originalWebSocket = global.WebSocket;
     // Store the instance when MockWebSocket is constructed
     const OriginalMockWebSocket = MockWebSocket;
-    global.WebSocket = class extends OriginalMockWebSocket {
+    const WebSocketMockClass = class extends OriginalMockWebSocket {
       constructor(url: string) {
         super(url);
         mockWebSocketInstance = this as any;
       }
-    } as any;
+    };
+    global.WebSocket = vi.fn((url: string) => new WebSocketMockClass(url)) as any;
 
     // Mock Notification API
     global.Notification = {
