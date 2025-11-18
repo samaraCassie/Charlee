@@ -222,9 +222,7 @@ class NotificationCleanupService:
         )
         total_deleted = results["old_deleted"]["deleted"]
 
-        logger.info(
-            f"Cleanup completed: {total_archived} archived, {total_deleted} deleted"
-        )
+        logger.info(f"Cleanup completed: {total_archived} archived, {total_deleted} deleted")
 
         return {
             "success": True,

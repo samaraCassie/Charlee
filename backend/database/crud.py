@@ -1157,22 +1157,14 @@ def get_or_create_default_preferences(db: Session, user_id: int) -> list[Notific
 
 def get_notification_source(db: Session, source_id: int, user_id: int) -> NotificationSource | None:
     """Get a notification source by ID for a specific user."""
-    return (
-        db.query(NotificationSource).filter_by(id=source_id, user_id=user_id).first()
-    )
+    return db.query(NotificationSource).filter_by(id=source_id, user_id=user_id).first()
 
 
 def get_notification_sources(
     db: Session, user_id: int, skip: int = 0, limit: int = 100
 ) -> list[NotificationSource]:
     """Get all notification sources for a user."""
-    return (
-        db.query(NotificationSource)
-        .filter_by(user_id=user_id)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    return db.query(NotificationSource).filter_by(user_id=user_id).offset(skip).limit(limit).all()
 
 
 def create_notification_source(
@@ -1278,9 +1270,7 @@ def delete_notification_rule(db: Session, rule_id: int, user_id: int) -> bool:
 
 def get_notification_digest(db: Session, digest_id: int, user_id: int) -> NotificationDigest | None:
     """Get a notification digest by ID for a specific user."""
-    return (
-        db.query(NotificationDigest).filter_by(id=digest_id, user_id=user_id).first()
-    )
+    return db.query(NotificationDigest).filter_by(id=digest_id, user_id=user_id).first()
 
 
 def get_notification_digests(
@@ -1308,9 +1298,7 @@ def create_notification_digest(
     return db_digest
 
 
-def get_latest_digest(
-    db: Session, user_id: int, digest_type: str
-) -> NotificationDigest | None:
+def get_latest_digest(db: Session, user_id: int, digest_type: str) -> NotificationDigest | None:
     """Get the latest digest of a specific type for a user."""
     return (
         db.query(NotificationDigest)
@@ -1351,9 +1339,7 @@ def get_active_focus_session(db: Session, user_id: int) -> FocusSession | None:
     )
 
 
-def create_focus_session(
-    db: Session, session: FocusSessionCreate, user_id: int
-) -> FocusSession:
+def create_focus_session(db: Session, session: FocusSessionCreate, user_id: int) -> FocusSession:
     """Create a new focus session."""
     db_session = FocusSession(user_id=user_id, **session.model_dump())
     db.add(db_session)
@@ -1396,13 +1382,9 @@ def end_focus_session(db: Session, session_id: int, user_id: int) -> FocusSessio
 # ==================== Response Template CRUD ====================
 
 
-def get_response_template(
-    db: Session, template_id: int, user_id: int
-) -> ResponseTemplate | None:
+def get_response_template(db: Session, template_id: int, user_id: int) -> ResponseTemplate | None:
     """Get a response template by ID for a specific user."""
-    return (
-        db.query(ResponseTemplate).filter_by(id=template_id, user_id=user_id).first()
-    )
+    return db.query(ResponseTemplate).filter_by(id=template_id, user_id=user_id).first()
 
 
 def get_response_templates(

@@ -313,11 +313,13 @@ class RuleEngine:
                     # Note: This requires task creation logic
                     # For now, just mark the action
                     notification.acao_sugerida = "criar_tarefa"
-                    executed.append({
-                        "type": "create_task",
-                        "title": task_title,
-                        "description": task_description,
-                    })
+                    executed.append(
+                        {
+                            "type": "create_task",
+                            "title": task_title,
+                            "description": task_description,
+                        }
+                    )
 
                 elif action_type == "snooze":
                     # Snooze notification

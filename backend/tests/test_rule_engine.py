@@ -79,9 +79,7 @@ class TestRuleEngine:
         engine = RuleEngine(db_session, test_user.id)
 
         conditions = {
-            "all": [
-                {"field": "extra_data.sender", "operator": "contains", "value": "recruiter"}
-            ]
+            "all": [{"field": "extra_data.sender", "operator": "contains", "value": "recruiter"}]
         }
 
         result = engine._evaluate_conditions(test_notification, conditions)
@@ -327,7 +325,9 @@ class TestRuleEngine:
         db_session.refresh(spam_rule)
         assert spam_rule.times_triggered == 0
 
-    def test_batch_processing(self, db_session: Session, test_user: User, spam_rule: NotificationRule):
+    def test_batch_processing(
+        self, db_session: Session, test_user: User, spam_rule: NotificationRule
+    ):
         """Test batch processing of multiple notifications."""
         # Create multiple notifications
         notifications = []

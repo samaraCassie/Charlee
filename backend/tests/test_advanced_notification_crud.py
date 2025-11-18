@@ -68,9 +68,7 @@ class TestNotificationSourceCRUD:
 
         created_source = crud.create_notification_source(db_session, source_data, test_user.id)
 
-        retrieved_source = crud.get_notification_source(
-            db_session, created_source.id, test_user.id
-        )
+        retrieved_source = crud.get_notification_source(db_session, created_source.id, test_user.id)
 
         assert retrieved_source is not None
         assert retrieved_source.id == created_source.id
@@ -147,11 +145,7 @@ class TestNotificationRuleCRUD:
             description="Filter out recruiter spam",
             enabled=True,
             priority=10,
-            conditions={
-                "all": [
-                    {"field": "sender", "operator": "contains", "value": "recruiter"}
-                ]
-            },
+            conditions={"all": [{"field": "sender", "operator": "contains", "value": "recruiter"}]},
             actions=[{"type": "classify", "categoria": "spam"}, {"type": "archive"}],
         )
 
@@ -183,9 +177,7 @@ class TestNotificationRuleCRUD:
         assert len(all_rules) == 3
 
         # Get only enabled rules
-        enabled_rules = crud.get_notification_rules(
-            db_session, test_user.id, enabled_only=True
-        )
+        enabled_rules = crud.get_notification_rules(db_session, test_user.id, enabled_only=True)
         assert len(enabled_rules) == 2
 
     def test_update_notification_rule(self, db_session: Session, test_user: User):
@@ -206,9 +198,7 @@ class TestNotificationRuleCRUD:
             priority=20,
         )
 
-        updated_rule = crud.update_notification_rule(
-            db_session, rule.id, test_user.id, update_data
-        )
+        updated_rule = crud.update_notification_rule(db_session, rule.id, test_user.id, update_data)
 
         assert updated_rule is not None
         assert updated_rule.name == "Updated Rule"
@@ -257,9 +247,7 @@ class TestNotificationDigestCRUD:
             archived_count=15,
             time_saved_minutes=30,
             summary_text="You had a busy day with 50 notifications.",
-            highlights=[
-                {"title": "Important meeting", "why": "Deadline approaching"}
-            ],
+            highlights=[{"title": "Important meeting", "why": "Deadline approaching"}],
         )
 
         digest = crud.create_notification_digest(db_session, digest_data, test_user.id)

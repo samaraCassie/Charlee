@@ -59,9 +59,7 @@ def upgrade():
     )
 
     op.create_index(op.f("ix_notification_sources_id"), "notification_sources", ["id"])
-    op.create_index(
-        op.f("ix_notification_sources_user_id"), "notification_sources", ["user_id"]
-    )
+    op.create_index(op.f("ix_notification_sources_user_id"), "notification_sources", ["user_id"])
     op.create_index(
         op.f("ix_notification_sources_source_type"), "notification_sources", ["source_type"]
     )
@@ -86,9 +84,7 @@ def upgrade():
             sa.Column(
                 "categoria",
                 sa.String(50),
-                sa.CheckConstraint(
-                    "categoria IN ('urgente', 'importante', 'informativo', 'spam')"
-                ),
+                sa.CheckConstraint("categoria IN ('urgente', 'importante', 'informativo', 'spam')"),
                 nullable=True,
             )
         )
@@ -253,9 +249,7 @@ def upgrade():
     )
 
     op.create_index(op.f("ix_notification_digests_id"), "notification_digests", ["id"])
-    op.create_index(
-        op.f("ix_notification_digests_user_id"), "notification_digests", ["user_id"]
-    )
+    op.create_index(op.f("ix_notification_digests_user_id"), "notification_digests", ["user_id"])
     op.create_index(
         op.f("ix_notification_digests_period_start"), "notification_digests", ["period_start"]
     )
@@ -328,9 +322,7 @@ def upgrade():
     )
 
     op.create_index(op.f("ix_notification_patterns_id"), "notification_patterns", ["id"])
-    op.create_index(
-        op.f("ix_notification_patterns_user_id"), "notification_patterns", ["user_id"]
-    )
+    op.create_index(op.f("ix_notification_patterns_user_id"), "notification_patterns", ["user_id"])
     op.create_index(
         op.f("ix_notification_patterns_pattern_key"), "notification_patterns", ["pattern_key"]
     )
@@ -389,9 +381,7 @@ def downgrade():
     op.drop_table("focus_sessions")
 
     # Drop notification_digests
-    op.drop_index(
-        op.f("ix_notification_digests_period_start"), table_name="notification_digests"
-    )
+    op.drop_index(op.f("ix_notification_digests_period_start"), table_name="notification_digests")
     op.drop_index(op.f("ix_notification_digests_user_id"), table_name="notification_digests")
     op.drop_index(op.f("ix_notification_digests_id"), table_name="notification_digests")
     op.drop_table("notification_digests")
@@ -449,9 +439,7 @@ def downgrade():
 
     # Drop notification_sources
     op.drop_index("ix_notification_sources_user_type", table_name="notification_sources")
-    op.drop_index(
-        op.f("ix_notification_sources_source_type"), table_name="notification_sources"
-    )
+    op.drop_index(op.f("ix_notification_sources_source_type"), table_name="notification_sources")
     op.drop_index(op.f("ix_notification_sources_user_id"), table_name="notification_sources")
     op.drop_index(op.f("ix_notification_sources_id"), table_name="notification_sources")
     op.drop_table("notification_sources")

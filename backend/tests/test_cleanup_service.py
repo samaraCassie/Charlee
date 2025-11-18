@@ -115,9 +115,7 @@ class TestNotificationCleanupService:
         db_session.commit()
 
         # Run deletion with 30-day retention
-        result = cleanup_service.delete_old_archived(
-            user_id=test_user.id, retention_days=30
-        )
+        result = cleanup_service.delete_old_archived(user_id=test_user.id, retention_days=30)
 
         assert result["deleted"] == 3
         assert result["retention_days"] == 30
@@ -136,9 +134,7 @@ class TestNotificationCleanupService:
 
         # Verify recent one remains
         recent = (
-            db_session.query(Notification)
-            .filter_by(user_id=test_user.id, title="Recent")
-            .first()
+            db_session.query(Notification).filter_by(user_id=test_user.id, title="Recent").first()
         )
         assert recent is not None
 
@@ -212,9 +208,7 @@ class TestNotificationCleanupService:
         assert recent_read.arquivada is False
 
         unread = (
-            db_session.query(Notification)
-            .filter_by(user_id=test_user.id, title="Unread")
-            .first()
+            db_session.query(Notification).filter_by(user_id=test_user.id, title="Unread").first()
         )
         assert unread.arquivada is False
 
@@ -264,9 +258,7 @@ class TestNotificationCleanupService:
         db_session.commit()
 
         # Run cleanup with 3-day threshold
-        result = cleanup_service.cleanup_informativo(
-            user_id=test_user.id, archive_after_days=3
-        )
+        result = cleanup_service.cleanup_informativo(user_id=test_user.id, archive_after_days=3)
 
         assert result["archived"] == 3
 
@@ -364,9 +356,7 @@ class TestNotificationCleanupService:
         assert result["total_deleted"] == 2  # very old archived
 
         # Verify total count of notifications
-        remaining_count = (
-            db_session.query(Notification).filter_by(user_id=test_user.id).count()
-        )
+        remaining_count = db_session.query(Notification).filter_by(user_id=test_user.id).count()
         # Started with 11 (2+3+4+2), deleted 2, so should have 9
         assert remaining_count == 9
 
@@ -478,15 +468,11 @@ class TestNotificationCleanupService:
 
         # Verify only user1's spam was archived
         user1_spam = (
-            db_session.query(Notification)
-            .filter_by(user_id=user1.id, categoria="spam")
-            .first()
+            db_session.query(Notification).filter_by(user_id=user1.id, categoria="spam").first()
         )
         assert user1_spam.arquivada is True
 
         user2_spam = (
-            db_session.query(Notification)
-            .filter_by(user_id=user2.id, categoria="spam")
-            .first()
+            db_session.query(Notification).filter_by(user_id=user2.id, categoria="spam").first()
         )
         assert user2_spam.arquivada is False
