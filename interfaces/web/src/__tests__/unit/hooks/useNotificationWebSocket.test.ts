@@ -77,9 +77,17 @@ describe('useNotificationWebSocket', () => {
     vi.mocked(useNotificationStore).mockReturnValue(mockStore as any);
 
     // Mock localStorage
-    Storage.prototype.getItem = vi.fn((key) => {
-      if (key === 'token') return 'mock-token';
-      return null;
+    Object.defineProperty(global, 'localStorage', {
+      value: {
+        getItem: vi.fn((key) => {
+          if (key === 'token') return 'mock-token';
+          return null;
+        }),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      },
+      writable: true,
     });
 
     // Mock WebSocket
@@ -117,7 +125,8 @@ describe('useNotificationWebSocket', () => {
   });
 
   it('should not connect if no token is available', () => {
-    Storage.prototype.getItem = vi.fn(() => null);
+    // Override localStorage to return null for token
+    global.localStorage.getItem = vi.fn(() => null);
 
     renderHook(() => useNotificationWebSocket());
 
