@@ -1911,10 +1911,10 @@ class CalendarConflict(Base):
 
 class Notification(Base):
     """
-    Notification - In-app notification system.
+    Notification - Enhanced notification system with AI-powered classification.
 
-    Represents system notifications sent to users for various events
-    like task deadlines, capacity warnings, and cycle phase changes.
+    Represents notifications from both internal events and external sources
+    (email, Slack, etc.) with intelligent classification and automated actions.
     """
 
     __tablename__ = "notifications"
@@ -1924,11 +1924,20 @@ class Notification(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
+    # External source tracking
+    source_id = Column(
+        Integer, ForeignKey("notification_sources.id", ondelete="SET NULL"), nullable=True
+    )
+    external_id = Column(String(255), nullable=True, index=True)
+    thread_id = Column(String(255), nullable=True, index=True)
+
     # Notification type and content
     type = Column(
         String(50),
         CheckConstraint(
-            "type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change', 'freelance_invoice_ready', 'system', 'achievement')"
+            "type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change', "
+            "'freelance_invoice_ready', 'system', 'achievement', 'email', 'slack', "
+            "'linkedin', 'github', 'whatsapp', 'telegram', 'discord', 'trello', 'notion')"
         ),
         nullable=False,
         index=True,
@@ -1936,27 +1945,67 @@ class Notification(Base):
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
 
-    # Status
-    read = Column(Boolean, default=False, nullable=False, index=True)
+    # AI Classification (automated by ClassifierAgent)
+    categoria = Column(
+        String(50),
+        CheckConstraint("categoria IN ('urgente', 'importante', 'informativo', 'spam')"),
+        nullable=True,
+        index=True,
+    )
+    prioridade = Column(Integer, nullable=True, index=True)  # 1-5
+    contexto = Column(JSON, nullable=True)  # {projeto, tipo, stakeholder}
 
-    # Additional extra_data (JSON for flexibility)
-    # Note: 'metadata' is a reserved name in SQLAlchemy, so we use 'extra_data'
+    # Semantic Analysis
+    intencao = Column(
+        String(50),
+        CheckConstraint("intencao IN ('solicitacao', 'informacao', 'convite', 'cobranca')"),
+        nullable=True,
+    )
+    tom_emocional = Column(
+        String(50),
+        CheckConstraint("tom_emocional IN ('neutro', 'urgente', 'amigavel', 'formal')"),
+        nullable=True,
+    )
+    entidades_extraidas = Column(JSON, nullable=True)  # {pessoas, datas, locais, projetos}
+    embedding = Column(Vector(1536), nullable=True)  # OpenAI embeddings for semantic search
+
+    # Automated Actions
+    acao_sugerida = Column(
+        String(50),
+        CheckConstraint("acao_sugerida IN ('responder', 'arquivar', 'criar_tarefa', 'snooze')"),
+        nullable=True,
+    )
+    acao_executada = Column(String(50), nullable=True)
+    rascunho_resposta = Column(Text, nullable=True)
+
+    # Status (basic)
+    read = Column(Boolean, default=False, nullable=False, index=True)
+    arquivada = Column(Boolean, default=False, nullable=False, index=True)
+    respondida = Column(Boolean, default=False, nullable=False)
+
+    # Advanced Status
+    snooze_until = Column(DateTime, nullable=True, index=True)
+    tarefa_criada_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    evento_criado_id = Column(String(255), nullable=True)
+
+    # Legacy field (for backward compatibility)
     extra_data = Column(JSON, nullable=True)
-    # Example extra_data:
-    # - task_id: int (for task-related notifications)
-    # - big_rock_id: int (for Big Rock-related notifications)
-    # - priority: str ('low', 'medium', 'high', 'critical')
-    # - action_url: str (deep link to relevant page)
 
     # Timestamps
     created_at = Column(DateTime, default=utc_now, index=True)
     read_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
     user = relationship("User")
+    source = relationship("NotificationSource", back_populates="notifications")
+    tarefa_criada = relationship("Task", foreign_keys=[tarefa_criada_id])
 
     def __repr__(self):
-        return f"<Notification(id={self.id}, user_id={self.user_id}, type='{self.type}', read={self.read})>"
+        return (
+            f"<Notification(id={self.id}, user_id={self.user_id}, type='{self.type}', "
+            f"categoria='{self.categoria}', read={self.read})>"
+        )
 
     def mark_as_read(self):
         """Mark notification as read."""
@@ -2017,8 +2066,332 @@ class NotificationPreference(Base):
         return f"<NotificationPreference(user_id={self.user_id}, type='{self.notification_type}', enabled={self.enabled})>"
 
 
-# Additional indexes for Notification System
+class NotificationSource(Base):
+    """
+    Notification Source - External sources for notification collection.
+
+    Represents configured external sources like Email, Slack, LinkedIn, etc.
+    """
+
+    __tablename__ = "notification_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Source type
+    source_type = Column(
+        String(50),
+        CheckConstraint(
+            "source_type IN ('email', 'slack', 'linkedin', 'github', 'whatsapp', "
+            "'telegram', 'discord', 'trello', 'notion')"
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    # Configuration (encrypted credentials, API keys, etc.)
+    name = Column(String(100), nullable=False)
+    credentials = Column(JSON, nullable=True)  # Encrypted in application layer
+    settings = Column(JSON, nullable=True)
+    # Example settings:
+    # - email: {imap_server, username, folders}
+    # - slack: {workspace_id, channel_ids, token}
+    # - github: {repos, token}
+
+    # Status
+    enabled = Column(Boolean, default=True, nullable=False)
+    last_sync = Column(DateTime, nullable=True)
+    sync_frequency_minutes = Column(Integer, default=15, nullable=False)
+    last_error = Column(Text, nullable=True)
+
+    # Statistics
+    total_collected = Column(Integer, default=0, nullable=False)
+    total_spam_filtered = Column(Integer, default=0, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+    notifications = relationship("Notification", back_populates="source")
+
+    def __repr__(self):
+        return (
+            f"<NotificationSource(id={self.id}, user_id={self.user_id}, "
+            f"type='{self.source_type}', enabled={self.enabled})>"
+        )
+
+
+class NotificationRule(Base):
+    """
+    Notification Rule - Custom filtering and automation rules.
+
+    Allows users to create custom rules for automatic classification,
+    archiving, and actions on incoming notifications.
+    """
+
+    __tablename__ = "notification_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Rule metadata
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    enabled = Column(Boolean, default=True, nullable=False, index=True)
+    priority = Column(Integer, default=0, nullable=False)  # Higher priority runs first
+
+    # Conditions (JSON structure for complex logic)
+    conditions = Column(JSON, nullable=False)
+    # Example: {
+    #   "all": [
+    #     {"field": "sender", "operator": "contains", "value": "recruiter"},
+    #     {"field": "subject", "operator": "contains", "value": "job opportunity"}
+    #   ]
+    # }
+
+    # Actions to execute when conditions match
+    actions = Column(JSON, nullable=False)
+    # Example: [
+    #   {"type": "classify", "categoria": "spam"},
+    #   {"type": "archive"},
+    #   {"type": "mark_read"}
+    # ]
+
+    # Statistics
+    times_triggered = Column(Integer, default=0, nullable=False)
+    last_triggered = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<NotificationRule(id={self.id}, name='{self.name}', enabled={self.enabled})>"
+
+
+class NotificationDigest(Base):
+    """
+    Notification Digest - Periodic summaries of notifications.
+
+    Stores generated digests (daily/weekly summaries) for users.
+    """
+
+    __tablename__ = "notification_digests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Digest type and period
+    digest_type = Column(
+        String(50),
+        CheckConstraint("digest_type IN ('daily', 'weekly', 'monthly')"),
+        nullable=False,
+    )
+    period_start = Column(DateTime, nullable=False, index=True)
+    period_end = Column(DateTime, nullable=False)
+
+    # Summary statistics
+    total_notifications = Column(Integer, nullable=False)
+    urgent_count = Column(Integer, default=0)
+    important_count = Column(Integer, default=0)
+    informativo_count = Column(Integer, default=0)
+    spam_count = Column(Integer, default=0)
+    archived_count = Column(Integer, default=0)
+    time_saved_minutes = Column(Integer, default=0)  # Estimated time saved by filtering
+
+    # Generated content
+    summary_text = Column(Text, nullable=True)  # AI-generated summary
+    highlights = Column(JSON, nullable=True)  # Top 5 important notifications
+
+    # Status
+    sent = Column(Boolean, default=False, nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return (
+            f"<NotificationDigest(id={self.id}, user_id={self.user_id}, "
+            f"type='{self.digest_type}', period={self.period_start.date()})>"
+        )
+
+
+class FocusSession(Base):
+    """
+    Focus Session - Deep work/focus mode tracking.
+
+    Tracks when users are in focus mode to suppress non-urgent notifications.
+    """
+
+    __tablename__ = "focus_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Session details
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=True)
+    planned_duration_minutes = Column(Integer, nullable=True)
+
+    # Session type
+    session_type = Column(
+        String(50),
+        CheckConstraint("session_type IN ('deep_work', 'meeting', 'break', 'custom')"),
+        default="deep_work",
+    )
+
+    # Suppression rules during focus
+    suppress_all = Column(Boolean, default=False)
+    allow_urgent_only = Column(Boolean, default=True)
+    custom_rules = Column(JSON, nullable=True)
+
+    # Statistics
+    notifications_suppressed = Column(Integer, default=0)
+    notifications_allowed = Column(Integer, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return (
+            f"<FocusSession(id={self.id}, user_id={self.user_id}, "
+            f"type='{self.session_type}', active={self.end_time is None})>"
+        )
+
+
+class NotificationPattern(Base):
+    """
+    Notification Pattern - Learned patterns from user behavior.
+
+    Stores patterns learned from how users interact with notifications
+    to improve future classification and suggestions.
+    """
+
+    __tablename__ = "notification_patterns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Pattern identification
+    pattern_type = Column(
+        String(50),
+        CheckConstraint(
+            "pattern_type IN ('sender_preference', 'time_preference', 'topic_preference', "
+            "'action_pattern')"
+        ),
+        nullable=False,
+    )
+    pattern_key = Column(String(255), nullable=False, index=True)
+    # Examples:
+    # - sender:recruiter@company.com
+    # - time:morning_emails
+    # - topic:project_updates
+
+    # Pattern data
+    pattern_data = Column(JSON, nullable=False)
+    # Example: {
+    #   "typical_action": "archive",
+    #   "typical_response_time_hours": 24,
+    #   "importance_score": 0.2
+    # }
+
+    # Pattern confidence
+    confidence_score = Column(Float, default=0.0)  # 0-1
+    occurrences = Column(Integer, default=1)
+    last_occurrence = Column(DateTime, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return (
+            f"<NotificationPattern(id={self.id}, user_id={self.user_id}, "
+            f"type='{self.pattern_type}', key='{self.pattern_key}')>"
+        )
+
+
+class ResponseTemplate(Base):
+    """
+    Response Template - Quick response templates.
+
+    Stores templates for common responses to notifications,
+    can be AI-generated or user-created.
+    """
+
+    __tablename__ = "response_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Template metadata
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    category = Column(String(50), nullable=True, index=True)
+    # Examples: "meeting_response", "project_update", "decline_politely"
+
+    # Template content
+    template_text = Column(Text, nullable=False)
+    variables = Column(JSON, nullable=True)  # Placeholder variables
+    # Example: {"recipient_name": "{{name}}", "project": "{{project}}"}
+
+    # Usage statistics
+    times_used = Column(Integer, default=0)
+    last_used = Column(DateTime, nullable=True)
+
+    # AI-generated flag
+    ai_generated = Column(Boolean, default=False)
+    confidence_score = Column(Float, nullable=True)  # If AI-generated
+
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return (
+            f"<ResponseTemplate(id={self.id}, name='{self.name}', "
+            f"category='{self.category}')>"
+        )
+
+
+# Additional indexes for Advanced Notification System
 # CREATE INDEX idx_notifications_user_read ON notifications(user_id, read);
 # CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);
 # CREATE INDEX idx_notifications_type_created ON notifications(type, created_at DESC);
 # CREATE INDEX idx_notification_preferences_user_type ON notification_preferences(user_id, notification_type);
+# CREATE INDEX idx_notifications_categoria ON notifications(categoria);
+# CREATE INDEX idx_notifications_arquivada ON notifications(arquivada);
+# CREATE INDEX idx_notifications_thread ON notifications(thread_id);
+# CREATE INDEX idx_notification_sources_user_type ON notification_sources(user_id, source_type);
+# CREATE INDEX idx_notification_rules_user_enabled ON notification_rules(user_id, enabled, priority);
+# CREATE INDEX idx_focus_sessions_user_active ON focus_sessions(user_id, end_time);

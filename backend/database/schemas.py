@@ -1083,6 +1083,15 @@ class NotificationBase(BaseModel):
         "freelance_invoice_ready",
         "system",
         "achievement",
+        "email",
+        "slack",
+        "linkedin",
+        "github",
+        "whatsapp",
+        "telegram",
+        "discord",
+        "trello",
+        "notion",
     ]
     title: str = Field(..., min_length=1, max_length=200)
     message: str = Field(..., min_length=1)
@@ -1194,3 +1203,234 @@ class NotificationPreferenceListResponse(BaseModel):
 
     total: int
     preferences: list[NotificationPreferenceResponse]
+
+
+# ==================== Advanced Notification Schemas ====================
+
+
+class NotificationSourceBase(BaseModel):
+    """Base schema for NotificationSource."""
+
+    source_type: Literal["email", "slack", "linkedin", "github", "whatsapp", "telegram", "discord", "trello", "notion"]
+    name: str = Field(..., min_length=1, max_length=100)
+    credentials: Optional[dict] = None
+    settings: Optional[dict] = None
+    enabled: bool = True
+    sync_frequency_minutes: int = Field(default=15, ge=1, le=1440)
+
+
+class NotificationSourceCreate(NotificationSourceBase):
+    """Schema for creating a NotificationSource."""
+
+    pass
+
+
+class NotificationSourceUpdate(BaseModel):
+    """Schema for updating a NotificationSource."""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    credentials: Optional[dict] = None
+    settings: Optional[dict] = None
+    enabled: Optional[bool] = None
+    sync_frequency_minutes: Optional[int] = Field(None, ge=1, le=1440)
+
+
+class NotificationSourceResponse(NotificationSourceBase):
+    """Schema for NotificationSource response."""
+
+    id: int
+    user_id: int
+    last_sync: Optional[datetime] = None
+    last_error: Optional[str] = None
+    total_collected: int
+    total_spam_filtered: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationSourceListResponse(BaseModel):
+    """Schema for list of notification sources."""
+
+    total: int
+    sources: list[NotificationSourceResponse]
+
+
+class NotificationRuleBase(BaseModel):
+    """Base schema for NotificationRule."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    enabled: bool = True
+    priority: int = Field(default=0, ge=0, le=100)
+    conditions: dict
+    actions: list[dict]
+
+
+class NotificationRuleCreate(NotificationRuleBase):
+    """Schema for creating a NotificationRule."""
+
+    pass
+
+
+class NotificationRuleUpdate(BaseModel):
+    """Schema for updating a NotificationRule."""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    enabled: Optional[bool] = None
+    priority: Optional[int] = Field(None, ge=0, le=100)
+    conditions: Optional[dict] = None
+    actions: Optional[list[dict]] = None
+
+
+class NotificationRuleResponse(NotificationRuleBase):
+    """Schema for NotificationRule response."""
+
+    id: int
+    user_id: int
+    times_triggered: int
+    last_triggered: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationRuleListResponse(BaseModel):
+    """Schema for list of notification rules."""
+
+    total: int
+    rules: list[NotificationRuleResponse]
+
+
+class NotificationDigestBase(BaseModel):
+    """Base schema for NotificationDigest."""
+
+    digest_type: Literal["daily", "weekly", "monthly"]
+    period_start: datetime
+    period_end: datetime
+    total_notifications: int
+    urgent_count: int = 0
+    important_count: int = 0
+    informativo_count: int = 0
+    spam_count: int = 0
+    archived_count: int = 0
+    time_saved_minutes: int = 0
+    summary_text: Optional[str] = None
+    highlights: Optional[list[dict]] = None
+
+
+class NotificationDigestResponse(NotificationDigestBase):
+    """Schema for NotificationDigest response."""
+
+    id: int
+    user_id: int
+    sent: bool
+    sent_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationDigestListResponse(BaseModel):
+    """Schema for list of notification digests."""
+
+    total: int
+    digests: list[NotificationDigestResponse]
+
+
+class FocusSessionBase(BaseModel):
+    """Base schema for FocusSession."""
+
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    planned_duration_minutes: Optional[int] = Field(None, ge=1, le=480)
+    session_type: Literal["deep_work", "meeting", "break", "custom"] = "deep_work"
+    suppress_all: bool = False
+    allow_urgent_only: bool = True
+    custom_rules: Optional[dict] = None
+
+
+class FocusSessionCreate(FocusSessionBase):
+    """Schema for creating a FocusSession."""
+
+    pass
+
+
+class FocusSessionUpdate(BaseModel):
+    """Schema for updating a FocusSession."""
+
+    end_time: Optional[datetime] = None
+    planned_duration_minutes: Optional[int] = Field(None, ge=1, le=480)
+    suppress_all: Optional[bool] = None
+    allow_urgent_only: Optional[bool] = None
+    custom_rules: Optional[dict] = None
+
+
+class FocusSessionResponse(FocusSessionBase):
+    """Schema for FocusSession response."""
+
+    id: int
+    user_id: int
+    notifications_suppressed: int
+    notifications_allowed: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FocusSessionListResponse(BaseModel):
+    """Schema for list of focus sessions."""
+
+    total: int
+    sessions: list[FocusSessionResponse]
+
+
+class ResponseTemplateBase(BaseModel):
+    """Base schema for ResponseTemplate."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    template_text: str = Field(..., min_length=1)
+    variables: Optional[dict] = None
+
+
+class ResponseTemplateCreate(ResponseTemplateBase):
+    """Schema for creating a ResponseTemplate."""
+
+    pass
+
+
+class ResponseTemplateUpdate(BaseModel):
+    """Schema for updating a ResponseTemplate."""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    template_text: Optional[str] = Field(None, min_length=1)
+    variables: Optional[dict] = None
+
+
+class ResponseTemplateResponse(ResponseTemplateBase):
+    """Schema for ResponseTemplate response."""
+
+    id: int
+    user_id: int
+    times_used: int
+    last_used: Optional[datetime] = None
+    ai_generated: bool
+    confidence_score: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ResponseTemplateListResponse(BaseModel):
+    """Schema for list of response templates."""
+
+    total: int
+    templates: list[ResponseTemplateResponse]
