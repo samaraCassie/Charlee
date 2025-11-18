@@ -9,7 +9,9 @@ export interface SwitchProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
   ({ className, checked, onCheckedChange, disabled, ...props }, ref) => {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      onCheckedChange?.(event.target.checked);
+      if (!disabled) {
+        onCheckedChange?.(event.target.checked);
+      }
     };
 
     return (

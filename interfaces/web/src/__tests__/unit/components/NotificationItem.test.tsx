@@ -108,7 +108,9 @@ describe('NotificationItem', () => {
 
     render(<NotificationItem notification={notification} />);
 
-    const item = screen.getByRole('button');
+    // Find the container div with the notification title, not the action buttons
+    const titleElement = screen.getByText('Task Due Soon');
+    const item = titleElement.closest('[role="button"]') as HTMLElement;
     fireEvent.click(item);
 
     expect(mockMarkAsRead).toHaveBeenCalledWith('1');

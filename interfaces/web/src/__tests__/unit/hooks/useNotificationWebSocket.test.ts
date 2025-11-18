@@ -17,13 +17,13 @@ class MockWebSocket {
   public readyState: number = WebSocket.CONNECTING;
 
   constructor(public url: string) {
-    // Automatically trigger onopen after a short delay
-    setTimeout(() => {
+    // Trigger onopen synchronously
+    queueMicrotask(() => {
       this.readyState = WebSocket.OPEN;
       if (this.onopen) {
         this.onopen(new Event('open'));
       }
-    }, 0);
+    });
   }
 
   send(data: string) {
@@ -54,17 +54,27 @@ describe('useNotificationWebSocket', () => {
   let mockWebSocketInstance: MockWebSocket;
 
   beforeEach(() => {
+    // Create stable mock functions
     mockAddNotification = vi.fn();
     mockUpdateUnreadCount = vi.fn();
     mockSetWsConnected = vi.fn();
-    mockFetchNotifications = vi.fn();
+    mockFetchNotifications = vi.fn().mockResolvedValue(undefined);
 
-    vi.mocked(useNotificationStore).mockReturnValue({
+    // Mock the store with stable references
+    const mockStore = {
       addNotification: mockAddNotification,
       updateUnreadCount: mockUpdateUnreadCount,
       setWsConnected: mockSetWsConnected,
       fetchNotifications: mockFetchNotifications,
-    } as any);
+      notifications: [],
+      unreadCount: 0,
+      wsConnected: false,
+      markAsRead: vi.fn(),
+      markAllAsRead: vi.fn(),
+      deleteNotification: vi.fn(),
+    };
+
+    vi.mocked(useNotificationStore).mockReturnValue(mockStore as any);
 
     // Mock localStorage
     Storage.prototype.getItem = vi.fn((key) => {
@@ -74,10 +84,14 @@ describe('useNotificationWebSocket', () => {
 
     // Mock WebSocket
     originalWebSocket = global.WebSocket;
-    global.WebSocket = vi.fn((url: string) => {
-      mockWebSocketInstance = new MockWebSocket(url);
-      return mockWebSocketInstance as any;
-    }) as any;
+    // Store the instance when MockWebSocket is constructed
+    const OriginalMockWebSocket = MockWebSocket;
+    global.WebSocket = class extends OriginalMockWebSocket {
+      constructor(url: string) {
+        super(url);
+        mockWebSocketInstance = this as any;
+      }
+    } as any;
 
     // Mock Notification API
     global.Notification = {

@@ -242,7 +242,7 @@ describe('NotificationBell', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      const items = screen.getAllByText(/Notification/);
+      const items = screen.getAllByText(/^Notification \d+$/);
       expect(items).toHaveLength(5);
     });
   });
