@@ -278,6 +278,690 @@ class GitHubCollector(SourceCollector):
         return collected_notifications
 
 
+class SlackCollector(SourceCollector):
+    """Collector for Slack messages and notifications."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with Slack API."""
+        try:
+            credentials = self.source.credentials
+            token = credentials.get("token")
+
+            if not token:
+                logger.error(f"Missing Slack token for source {self.source.id}")
+                return False
+
+            # Test token
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get("https://slack.com/api/auth.test", headers=headers, timeout=10)
+
+            data = response.json()
+            return data.get("ok", False)
+
+        except Exception as e:
+            logger.error(f"Slack authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect messages from Slack."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            token = credentials.get("token")
+            channels = settings.get("channels", [])  # Channel IDs to monitor
+            include_dms = settings.get("include_dms", True)
+            max_messages = settings.get("max_messages_per_sync", 50)
+
+            headers = {"Authorization": f"Bearer {token}"}
+
+            # Get conversations
+            url = "https://slack.com/api/conversations.list"
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            conversations_data = response.json()
+
+            if not conversations_data.get("ok"):
+                logger.error(f"Slack API error: {conversations_data.get('error')}")
+                return collected_notifications
+
+            conversations = conversations_data.get("channels", [])
+
+            # Filter channels if specified
+            if channels:
+                conversations = [c for c in conversations if c["id"] in channels]
+
+            # Get messages from each conversation
+            for conv in conversations[:10]:  # Limit to 10 conversations
+                try:
+                    # Get conversation history
+                    history_url = "https://slack.com/api/conversations.history"
+                    params = {
+                        "channel": conv["id"],
+                        "limit": min(max_messages // len(conversations), 20),
+                    }
+
+                    history_response = requests.get(
+                        history_url, headers=headers, params=params, timeout=10
+                    )
+                    history_data = history_response.json()
+
+                    if not history_data.get("ok"):
+                        continue
+
+                    messages = history_data.get("messages", [])
+
+                    for msg in messages:
+                        try:
+                            # Skip bot messages if configured
+                            if msg.get("bot_id") and not settings.get("include_bots", False):
+                                continue
+
+                            text = msg.get("text", "")
+                            user = msg.get("user", "Unknown")
+                            ts = msg.get("ts", "")
+
+                            notification_dict = {
+                                "title": f"[Slack] {conv['name']}: New message",
+                                "message": text[:500],
+                                "external_id": f"slack-{conv['id']}-{ts}",
+                                "thread_id": msg.get("thread_ts", ts),
+                                "extra_data": {
+                                    "channel": conv["name"],
+                                    "channel_id": conv["id"],
+                                    "user": user,
+                                    "timestamp": ts,
+                                    "type": msg.get("type", "message"),
+                                },
+                            }
+
+                            collected_notifications.append(notification_dict)
+
+                        except Exception as e:
+                            logger.error(f"Error processing Slack message: {e}")
+                            continue
+
+                except Exception as e:
+                    logger.error(f"Error processing Slack conversation {conv['id']}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error collecting Slack messages for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class DiscordCollector(SourceCollector):
+    """Collector for Discord messages."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with Discord API."""
+        try:
+            credentials = self.source.credentials
+            token = credentials.get("token")
+
+            if not token:
+                logger.error(f"Missing Discord token for source {self.source.id}")
+                return False
+
+            # Test token
+            headers = {"Authorization": f"Bot {token}"}
+            response = requests.get(
+                "https://discord.com/api/v10/users/@me", headers=headers, timeout=10
+            )
+
+            return response.status_code == 200
+
+        except Exception as e:
+            logger.error(f"Discord authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect messages from Discord."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            token = credentials.get("token")
+            guild_ids = settings.get("guild_ids", [])  # Server IDs to monitor
+            channel_ids = settings.get("channel_ids", [])  # Specific channels
+            max_messages = settings.get("max_messages_per_sync", 50)
+
+            headers = {"Authorization": f"Bot {token}"}
+
+            # If specific channels provided
+            channels_to_check = channel_ids
+
+            # Otherwise get channels from guilds
+            if not channels_to_check and guild_ids:
+                for guild_id in guild_ids[:5]:  # Limit to 5 guilds
+                    try:
+                        url = f"https://discord.com/api/v10/guilds/{guild_id}/channels"
+                        response = requests.get(url, headers=headers, timeout=10)
+                        response.raise_for_status()
+                        channels = response.json()
+
+                        # Filter text channels
+                        text_channels = [c["id"] for c in channels if c["type"] == 0]
+                        channels_to_check.extend(text_channels[:10])  # Max 10 per guild
+
+                    except Exception as e:
+                        logger.error(f"Error getting Discord guild channels: {e}")
+                        continue
+
+            # Get messages from each channel
+            for channel_id in channels_to_check[:20]:  # Limit total channels
+                try:
+                    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+                    params = {"limit": min(max_messages // max(len(channels_to_check), 1), 20)}
+
+                    response = requests.get(url, headers=headers, params=params, timeout=10)
+                    response.raise_for_status()
+                    messages = response.json()
+
+                    for msg in messages:
+                        try:
+                            notification_dict = {
+                                "title": f"[Discord] {msg['author']['username']}: New message",
+                                "message": msg["content"][:500],
+                                "external_id": f"discord-{msg['id']}",
+                                "thread_id": msg.get("message_reference", {}).get(
+                                    "message_id", msg["id"]
+                                ),
+                                "extra_data": {
+                                    "channel_id": channel_id,
+                                    "author": msg["author"]["username"],
+                                    "author_id": msg["author"]["id"],
+                                    "timestamp": msg["timestamp"],
+                                    "attachments": len(msg.get("attachments", [])),
+                                },
+                            }
+
+                            collected_notifications.append(notification_dict)
+
+                        except Exception as e:
+                            logger.error(f"Error processing Discord message: {e}")
+                            continue
+
+                except Exception as e:
+                    logger.error(f"Error processing Discord channel {channel_id}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error collecting Discord messages for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class TelegramCollector(SourceCollector):
+    """Collector for Telegram messages via Bot API."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with Telegram Bot API."""
+        try:
+            credentials = self.source.credentials
+            bot_token = credentials.get("bot_token")
+
+            if not bot_token:
+                logger.error(f"Missing Telegram bot token for source {self.source.id}")
+                return False
+
+            # Test token
+            url = f"https://api.telegram.org/bot{bot_token}/getMe"
+            response = requests.get(url, timeout=10)
+            data = response.json()
+
+            return data.get("ok", False)
+
+        except Exception as e:
+            logger.error(f"Telegram authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect messages from Telegram."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            bot_token = credentials.get("bot_token")
+            offset = settings.get("last_update_id", 0)
+            max_updates = settings.get("max_updates_per_sync", 50)
+
+            # Get updates
+            url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+            params = {"offset": offset + 1, "limit": max_updates, "timeout": 10}
+
+            response = requests.get(url, params=params, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data.get("ok"):
+                logger.error(f"Telegram API error: {data.get('description')}")
+                return collected_notifications
+
+            updates = data.get("result", [])
+            last_update_id = offset
+
+            for update in updates:
+                try:
+                    last_update_id = max(last_update_id, update["update_id"])
+
+                    # Process different update types
+                    if "message" in update:
+                        msg = update["message"]
+                    elif "edited_message" in update:
+                        msg = update["edited_message"]
+                    else:
+                        continue
+
+                    chat = msg.get("chat", {})
+                    sender = msg.get("from", {})
+                    text = msg.get("text", msg.get("caption", ""))
+
+                    notification_dict = {
+                        "title": f"[Telegram] {sender.get('first_name', 'Unknown')}: New message",
+                        "message": text[:500],
+                        "external_id": f"telegram-{msg['message_id']}-{msg['chat']['id']}",
+                        "thread_id": str(
+                            msg.get("reply_to_message", {}).get("message_id", msg["message_id"])
+                        ),
+                        "extra_data": {
+                            "chat_id": chat.get("id"),
+                            "chat_type": chat.get("type"),
+                            "chat_title": chat.get("title", chat.get("username")),
+                            "sender_id": sender.get("id"),
+                            "sender_username": sender.get("username"),
+                            "date": msg.get("date"),
+                        },
+                    }
+
+                    collected_notifications.append(notification_dict)
+
+                except Exception as e:
+                    logger.error(f"Error processing Telegram update: {e}")
+                    continue
+
+            # Update last_update_id in settings
+            if last_update_id > offset:
+                self.source.settings["last_update_id"] = last_update_id
+                self.db.commit()
+
+        except Exception as e:
+            logger.error(f"Error collecting Telegram messages for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class LinkedInCollector(SourceCollector):
+    """Collector for LinkedIn notifications (requires LinkedIn API access)."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with LinkedIn API."""
+        try:
+            credentials = self.source.credentials
+            access_token = credentials.get("access_token")
+
+            if not access_token:
+                logger.error(f"Missing LinkedIn access token for source {self.source.id}")
+                return False
+
+            # Test token with userinfo endpoint
+            headers = {"Authorization": f"Bearer {access_token}"}
+            response = requests.get("https://api.linkedin.com/v2/me", headers=headers, timeout=10)
+
+            return response.status_code == 200
+
+        except Exception as e:
+            logger.error(f"LinkedIn authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect notifications from LinkedIn."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            access_token = credentials.get("access_token")
+            max_notifications = settings.get("max_notifications_per_sync", 50)
+
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "X-Restli-Protocol-Version": "2.0.0",
+            }
+
+            # Note: LinkedIn API has limited notification access
+            # This is a simplified implementation
+            # Real implementation may require different endpoints based on API access level
+
+            # Get network updates (shares, posts)
+            url = "https://api.linkedin.com/v2/shares"
+            params = {"count": max_notifications}
+
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            if response.status_code != 200:
+                logger.warning(f"LinkedIn API returned {response.status_code}")
+                return collected_notifications
+
+            data = response.json()
+            elements = data.get("elements", [])
+
+            for element in elements:
+                try:
+                    share_id = element.get("id")
+                    text = element.get("text", {}).get("text", "")
+                    created = element.get("created", {}).get("time", 0)
+
+                    notification_dict = {
+                        "title": "[LinkedIn] New network update",
+                        "message": text[:500],
+                        "external_id": f"linkedin-{share_id}",
+                        "thread_id": share_id,
+                        "extra_data": {
+                            "share_id": share_id,
+                            "created_time": created,
+                            "type": "share",
+                        },
+                    }
+
+                    collected_notifications.append(notification_dict)
+
+                except Exception as e:
+                    logger.error(f"Error processing LinkedIn update: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(
+                f"Error collecting LinkedIn notifications for source {self.source.id}: {e}"
+            )
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class TrelloCollector(SourceCollector):
+    """Collector for Trello board notifications."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with Trello API."""
+        try:
+            credentials = self.source.credentials
+            api_key = credentials.get("api_key")
+            token = credentials.get("token")
+
+            if not all([api_key, token]):
+                logger.error(f"Missing Trello credentials for source {self.source.id}")
+                return False
+
+            # Test credentials
+            url = "https://api.trello.com/1/members/me"
+            params = {"key": api_key, "token": token}
+
+            response = requests.get(url, params=params, timeout=10)
+            return response.status_code == 200
+
+        except Exception as e:
+            logger.error(f"Trello authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect notifications from Trello."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            api_key = credentials.get("api_key")
+            token = credentials.get("token")
+            board_ids = settings.get("board_ids", [])
+            max_notifications = settings.get("max_notifications_per_sync", 50)
+
+            params = {"key": api_key, "token": token}
+
+            # Get notifications for the authenticated user
+            url = "https://api.trello.com/1/members/me/notifications"
+            notif_params = {**params, "limit": max_notifications, "read_filter": "unread"}
+
+            response = requests.get(url, params=notif_params, timeout=10)
+            response.raise_for_status()
+            notifications = response.json()
+
+            for notif in notifications:
+                try:
+                    # Filter by board if specified
+                    board_id = notif.get("data", {}).get("board", {}).get("id")
+                    if board_ids and board_id not in board_ids:
+                        continue
+
+                    notif_type = notif.get("type")
+                    data = notif.get("data", {})
+                    card = data.get("card", {})
+                    board = data.get("board", {})
+
+                    # Build message based on notification type
+                    message = f"{notif_type} on {board.get('name', 'board')}"
+                    if card:
+                        message = f"{notif_type}: {card.get('name', '')}"
+
+                    notification_dict = {
+                        "title": f"[Trello] {message}",
+                        "message": notif.get("data", {}).get("text", message)[:500],
+                        "external_id": f"trello-{notif['id']}",
+                        "thread_id": card.get("id", notif["id"]),
+                        "extra_data": {
+                            "type": notif_type,
+                            "board_id": board_id,
+                            "board_name": board.get("name"),
+                            "card_id": card.get("id"),
+                            "card_name": card.get("name"),
+                            "date": notif.get("date"),
+                        },
+                    }
+
+                    collected_notifications.append(notification_dict)
+
+                except Exception as e:
+                    logger.error(f"Error processing Trello notification: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error collecting Trello notifications for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class NotionCollector(SourceCollector):
+    """Collector for Notion page and database notifications."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with Notion API."""
+        try:
+            credentials = self.source.credentials
+            token = credentials.get("token")
+
+            if not token:
+                logger.error(f"Missing Notion token for source {self.source.id}")
+                return False
+
+            # Test token
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Notion-Version": "2022-06-28",
+            }
+            response = requests.get(
+                "https://api.notion.com/v1/users/me", headers=headers, timeout=10
+            )
+
+            return response.status_code == 200
+
+        except Exception as e:
+            logger.error(f"Notion authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """Collect updates from Notion."""
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            token = credentials.get("token")
+            database_ids = settings.get("database_ids", [])
+            page_ids = settings.get("page_ids", [])
+
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json",
+            }
+
+            # Check databases for new items
+            for db_id in database_ids[:10]:  # Limit to 10 databases
+                try:
+                    url = f"https://api.notion.com/v1/databases/{db_id}/query"
+                    data = {
+                        "page_size": 10,
+                        "sorts": [{"timestamp": "created_time", "direction": "descending"}],
+                    }
+
+                    response = requests.post(url, headers=headers, json=data, timeout=10)
+
+                    if response.status_code != 200:
+                        continue
+
+                    result = response.json()
+                    pages = result.get("results", [])
+
+                    for page in pages:
+                        try:
+                            page_id = page["id"]
+                            created_time = page.get("created_time")
+                            properties = page.get("properties", {})
+
+                            # Try to get title from properties
+                            title = "Untitled"
+                            for prop_name, prop_value in properties.items():
+                                if prop_value.get("type") == "title":
+                                    title_array = prop_value.get("title", [])
+                                    if title_array:
+                                        title = title_array[0].get("plain_text", "Untitled")
+                                    break
+
+                            notification_dict = {
+                                "title": f"[Notion] New page: {title}",
+                                "message": f"New page created in database: {title}",
+                                "external_id": f"notion-page-{page_id}",
+                                "thread_id": db_id,
+                                "extra_data": {
+                                    "page_id": page_id,
+                                    "database_id": db_id,
+                                    "created_time": created_time,
+                                    "page_url": page.get("url"),
+                                },
+                            }
+
+                            collected_notifications.append(notification_dict)
+
+                        except Exception as e:
+                            logger.error(f"Error processing Notion page: {e}")
+                            continue
+
+                except Exception as e:
+                    logger.error(f"Error querying Notion database {db_id}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error collecting Notion notifications for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
+class WhatsAppCollector(SourceCollector):
+    """Collector for WhatsApp Business messages via Cloud API."""
+
+    def authenticate(self) -> bool:
+        """Authenticate with WhatsApp Business API."""
+        try:
+            credentials = self.source.credentials
+            access_token = credentials.get("access_token")
+            phone_number_id = credentials.get("phone_number_id")
+
+            if not all([access_token, phone_number_id]):
+                logger.error(f"Missing WhatsApp credentials for source {self.source.id}")
+                return False
+
+            # Test credentials by getting phone number info
+            headers = {"Authorization": f"Bearer {access_token}"}
+            url = f"https://graph.facebook.com/v17.0/{phone_number_id}"
+
+            response = requests.get(url, headers=headers, timeout=10)
+            return response.status_code == 200
+
+        except Exception as e:
+            logger.error(f"WhatsApp authentication failed for source {self.source.id}: {e}")
+            return False
+
+    def collect(self) -> List[Dict]:
+        """
+        Collect messages from WhatsApp Business.
+
+        Note: WhatsApp Cloud API uses webhooks for real-time messages.
+        This collector retrieves recent conversations.
+        """
+        collected_notifications = []
+
+        try:
+            credentials = self.source.credentials
+            settings = self.source.settings or {}
+
+            access_token = credentials.get("access_token")
+            phone_number_id = credentials.get("phone_number_id")
+
+            headers = {"Authorization": f"Bearer {access_token}"}
+
+            # Note: WhatsApp Cloud API primarily uses webhooks
+            # This is a placeholder implementation
+            # Real implementation would store webhook data and retrieve it here
+
+            logger.info(
+                f"WhatsApp collector for source {self.source.id}: "
+                "WhatsApp uses webhooks. Configure webhook endpoint to receive messages."
+            )
+
+            # Placeholder: In production, you'd query your webhook message storage
+            # For now, return empty list
+            # To implement: Store webhook POST data in a temporary table,
+            # then query that table here
+
+        except Exception as e:
+            logger.error(f"Error collecting WhatsApp messages for source {self.source.id}: {e}")
+            self.source.last_error = str(e)
+            self.db.commit()
+
+        return collected_notifications
+
+
 class NotificationAgent:
     """
     Main agent for collecting notifications from external sources.
@@ -286,7 +970,17 @@ class NotificationAgent:
     """
 
     # Map source types to collector classes
-    COLLECTORS = {"email": EmailCollector, "github": GitHubCollector}
+    COLLECTORS = {
+        "email": EmailCollector,
+        "github": GitHubCollector,
+        "slack": SlackCollector,
+        "discord": DiscordCollector,
+        "telegram": TelegramCollector,
+        "linkedin": LinkedInCollector,
+        "trello": TrelloCollector,
+        "notion": NotionCollector,
+        "whatsapp": WhatsAppCollector,
+    }
 
     def __init__(self, db: Session):
         """

@@ -28,15 +28,19 @@ from api.routes import (
     calendar,
     capacity,
     daily_tracking,
+    focus_sessions,
     freelancer,
     inbox,
     multimodal,
+    notification_digests,
+    notification_patterns,
     notification_rules,
     notification_sources,
     notifications,
     oauth_routes,
     priorizacao,
     projects,
+    response_templates,
     settings,
     tasks,
     wellness,
@@ -263,6 +267,22 @@ app.include_router(
     notification_rules.router,
     prefix="/api/v2/notifications/rules",
     tags=["Notification Rules (V3)"],
+)
+app.include_router(
+    notification_digests.router,
+    tags=["Notification Digests (V3)"],
+)
+app.include_router(
+    notification_patterns.router,
+    tags=["Notification Patterns (V3)"],
+)
+app.include_router(
+    focus_sessions.router,
+    tags=["Focus Sessions (V3)"],
+)
+app.include_router(
+    response_templates.router,
+    tags=["Response Templates (V3)"],
 )
 
 # ========================================
