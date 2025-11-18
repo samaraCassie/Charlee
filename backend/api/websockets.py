@@ -9,7 +9,7 @@ from typing import Dict, Set
 from fastapi import WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
 
-from api.auth.security import SECRET_KEY, ALGORITHM
+from api.auth.jwt import JWTConfig
 from database.config import SessionLocal
 from database import crud
 
@@ -146,7 +146,7 @@ async def get_user_from_token(token: str) -> int:
         ValueError: If token is invalid or expired
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWTConfig.SECRET_KEY, algorithms=[JWTConfig.ALGORITHM])
         user_id: int = int(payload.get("user_id"))  # type: ignore
         if user_id is None:
             raise ValueError("Invalid token: missing user_id")
