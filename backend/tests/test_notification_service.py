@@ -1,6 +1,5 @@
 """Tests for notification service."""
 
-import pytest
 from datetime import datetime, timezone, timedelta
 
 from services.notification_service import NotificationService

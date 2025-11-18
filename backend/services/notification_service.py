@@ -7,7 +7,7 @@ from typing import Literal, Optional
 from sqlalchemy.orm import Session
 
 from database import crud
-from database.models import Notification, NotificationPreference
+from database.models import Notification
 from database.schemas import NotificationCreate
 
 logger = logging.getLogger(__name__)

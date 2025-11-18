@@ -1,10 +1,7 @@
 """Notification Listener - Subscribes to Event Bus and creates notifications."""
 
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Any
-
-from sqlalchemy.orm import Session
+from datetime import datetime
 
 from database.config import SessionLocal
 from integration.event_bus import EventBus, Event

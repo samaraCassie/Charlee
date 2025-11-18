@@ -1,12 +1,8 @@
 """Tests for notification CRUD operations."""
 
-import pytest
-from datetime import datetime, timezone
-
 from database import crud
 from database.schemas import (
     NotificationCreate,
-    NotificationUpdate,
     NotificationPreferenceCreate,
     NotificationPreferenceUpdate,
 )
