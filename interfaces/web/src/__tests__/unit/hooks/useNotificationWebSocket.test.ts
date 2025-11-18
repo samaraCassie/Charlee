@@ -100,7 +100,9 @@ describe('useNotificationWebSocket', () => {
         mockWebSocketInstance = this as any;
       }
     };
-    global.WebSocket = vi.fn((url: string) => new WebSocketMockClass(url)) as any;
+    global.WebSocket = vi.fn().mockImplementation(function (this: any, url: string) {
+      return new WebSocketMockClass(url);
+    }) as any;
 
     // Mock Notification API
     global.Notification = {
