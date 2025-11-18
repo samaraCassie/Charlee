@@ -4,14 +4,33 @@ from typing import Optional, cast
 
 from sqlalchemy.orm import Session
 
-from database.models import BigRock, Notification, NotificationPreference, Task
+from database.models import (
+    BigRock,
+    FocusSession,
+    Notification,
+    NotificationDigest,
+    NotificationPreference,
+    NotificationRule,
+    NotificationSource,
+    ResponseTemplate,
+    Task,
+)
 from database.schemas import (
     BigRockCreate,
     BigRockUpdate,
+    FocusSessionCreate,
+    FocusSessionUpdate,
     NotificationCreate,
+    NotificationDigestBase,
     NotificationPreferenceCreate,
     NotificationPreferenceUpdate,
+    NotificationRuleCreate,
+    NotificationRuleUpdate,
+    NotificationSourceCreate,
+    NotificationSourceUpdate,
     NotificationUpdate,
+    ResponseTemplateCreate,
+    ResponseTemplateUpdate,
     TaskCreate,
     TaskUpdate,
 )
@@ -1131,3 +1150,321 @@ def get_or_create_default_preferences(db: Session, user_id: int) -> list[Notific
         preferences.append(pref)
 
     return preferences
+
+
+# ==================== Notification Source CRUD ====================
+
+
+def get_notification_source(db: Session, source_id: int, user_id: int) -> NotificationSource | None:
+    """Get a notification source by ID for a specific user."""
+    return (
+        db.query(NotificationSource).filter_by(id=source_id, user_id=user_id).first()
+    )
+
+
+def get_notification_sources(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> list[NotificationSource]:
+    """Get all notification sources for a user."""
+    return (
+        db.query(NotificationSource)
+        .filter_by(user_id=user_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def create_notification_source(
+    db: Session, source: NotificationSourceCreate, user_id: int
+) -> NotificationSource:
+    """Create a new notification source."""
+    db_source = NotificationSource(user_id=user_id, **source.model_dump())
+    db.add(db_source)
+    db.commit()
+    db.refresh(db_source)
+    return db_source
+
+
+def update_notification_source(
+    db: Session, source_id: int, user_id: int, source_update: NotificationSourceUpdate
+) -> NotificationSource | None:
+    """Update a notification source."""
+    db_source = get_notification_source(db, source_id, user_id)
+    if not db_source:
+        return None
+
+    update_data = source_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_source, field, value)
+
+    db.commit()
+    db.refresh(db_source)
+    return db_source
+
+
+def delete_notification_source(db: Session, source_id: int, user_id: int) -> bool:
+    """Delete a notification source."""
+    db_source = get_notification_source(db, source_id, user_id)
+    if not db_source:
+        return False
+
+    db.delete(db_source)
+    db.commit()
+    return True
+
+
+# ==================== Notification Rule CRUD ====================
+
+
+def get_notification_rule(db: Session, rule_id: int, user_id: int) -> NotificationRule | None:
+    """Get a notification rule by ID for a specific user."""
+    return db.query(NotificationRule).filter_by(id=rule_id, user_id=user_id).first()
+
+
+def get_notification_rules(
+    db: Session, user_id: int, enabled_only: bool = False, skip: int = 0, limit: int = 100
+) -> list[NotificationRule]:
+    """Get all notification rules for a user."""
+    query = db.query(NotificationRule).filter_by(user_id=user_id)
+
+    if enabled_only:
+        query = query.filter_by(enabled=True)
+
+    return query.order_by(NotificationRule.priority.desc()).offset(skip).limit(limit).all()
+
+
+def create_notification_rule(
+    db: Session, rule: NotificationRuleCreate, user_id: int
+) -> NotificationRule:
+    """Create a new notification rule."""
+    db_rule = NotificationRule(user_id=user_id, **rule.model_dump())
+    db.add(db_rule)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def update_notification_rule(
+    db: Session, rule_id: int, user_id: int, rule_update: NotificationRuleUpdate
+) -> NotificationRule | None:
+    """Update a notification rule."""
+    db_rule = get_notification_rule(db, rule_id, user_id)
+    if not db_rule:
+        return None
+
+    update_data = rule_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_rule, field, value)
+
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def delete_notification_rule(db: Session, rule_id: int, user_id: int) -> bool:
+    """Delete a notification rule."""
+    db_rule = get_notification_rule(db, rule_id, user_id)
+    if not db_rule:
+        return False
+
+    db.delete(db_rule)
+    db.commit()
+    return True
+
+
+# ==================== Notification Digest CRUD ====================
+
+
+def get_notification_digest(db: Session, digest_id: int, user_id: int) -> NotificationDigest | None:
+    """Get a notification digest by ID for a specific user."""
+    return (
+        db.query(NotificationDigest).filter_by(id=digest_id, user_id=user_id).first()
+    )
+
+
+def get_notification_digests(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> list[NotificationDigest]:
+    """Get all notification digests for a user."""
+    return (
+        db.query(NotificationDigest)
+        .filter_by(user_id=user_id)
+        .order_by(NotificationDigest.period_start.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def create_notification_digest(
+    db: Session, digest: NotificationDigestBase, user_id: int
+) -> NotificationDigest:
+    """Create a new notification digest."""
+    db_digest = NotificationDigest(user_id=user_id, **digest.model_dump())
+    db.add(db_digest)
+    db.commit()
+    db.refresh(db_digest)
+    return db_digest
+
+
+def get_latest_digest(
+    db: Session, user_id: int, digest_type: str
+) -> NotificationDigest | None:
+    """Get the latest digest of a specific type for a user."""
+    return (
+        db.query(NotificationDigest)
+        .filter_by(user_id=user_id, digest_type=digest_type)
+        .order_by(NotificationDigest.period_start.desc())
+        .first()
+    )
+
+
+# ==================== Focus Session CRUD ====================
+
+
+def get_focus_session(db: Session, session_id: int, user_id: int) -> FocusSession | None:
+    """Get a focus session by ID for a specific user."""
+    return db.query(FocusSession).filter_by(id=session_id, user_id=user_id).first()
+
+
+def get_focus_sessions(
+    db: Session, user_id: int, active_only: bool = False, skip: int = 0, limit: int = 100
+) -> list[FocusSession]:
+    """Get all focus sessions for a user."""
+    query = db.query(FocusSession).filter_by(user_id=user_id)
+
+    if active_only:
+        query = query.filter(FocusSession.end_time.is_(None))
+
+    return query.order_by(FocusSession.start_time.desc()).offset(skip).limit(limit).all()
+
+
+def get_active_focus_session(db: Session, user_id: int) -> FocusSession | None:
+    """Get the currently active focus session for a user."""
+    return (
+        db.query(FocusSession)
+        .filter_by(user_id=user_id)
+        .filter(FocusSession.end_time.is_(None))
+        .order_by(FocusSession.start_time.desc())
+        .first()
+    )
+
+
+def create_focus_session(
+    db: Session, session: FocusSessionCreate, user_id: int
+) -> FocusSession:
+    """Create a new focus session."""
+    db_session = FocusSession(user_id=user_id, **session.model_dump())
+    db.add(db_session)
+    db.commit()
+    db.refresh(db_session)
+    return db_session
+
+
+def update_focus_session(
+    db: Session, session_id: int, user_id: int, session_update: FocusSessionUpdate
+) -> FocusSession | None:
+    """Update a focus session."""
+    db_session = get_focus_session(db, session_id, user_id)
+    if not db_session:
+        return None
+
+    update_data = session_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_session, field, value)
+
+    db.commit()
+    db.refresh(db_session)
+    return db_session
+
+
+def end_focus_session(db: Session, session_id: int, user_id: int) -> FocusSession | None:
+    """End a focus session by setting end_time to now."""
+    from datetime import datetime, timezone
+
+    db_session = get_focus_session(db, session_id, user_id)
+    if not db_session:
+        return None
+
+    db_session.end_time = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(db_session)
+    return db_session
+
+
+# ==================== Response Template CRUD ====================
+
+
+def get_response_template(
+    db: Session, template_id: int, user_id: int
+) -> ResponseTemplate | None:
+    """Get a response template by ID for a specific user."""
+    return (
+        db.query(ResponseTemplate).filter_by(id=template_id, user_id=user_id).first()
+    )
+
+
+def get_response_templates(
+    db: Session, user_id: int, category: str | None = None, skip: int = 0, limit: int = 100
+) -> list[ResponseTemplate]:
+    """Get all response templates for a user."""
+    query = db.query(ResponseTemplate).filter_by(user_id=user_id)
+
+    if category:
+        query = query.filter_by(category=category)
+
+    return query.order_by(ResponseTemplate.times_used.desc()).offset(skip).limit(limit).all()
+
+
+def create_response_template(
+    db: Session, template: ResponseTemplateCreate, user_id: int
+) -> ResponseTemplate:
+    """Create a new response template."""
+    db_template = ResponseTemplate(user_id=user_id, **template.model_dump())
+    db.add(db_template)
+    db.commit()
+    db.refresh(db_template)
+    return db_template
+
+
+def update_response_template(
+    db: Session, template_id: int, user_id: int, template_update: ResponseTemplateUpdate
+) -> ResponseTemplate | None:
+    """Update a response template."""
+    db_template = get_response_template(db, template_id, user_id)
+    if not db_template:
+        return None
+
+    update_data = template_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_template, field, value)
+
+    db.commit()
+    db.refresh(db_template)
+    return db_template
+
+
+def delete_response_template(db: Session, template_id: int, user_id: int) -> bool:
+    """Delete a response template."""
+    db_template = get_response_template(db, template_id, user_id)
+    if not db_template:
+        return False
+
+    db.delete(db_template)
+    db.commit()
+    return True
+
+
+def increment_template_usage(db: Session, template_id: int, user_id: int) -> bool:
+    """Increment the usage counter for a response template."""
+    from datetime import datetime, timezone
+
+    db_template = get_response_template(db, template_id, user_id)
+    if not db_template:
+        return False
+
+    db_template.times_used += 1
+    db_template.last_used = datetime.now(timezone.utc)
+    db.commit()
+    return True

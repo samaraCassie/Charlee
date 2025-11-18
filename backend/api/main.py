@@ -31,6 +31,8 @@ from api.routes import (
     freelancer,
     inbox,
     multimodal,
+    notification_rules,
+    notification_sources,
     notifications,
     oauth_routes,
     priorizacao,
@@ -251,6 +253,16 @@ app.include_router(attachments.router, prefix="/api/v2", tags=["Attachments (V2)
 app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["Calendar Integration (V3)"])
 app.include_router(
     notifications.router, prefix="/api/v2/notifications", tags=["Notifications (V3)"]
+)
+app.include_router(
+    notification_sources.router,
+    prefix="/api/v2/notifications/sources",
+    tags=["Notification Sources (V3)"],
+)
+app.include_router(
+    notification_rules.router,
+    prefix="/api/v2/notifications/rules",
+    tags=["Notification Rules (V3)"],
 )
 
 # ========================================
