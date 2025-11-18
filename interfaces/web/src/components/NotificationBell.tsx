@@ -70,9 +70,12 @@ export function NotificationBell() {
 
         {notifications.length > 0 && (
           <div className="border-t px-4 py-2">
-            <Button variant="link" className="w-full text-sm" asChild>
-              <a href="/notifications">View all notifications</a>
-            </Button>
+            <a
+              href="/notifications"
+              className="block w-full text-center text-sm text-primary hover:underline"
+            >
+              View all notifications
+            </a>
           </div>
         )}
       </PopoverContent>

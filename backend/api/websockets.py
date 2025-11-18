@@ -198,25 +198,29 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # Send welcome message
-        await websocket.send_json({
-            "type": "connected",
-            "data": {
-                "message": "Connected to notifications",
-                "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        })
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "data": {
+                    "message": "Connected to notifications",
+                    "user_id": user_id,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            }
+        )
 
         # Send initial unread count
         db = SessionLocal()
         try:
             unread_count = crud.count_unread_notifications(db, user_id)
-            await websocket.send_json({
-                "type": "unread_count",
-                "data": {
-                    "count": unread_count,
-                },
-            })
+            await websocket.send_json(
+                {
+                    "type": "unread_count",
+                    "data": {
+                        "count": unread_count,
+                    },
+                }
+            )
         finally:
             db.close()
 
@@ -226,12 +230,14 @@ async def websocket_endpoint(websocket: WebSocket):
             while True:
                 try:
                     await asyncio.sleep(30)  # Send heartbeat every 30 seconds
-                    await websocket.send_json({
-                        "type": "heartbeat",
-                        "data": {
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                        },
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "heartbeat",
+                            "data": {
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            },
+                        }
+                    )
                 except Exception:
                     break
 
@@ -259,21 +265,25 @@ async def websocket_endpoint(websocket: WebSocket):
                             )
                             if notification:
                                 # Send confirmation
-                                await websocket.send_json({
-                                    "type": "notification_read",
-                                    "data": {
-                                        "notification_id": notification_id,
-                                        "success": True,
-                                    },
-                                })
+                                await websocket.send_json(
+                                    {
+                                        "type": "notification_read",
+                                        "data": {
+                                            "notification_id": notification_id,
+                                            "success": True,
+                                        },
+                                    }
+                                )
                                 # Send updated unread count
                                 unread_count = crud.count_unread_notifications(db, user_id)
-                                await websocket.send_json({
-                                    "type": "unread_count",
-                                    "data": {
-                                        "count": unread_count,
-                                    },
-                                })
+                                await websocket.send_json(
+                                    {
+                                        "type": "unread_count",
+                                        "data": {
+                                            "count": unread_count,
+                                        },
+                                    }
+                                )
                         finally:
                             db.close()
 

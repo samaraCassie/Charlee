@@ -951,7 +951,8 @@ def get_notifications(
         query = query.filter(Notification.type == notification_type)
 
     return cast(
-        list[Notification], query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+        list[Notification],
+        query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all(),
     )
 
 
@@ -995,7 +996,9 @@ def update_notification(
     return db_notification
 
 
-def mark_notification_as_read(db: Session, notification_id: int, user_id: int) -> Optional[Notification]:
+def mark_notification_as_read(
+    db: Session, notification_id: int, user_id: int
+) -> Optional[Notification]:
     """Mark a single notification as read."""
     db_notification = get_notification(db, notification_id, user_id)
     if not db_notification:

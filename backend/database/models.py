@@ -1939,9 +1939,10 @@ class Notification(Base):
     # Status
     read = Column(Boolean, default=False, nullable=False, index=True)
 
-    # Additional metadata (JSON for flexibility)
-    metadata = Column(JSON, nullable=True)
-    # Example metadata:
+    # Additional extra_data (JSON for flexibility)
+    # Note: 'metadata' is a reserved name in SQLAlchemy, so we use 'extra_data'
+    extra_data = Column(JSON, nullable=True)
+    # Example extra_data:
     # - task_id: int (for task-related notifications)
     # - big_rock_id: int (for Big Rock-related notifications)
     # - priority: str ('low', 'medium', 'high', 'critical')
@@ -1973,7 +1974,9 @@ class NotificationPreference(Base):
     """
 
     __tablename__ = "notification_preferences"
-    __table_args__ = (UniqueConstraint("user_id", "notification_type", name="uix_user_notification_type"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "notification_type", name="uix_user_notification_type"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(

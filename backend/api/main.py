@@ -249,7 +249,9 @@ app.include_router(attachments.router, prefix="/api/v2", tags=["Attachments (V2)
 # ROUTERS V3
 # ========================================
 app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["Calendar Integration (V3)"])
-app.include_router(notifications.router, prefix="/api/v2/notifications", tags=["Notifications (V3)"])
+app.include_router(
+    notifications.router, prefix="/api/v2/notifications", tags=["Notifications (V3)"]
+)
 
 # ========================================
 # WEBSOCKET ENDPOINTS

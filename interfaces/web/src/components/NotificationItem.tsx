@@ -40,8 +40,8 @@ export function NotificationItem({ notification }: NotificationItemProps) {
     }
 
     // Navigate to action URL if present
-    if (notification.metadata?.action_url) {
-      window.location.href = notification.metadata.action_url;
+    if (notification.extraData?.action_url) {
+      window.location.href = notification.extraData.action_url;
     }
   };
 
@@ -64,11 +64,11 @@ export function NotificationItem({ notification }: NotificationItemProps) {
       className={cn(
         'flex items-start gap-3 px-4 py-3 transition-colors hover:bg-accent',
         !notification.read && 'bg-blue-50/50',
-        notification.metadata?.action_url && 'cursor-pointer'
+        notification.extraData?.action_url && 'cursor-pointer'
       )}
       onClick={handleClick}
-      role={notification.metadata?.action_url ? 'button' : undefined}
-      tabIndex={notification.metadata?.action_url ? 0 : undefined}
+      role={notification.extraData?.action_url ? 'button' : undefined}
+      tabIndex={notification.extraData?.action_url ? 0 : undefined}
     >
       {/* Icon */}
       <div className={cn('mt-0.5', iconColor)}>
@@ -87,17 +87,17 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         <p className="text-sm text-muted-foreground">{notification.message}</p>
 
         {/* Priority badge */}
-        {notification.metadata?.priority && (
+        {notification.extraData?.priority && (
           <span
             className={cn(
               'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
-              notification.metadata.priority === 'critical' && 'bg-red-100 text-red-800',
-              notification.metadata.priority === 'high' && 'bg-orange-100 text-orange-800',
-              notification.metadata.priority === 'medium' && 'bg-yellow-100 text-yellow-800',
-              notification.metadata.priority === 'low' && 'bg-gray-100 text-gray-800'
+              notification.extraData.priority === 'critical' && 'bg-red-100 text-red-800',
+              notification.extraData.priority === 'high' && 'bg-orange-100 text-orange-800',
+              notification.extraData.priority === 'medium' && 'bg-yellow-100 text-yellow-800',
+              notification.extraData.priority === 'low' && 'bg-gray-100 text-gray-800'
             )}
           >
-            {notification.metadata.priority}
+            {notification.extraData.priority}
           </span>
         )}
       </div>

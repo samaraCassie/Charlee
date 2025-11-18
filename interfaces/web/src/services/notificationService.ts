@@ -8,7 +8,7 @@ export interface NotificationAPI {
   title: string;
   message: string;
   read: boolean;
-  metadata?: Record<string, any>;
+  extra_data?: Record<string, any>;
   created_at: string;
   read_at?: string;
 }

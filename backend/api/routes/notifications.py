@@ -239,9 +239,7 @@ def create_notification_preference(
 ):
     """Create a new notification preference for authenticated user."""
     # Check if preference already exists
-    existing = crud.get_notification_preference(
-        db, current_user.id, preference.notification_type
-    )
+    existing = crud.get_notification_preference(db, current_user.id, preference.notification_type)
     if existing:
         raise HTTPException(
             status_code=409,

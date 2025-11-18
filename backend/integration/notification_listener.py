@@ -41,7 +41,9 @@ class NotificationListener:
     def _subscribe_to_events(self):
         """Subscribe to all relevant event types."""
         # Task events
-        self.event_bus.subscribe(EventType.TASK_DEADLINE_APPROACHING, self.handle_task_deadline_approaching)
+        self.event_bus.subscribe(
+            EventType.TASK_DEADLINE_APPROACHING, self.handle_task_deadline_approaching
+        )
         self.event_bus.subscribe(EventType.TASK_OVERDUE, self.handle_task_overdue)
 
         # Capacity events
@@ -312,8 +314,10 @@ class NotificationListener:
                     "title": notification.title,
                     "message": notification.message,
                     "read": notification.read,
-                    "metadata": notification.metadata,
-                    "created_at": notification.created_at.isoformat() if notification.created_at else None,
+                    "extra_data": notification.extra_data,
+                    "created_at": (
+                        notification.created_at.isoformat() if notification.created_at else None
+                    ),
                 },
             }
 

@@ -12,7 +12,7 @@ interface WebSocketMessage {
  */
 export function useNotificationWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const reconnectDelay = 3000; // 3 seconds
@@ -63,7 +63,7 @@ export function useNotificationWebSocket() {
                 title: message.data.title,
                 message: message.data.message,
                 read: message.data.read,
-                metadata: message.data.metadata,
+                extraData: message.data.extra_data,
                 createdAt: message.data.created_at,
                 readAt: message.data.read_at,
               };

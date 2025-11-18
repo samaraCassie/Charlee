@@ -71,7 +71,7 @@ class NotificationService:
         # If no preference, create default (enabled)
         if not preference:
             logger.info(
-                f"No preference found for user {user_id}, type {notification_type}. Creating default."
+                f"No preference for user {user_id}, type {notification_type}. Creating default."
             )
             crud.get_or_create_default_preferences(self.db, user_id)
             preference = crud.get_notification_preference(self.db, user_id, notification_type)
@@ -104,7 +104,7 @@ class NotificationService:
             type=notification_type,
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
         notification = crud.create_notification(self.db, notification_data)
@@ -173,7 +173,7 @@ class NotificationService:
             notification_type="task_due_soon",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
     def send_capacity_overload_notification(
@@ -211,7 +211,7 @@ class NotificationService:
             notification_type="capacity_overload",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
     def send_cycle_phase_change_notification(
@@ -256,7 +256,7 @@ class NotificationService:
             notification_type="cycle_phase_change",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
     def send_freelance_invoice_ready_notification(
@@ -294,7 +294,7 @@ class NotificationService:
             notification_type="freelance_invoice_ready",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
     def send_system_notification(
@@ -325,7 +325,7 @@ class NotificationService:
             notification_type="system",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
     def send_achievement_notification(
@@ -358,7 +358,7 @@ class NotificationService:
             notification_type="achievement",
             title=title,
             message=message,
-            metadata=metadata,
+            extra_data=metadata,
         )
 
 

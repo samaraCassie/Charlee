@@ -16,7 +16,7 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
-  metadata?: Record<string, any>;
+  extraData?: Record<string, any>;
   createdAt: string;
   readAt?: string;
 }
@@ -75,7 +75,7 @@ function apiToNotification(apiNotification: NotificationAPI): Notification {
     title: apiNotification.title,
     message: apiNotification.message,
     read: apiNotification.read,
-    metadata: apiNotification.metadata,
+    extraData: apiNotification.extra_data,
     createdAt: apiNotification.created_at,
     readAt: apiNotification.read_at,
   };

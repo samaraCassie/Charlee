@@ -35,7 +35,7 @@ def upgrade():
         sa.Column("title", sa.String(length=200), nullable=False),
         sa.Column("message", sa.Text(), nullable=False),
         sa.Column("read", sa.Boolean(), nullable=False, server_default="false"),
-        sa.Column("metadata", sa.JSON(), nullable=True),
+        sa.Column("extra_data", sa.JSON(), nullable=True),
         sa.Column(
             "created_at", sa.DateTime(), nullable=True, server_default=sa.text("CURRENT_TIMESTAMP")
         ),
@@ -155,7 +155,9 @@ def downgrade():
 
     # Drop notification_preferences indexes
     op.drop_index("ix_notification_preferences_user_type", table_name="notification_preferences")
-    op.drop_index(op.f("ix_notification_preferences_user_id"), table_name="notification_preferences")
+    op.drop_index(
+        op.f("ix_notification_preferences_user_id"), table_name="notification_preferences"
+    )
     op.drop_index(op.f("ix_notification_preferences_id"), table_name="notification_preferences")
 
     # Drop notification_preferences table

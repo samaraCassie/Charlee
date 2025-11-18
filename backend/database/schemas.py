@@ -1086,7 +1086,7 @@ class NotificationBase(BaseModel):
     ]
     title: str = Field(..., min_length=1, max_length=200)
     message: str = Field(..., min_length=1)
-    metadata: Optional[dict] = None
+    extra_data: Optional[dict] = None
 
     @field_validator("title")
     @classmethod
