@@ -62,7 +62,9 @@ def get_notification_rule(
     return rule
 
 
-@router.post("/", response_model=schemas.NotificationRuleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=schemas.NotificationRuleResponse, status_code=status.HTTP_201_CREATED
+)
 def create_notification_rule(
     rule: schemas.NotificationRuleCreate,
     current_user: User = Depends(get_current_user),
@@ -200,9 +202,7 @@ def test_notification_rule(
 
 @router.post("/apply-to-existing", response_model=dict)
 def apply_rules_to_existing(
-    notification_ids: list[int] = Query(
-        ..., description="List of notification IDs to process"
-    ),
+    notification_ids: list[int] = Query(..., description="List of notification IDs to process"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

@@ -1211,7 +1211,17 @@ class NotificationPreferenceListResponse(BaseModel):
 class NotificationSourceBase(BaseModel):
     """Base schema for NotificationSource."""
 
-    source_type: Literal["email", "slack", "linkedin", "github", "whatsapp", "telegram", "discord", "trello", "notion"]
+    source_type: Literal[
+        "email",
+        "slack",
+        "linkedin",
+        "github",
+        "whatsapp",
+        "telegram",
+        "discord",
+        "trello",
+        "notion",
+    ]
     name: str = Field(..., min_length=1, max_length=100)
     credentials: Optional[dict] = None
     settings: Optional[dict] = None

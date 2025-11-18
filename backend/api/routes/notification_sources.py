@@ -56,7 +56,9 @@ def get_notification_source(
     return source
 
 
-@router.post("/", response_model=schemas.NotificationSourceResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=schemas.NotificationSourceResponse, status_code=status.HTTP_201_CREATED
+)
 def create_notification_source(
     source: schemas.NotificationSourceCreate,
     current_user: User = Depends(get_current_user),

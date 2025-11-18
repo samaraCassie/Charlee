@@ -3,7 +3,7 @@
 import pytest
 from fastapi import status
 
-from api.auth.security import create_access_token
+from api.auth.jwt import create_access_token
 from database import crud
 from database.schemas import NotificationCreate, NotificationPreferenceCreate
 
