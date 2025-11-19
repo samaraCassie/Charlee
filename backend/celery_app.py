@@ -23,6 +23,7 @@ celery_app = Celery(
         "tasks.opportunity_collector",
         "tasks.intelligence_automation",
         "tasks.calendar_sync",
+        "tasks.notification_tasks",
     ],
 )
 
@@ -88,6 +89,37 @@ celery_app.conf.update(
             "task": "calendar.refresh_tokens",
             "schedule": crontab(minute=0, hour="*/2"),
             "options": {"expires": 1800},
+        },
+        # Notification collection and processing tasks
+        # Collect notifications from all sources every 15 minutes
+        "collect-notifications-every-15-minutes": {
+            "task": "notifications.collect_all_sources",
+            "schedule": crontab(minute="*/15"),
+            "options": {"expires": 600},
+        },
+        # Generate daily digests every morning at 7 AM
+        "generate-daily-digests-morning": {
+            "task": "notifications.generate_daily_digests",
+            "schedule": crontab(hour=7, minute=0),
+            "options": {"expires": 3600},
+        },
+        # Generate weekly digests every Monday at 7 AM
+        "generate-weekly-digests-monday": {
+            "task": "notifications.generate_weekly_digests",
+            "schedule": crontab(day_of_week=1, hour=7, minute=0),
+            "options": {"expires": 3600},
+        },
+        # Generate monthly digests on the 1st of each month at 7 AM
+        "generate-monthly-digests-monthly": {
+            "task": "notifications.generate_monthly_digests",
+            "schedule": crontab(day_of_month=1, hour=7, minute=0),
+            "options": {"expires": 3600},
+        },
+        # Cleanup old notifications daily at 3 AM
+        "cleanup-old-notifications-daily": {
+            "task": "notifications.cleanup_old_notifications",
+            "schedule": crontab(hour=3, minute=0),
+            "options": {"expires": 7200},
         },
     },
 )

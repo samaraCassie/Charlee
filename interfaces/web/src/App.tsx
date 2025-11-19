@@ -10,6 +10,10 @@ import Chat from './pages/Chat';
 import Tasks from './pages/Tasks';
 import Wellness from './pages/Wellness';
 import TranscriptionHistory from './pages/TranscriptionHistory';
+import NotificationSettings from './pages/NotificationSettings';
+import NotificationSources from './pages/NotificationSources';
+import NotificationRules from './pages/NotificationRules';
+import NotificationDashboard from './pages/NotificationDashboard';
 import { Button } from './components/ui/button';
 import {
   Sheet,
@@ -106,6 +110,14 @@ function AppContent() {
             >
               Histórico
             </Link>
+            <Link
+              to="/notifications/dashboard"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive('/notifications/dashboard') ? '' : 'text-muted-foreground'
+              }`}
+            >
+              Notificações
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -138,6 +150,10 @@ function AppContent() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/wellness" element={<Wellness />} />
           <Route path="/transcriptions" element={<TranscriptionHistory />} />
+          <Route path="/notifications/settings" element={<NotificationSettings />} />
+          <Route path="/notifications/sources" element={<NotificationSources />} />
+          <Route path="/notifications/rules" element={<NotificationRules />} />
+          <Route path="/notifications/dashboard" element={<NotificationDashboard />} />
         </Routes>
       </main>
 
@@ -210,6 +226,15 @@ function AppContent() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Histórico
+            </Link>
+            <Link
+              to="/notifications/dashboard"
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent ${
+                isActive('/notifications/dashboard') ? '' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Notificações
             </Link>
           </nav>
         </SheetContent>
