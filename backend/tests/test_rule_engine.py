@@ -127,9 +127,7 @@ class TestRuleEngine:
         result = engine._evaluate_conditions(test_notification, conditions)
         assert result is True  # Should match because subject contains "job"
 
-    def test_operator_equals(
-        self, db: Session, test_user: User, test_notification: Notification
-    ):
+    def test_operator_equals(self, db: Session, test_user: User, test_notification: Notification):
         """Test equals operator."""
         engine = RuleEngine(db, test_user.id)
 
@@ -137,9 +135,7 @@ class TestRuleEngine:
         assert engine._apply_operator("test", "equals", "Test") is True  # Case insensitive
         assert engine._apply_operator("test", "equals", "other") is False
 
-    def test_operator_contains(
-        self, db: Session, test_user: User, test_notification: Notification
-    ):
+    def test_operator_contains(self, db: Session, test_user: User, test_notification: Notification):
         """Test contains operator."""
         engine = RuleEngine(db, test_user.id)
 
@@ -322,9 +318,7 @@ class TestRuleEngine:
         db.refresh(spam_rule)
         assert spam_rule.times_triggered == 0
 
-    def test_batch_processing(
-        self, db: Session, test_user: User, spam_rule: NotificationRule
-    ):
+    def test_batch_processing(self, db: Session, test_user: User, spam_rule: NotificationRule):
         """Test batch processing of multiple notifications."""
         # Create multiple notifications
         notifications = []

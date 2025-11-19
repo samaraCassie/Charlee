@@ -77,9 +77,7 @@ class TestNotificationCleanupService:
 
         # Verify important notification was not archived
         important = (
-            db.query(Notification)
-            .filter_by(user_id=test_user.id, categoria="importante")
-            .first()
+            db.query(Notification).filter_by(user_id=test_user.id, categoria="importante").first()
         )
         assert important.arquivada is False
 
@@ -133,9 +131,7 @@ class TestNotificationCleanupService:
         assert old_count == 0
 
         # Verify recent one remains
-        recent = (
-            db.query(Notification).filter_by(user_id=test_user.id, title="Recent").first()
-        )
+        recent = db.query(Notification).filter_by(user_id=test_user.id, title="Recent").first()
         assert recent is not None
 
     def test_archive_old_read(
@@ -201,15 +197,11 @@ class TestNotificationCleanupService:
 
         # Verify recent read and unread were not archived
         recent_read = (
-            db.query(Notification)
-            .filter_by(user_id=test_user.id, title="Recent Read")
-            .first()
+            db.query(Notification).filter_by(user_id=test_user.id, title="Recent Read").first()
         )
         assert recent_read.arquivada is False
 
-        unread = (
-            db.query(Notification).filter_by(user_id=test_user.id, title="Unread").first()
-        )
+        unread = db.query(Notification).filter_by(user_id=test_user.id, title="Unread").first()
         assert unread.arquivada is False
 
     def test_cleanup_informativo(
@@ -276,16 +268,12 @@ class TestNotificationCleanupService:
 
         # Verify recent informativo and important were not archived
         recent_info = (
-            db.query(Notification)
-            .filter_by(user_id=test_user.id, title="Recent Info")
-            .first()
+            db.query(Notification).filter_by(user_id=test_user.id, title="Recent Info").first()
         )
         assert recent_info.arquivada is False
 
         important = (
-            db.query(Notification)
-            .filter_by(user_id=test_user.id, title="Important")
-            .first()
+            db.query(Notification).filter_by(user_id=test_user.id, title="Important").first()
         )
         assert important.arquivada is False
 
@@ -467,12 +455,8 @@ class TestNotificationCleanupService:
         assert result["archived"] == 1
 
         # Verify only user1's spam was archived
-        user1_spam = (
-            db.query(Notification).filter_by(user_id=user1.id, categoria="spam").first()
-        )
+        user1_spam = db.query(Notification).filter_by(user_id=user1.id, categoria="spam").first()
         assert user1_spam.arquivada is True
 
-        user2_spam = (
-            db.query(Notification).filter_by(user_id=user2.id, categoria="spam").first()
-        )
+        user2_spam = db.query(Notification).filter_by(user_id=user2.id, categoria="spam").first()
         assert user2_spam.arquivada is False

@@ -104,9 +104,7 @@ class TestNotificationSourceCRUD:
             sync_frequency_minutes=30,
         )
 
-        updated_source = crud.update_notification_source(
-            db, source.id, test_user.id, update_data
-        )
+        updated_source = crud.update_notification_source(db, source.id, test_user.id, update_data)
 
         assert updated_source is not None
         assert updated_source.name == "New Name"
