@@ -1351,6 +1351,38 @@ class NotificationDigestListResponse(BaseModel):
     digests: list[NotificationDigestResponse]
 
 
+class NotificationPatternBase(BaseModel):
+    """Base schema for NotificationPattern."""
+
+    pattern_type: str = Field(
+        ...,
+        description="Type of pattern: sender_preference, time_preference, topic_preference, action_pattern",
+    )
+    pattern_key: str = Field(..., max_length=255, description="Unique identifier for the pattern")
+    pattern_data: dict = Field(..., description="JSON data containing pattern details")
+    confidence_score: Optional[float] = Field(0.0, ge=0.0, le=1.0, description="Pattern confidence (0-1)")
+    occurrences: Optional[int] = Field(1, ge=1, description="Number of times pattern occurred")
+    last_occurrence: datetime
+
+
+class NotificationPatternResponse(NotificationPatternBase):
+    """Schema for NotificationPattern responses."""
+
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationPatternListResponse(BaseModel):
+    """Schema for list of notification patterns."""
+
+    total: int
+    patterns: list[NotificationPatternResponse]
+
+
 class FocusSessionBase(BaseModel):
     """Base schema for FocusSession."""
 

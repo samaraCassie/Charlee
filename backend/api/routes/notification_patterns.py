@@ -80,29 +80,29 @@ def get_pattern_insights(
     # Calculate insights
     total_patterns = len(patterns)
     average_confidence = (
-        sum(p.confidence for p in patterns) / total_patterns if total_patterns > 0 else 0.0
+        sum(p.confidence_score for p in patterns) / total_patterns if total_patterns > 0 else 0.0
     )
 
     # Most confident patterns
-    most_confident = sorted(patterns, key=lambda p: p.confidence, reverse=True)[:5]
+    most_confident = sorted(patterns, key=lambda p: p.confidence_score, reverse=True)[:5]
     most_confident_data = [
         {
             "pattern_key": p.pattern_key,
             "pattern_type": p.pattern_type,
-            "confidence": p.confidence,
-            "frequency": p.frequency,
+            "confidence": p.confidence_score,
+            "frequency": p.occurrences,
         }
         for p in most_confident
     ]
 
     # Most frequent patterns
-    most_frequent = sorted(patterns, key=lambda p: p.frequency, reverse=True)[:5]
+    most_frequent = sorted(patterns, key=lambda p: p.occurrences, reverse=True)[:5]
     most_frequent_data = [
         {
             "pattern_key": p.pattern_key,
             "pattern_type": p.pattern_type,
-            "confidence": p.confidence,
-            "frequency": p.frequency,
+            "confidence": p.confidence_score,
+            "frequency": p.occurrences,
         }
         for p in most_frequent
     ]

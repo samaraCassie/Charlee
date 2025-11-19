@@ -9,6 +9,7 @@ from database.models import (
     FocusSession,
     Notification,
     NotificationDigest,
+    NotificationPattern,
     NotificationPreference,
     NotificationRule,
     NotificationSource,
@@ -1306,6 +1307,32 @@ def get_latest_digest(db: Session, user_id: int, digest_type: str) -> Notificati
         .order_by(NotificationDigest.period_start.desc())
         .first()
     )
+
+
+# ==================== Notification Pattern CRUD ====================
+
+
+def get_notification_pattern(
+    db: Session, pattern_id: int, user_id: int
+) -> NotificationPattern | None:
+    """Get a notification pattern by ID for a specific user."""
+    return db.query(NotificationPattern).filter_by(id=pattern_id, user_id=user_id).first()
+
+
+def get_notification_patterns(
+    db: Session,
+    user_id: int,
+    pattern_key: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> list[NotificationPattern]:
+    """Get notification patterns for a user with optional filtering."""
+    query = db.query(NotificationPattern).filter_by(user_id=user_id)
+
+    if pattern_key:
+        query = query.filter(NotificationPattern.pattern_key == pattern_key)
+
+    return query.order_by(NotificationPattern.updated_at.desc()).offset(skip).limit(limit).all()
 
 
 # ==================== Focus Session CRUD ====================
