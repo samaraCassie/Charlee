@@ -335,7 +335,13 @@ describe('useNotificationWebSocket', () => {
       expect(mockWebSocketInstance).toBeDefined();
     });
 
-    mockWebSocketInstance.readyState = WebSocket.CLOSED;
+    // Close the connection properly
+    mockWebSocketInstance.close();
+
+    // Wait for the close event to be processed
+    await waitFor(() => {
+      expect(mockSetWsConnected).toHaveBeenCalledWith(false);
+    });
 
     result.current.sendMessage({ type: 'test' });
 
