@@ -61,7 +61,9 @@ def collect_all_sources() -> Dict[str, any]:
         # Collect from each source
         for source in sources:
             try:
-                logger.info(f"Collecting from source {source.id}: {source.name} ({source.source_type})")
+                logger.info(
+                    f"Collecting from source {source.id}: {source.name} ({source.source_type})"
+                )
                 result = agent.collect_from_source(source.id)
 
                 total_collected += result["collected"]
@@ -136,10 +138,7 @@ def generate_daily_digests() -> Dict[str, any]:
         from database.models import User, Notification
 
         users = (
-            db.query(User.id)
-            .join(Notification, Notification.user_id == User.id)
-            .distinct()
-            .all()
+            db.query(User.id).join(Notification, Notification.user_id == User.id).distinct().all()
         )
 
         users_processed = 0
@@ -195,10 +194,7 @@ def generate_weekly_digests() -> Dict[str, any]:
         from database.models import User, Notification
 
         users = (
-            db.query(User.id)
-            .join(Notification, Notification.user_id == User.id)
-            .distinct()
-            .all()
+            db.query(User.id).join(Notification, Notification.user_id == User.id).distinct().all()
         )
 
         users_processed = 0
@@ -254,10 +250,7 @@ def generate_monthly_digests() -> Dict[str, any]:
         from database.models import User, Notification
 
         users = (
-            db.query(User.id)
-            .join(Notification, Notification.user_id == User.id)
-            .distinct()
-            .all()
+            db.query(User.id).join(Notification, Notification.user_id == User.id).distinct().all()
         )
 
         users_processed = 0
