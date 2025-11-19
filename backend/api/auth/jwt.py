@@ -14,7 +14,7 @@ class TokenData(BaseModel):
 
     user_id: int
     username: str
-    email: str
+    email: Optional[str] = None
     token_type: str  # "access" or "refresh"
 
 

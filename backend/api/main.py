@@ -3,7 +3,7 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -19,6 +19,7 @@ from api.middleware.request_logging import RequestLoggingMiddleware
 from api.routes import (
     agent as agent_routes,
 )
+from api.websockets import websocket_endpoint
 from api.routes import (
     analytics,
     attachments,
@@ -27,12 +28,19 @@ from api.routes import (
     calendar,
     capacity,
     daily_tracking,
+    focus_sessions,
     freelancer,
     inbox,
     multimodal,
+    notification_digests,
+    notification_patterns,
+    notification_rules,
+    notification_sources,
+    notifications,
     oauth_routes,
     priorizacao,
     projects,
+    response_templates,
     settings,
     tasks,
     wellness,
@@ -156,6 +164,10 @@ For detailed setup instructions, see the [Backend README](../README.md).
             "name": "Calendar Integration (V3)",
             "description": "Google Calendar and Microsoft Outlook synchronization with bidirectional sync",
         },
+        {
+            "name": "Notifications (V3)",
+            "description": "In-app notification system with real-time WebSocket updates and user preferences",
+        },
     ],
 )
 
@@ -243,6 +255,46 @@ app.include_router(attachments.router, prefix="/api/v2", tags=["Attachments (V2)
 # ROUTERS V3
 # ========================================
 app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["Calendar Integration (V3)"])
+app.include_router(
+    notifications.router, prefix="/api/v2/notifications", tags=["Notifications (V3)"]
+)
+app.include_router(
+    notification_sources.router,
+    prefix="/api/v2/notifications/sources",
+    tags=["Notification Sources (V3)"],
+)
+app.include_router(
+    notification_rules.router,
+    prefix="/api/v2/notifications/rules",
+    tags=["Notification Rules (V3)"],
+)
+app.include_router(
+    notification_digests.router,
+    tags=["Notification Digests (V3)"],
+)
+app.include_router(
+    notification_patterns.router,
+    tags=["Notification Patterns (V3)"],
+)
+app.include_router(
+    focus_sessions.router,
+    tags=["Focus Sessions (V3)"],
+)
+app.include_router(
+    response_templates.router,
+    tags=["Response Templates (V3)"],
+)
+
+# ========================================
+# WEBSOCKET ENDPOINTS
+# ========================================
+
+
+@app.websocket("/ws/notifications")
+async def websocket_notifications(websocket: WebSocket):
+    """WebSocket endpoint for real-time notifications."""
+    await websocket_endpoint(websocket)
+
 
 # ========================================
 # PROMETHEUS METRICS
