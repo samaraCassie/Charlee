@@ -47,7 +47,7 @@ class NotificationService:
         notification_type: NotificationType,
         title: str,
         message: str,
-        metadata: Optional[dict] = None,
+        extra_data: Optional[dict] = None,
     ) -> Optional[Notification]:
         """
         Send a notification to a user.
@@ -60,7 +60,7 @@ class NotificationService:
             notification_type: Type of notification
             title: Notification title
             message: Notification message
-            metadata: Optional metadata (task_id, priority, action_url, etc.)
+            extra_data: Optional metadata (task_id, priority, action_url, etc.)
 
         Returns:
             Created Notification if sent, None if user has disabled this type
@@ -104,7 +104,7 @@ class NotificationService:
             type=notification_type,
             title=title,
             message=message,
-            extra_data=metadata,
+            extra_data=extra_data,
         )
 
         notification = crud.create_notification(self.db, notification_data)

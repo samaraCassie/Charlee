@@ -19,23 +19,23 @@ from database.schemas import (
 
 
 @pytest.fixture
-def test_user(db_session: Session) -> User:
+def test_user(db: Session) -> User:
     """Create a test user."""
     user = User(
         username="testuser",
         email="test@example.com",
         hashed_password="hashed",
     )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user
 
 
 class TestNotificationSourceCRUD:
     """Test suite for NotificationSource CRUD operations."""
 
-    def test_create_notification_source(self, db_session: Session, test_user: User):
+    def test_create_notification_source(self, db: Session, test_user: User):
         """Test creating a notification source."""
         source_data = NotificationSourceCreate(
             source_type="email",
@@ -46,7 +46,7 @@ class TestNotificationSourceCRUD:
             sync_frequency_minutes=15,
         )
 
-        source = crud.create_notification_source(db_session, source_data, test_user.id)
+        source = crud.create_notification_source(db, source_data, test_user.id)
 
         assert source.id is not None
         assert source.user_id == test_user.id
@@ -55,7 +55,7 @@ class TestNotificationSourceCRUD:
         assert source.enabled is True
         assert source.sync_frequency_minutes == 15
 
-    def test_get_notification_source(self, db_session: Session, test_user: User):
+    def test_get_notification_source(self, db: Session, test_user: User):
         """Test retrieving a notification source."""
         source_data = NotificationSourceCreate(
             source_type="github",
@@ -64,15 +64,15 @@ class TestNotificationSourceCRUD:
             enabled=True,
         )
 
-        created_source = crud.create_notification_source(db_session, source_data, test_user.id)
+        created_source = crud.create_notification_source(db, source_data, test_user.id)
 
-        retrieved_source = crud.get_notification_source(db_session, created_source.id, test_user.id)
+        retrieved_source = crud.get_notification_source(db, created_source.id, test_user.id)
 
         assert retrieved_source is not None
         assert retrieved_source.id == created_source.id
         assert retrieved_source.source_type == "github"
 
-    def test_get_notification_sources(self, db_session: Session, test_user: User):
+    def test_get_notification_sources(self, db: Session, test_user: User):
         """Test retrieving all notification sources for a user."""
         # Create multiple sources
         for i, source_type in enumerate(["email", "github", "slack"]):
@@ -81,14 +81,14 @@ class TestNotificationSourceCRUD:
                 name=f"{source_type.title()} #{i}",
                 enabled=True,
             )
-            crud.create_notification_source(db_session, source_data, test_user.id)
+            crud.create_notification_source(db, source_data, test_user.id)
 
-        sources = crud.get_notification_sources(db_session, test_user.id)
+        sources = crud.get_notification_sources(db, test_user.id)
 
         assert len(sources) == 3
         assert {s.source_type for s in sources} == {"email", "github", "slack"}
 
-    def test_update_notification_source(self, db_session: Session, test_user: User):
+    def test_update_notification_source(self, db: Session, test_user: User):
         """Test updating a notification source."""
         source_data = NotificationSourceCreate(
             source_type="email",
@@ -96,7 +96,7 @@ class TestNotificationSourceCRUD:
             enabled=True,
         )
 
-        source = crud.create_notification_source(db_session, source_data, test_user.id)
+        source = crud.create_notification_source(db, source_data, test_user.id)
 
         update_data = NotificationSourceUpdate(
             name="New Name",
@@ -105,7 +105,7 @@ class TestNotificationSourceCRUD:
         )
 
         updated_source = crud.update_notification_source(
-            db_session, source.id, test_user.id, update_data
+            db, source.id, test_user.id, update_data
         )
 
         assert updated_source is not None
@@ -113,7 +113,7 @@ class TestNotificationSourceCRUD:
         assert updated_source.enabled is False
         assert updated_source.sync_frequency_minutes == 30
 
-    def test_delete_notification_source(self, db_session: Session, test_user: User):
+    def test_delete_notification_source(self, db: Session, test_user: User):
         """Test deleting a notification source."""
         source_data = NotificationSourceCreate(
             source_type="email",
@@ -121,22 +121,22 @@ class TestNotificationSourceCRUD:
             enabled=True,
         )
 
-        source = crud.create_notification_source(db_session, source_data, test_user.id)
+        source = crud.create_notification_source(db, source_data, test_user.id)
         source_id = source.id
 
-        success = crud.delete_notification_source(db_session, source_id, test_user.id)
+        success = crud.delete_notification_source(db, source_id, test_user.id)
 
         assert success is True
 
         # Verify it's deleted
-        deleted_source = crud.get_notification_source(db_session, source_id, test_user.id)
+        deleted_source = crud.get_notification_source(db, source_id, test_user.id)
         assert deleted_source is None
 
 
 class TestNotificationRuleCRUD:
     """Test suite for NotificationRule CRUD operations."""
 
-    def test_create_notification_rule(self, db_session: Session, test_user: User):
+    def test_create_notification_rule(self, db: Session, test_user: User):
         """Test creating a notification rule."""
         rule_data = NotificationRuleCreate(
             name="Spam Filter",
@@ -147,7 +147,7 @@ class TestNotificationRuleCRUD:
             actions=[{"type": "classify", "categoria": "spam"}, {"type": "archive"}],
         )
 
-        rule = crud.create_notification_rule(db_session, rule_data, test_user.id)
+        rule = crud.create_notification_rule(db, rule_data, test_user.id)
 
         assert rule.id is not None
         assert rule.user_id == test_user.id
@@ -157,7 +157,7 @@ class TestNotificationRuleCRUD:
         assert "all" in rule.conditions
         assert len(rule.actions) == 2
 
-    def test_get_notification_rules(self, db_session: Session, test_user: User):
+    def test_get_notification_rules(self, db: Session, test_user: User):
         """Test retrieving notification rules."""
         # Create enabled and disabled rules
         for i in range(3):
@@ -168,17 +168,17 @@ class TestNotificationRuleCRUD:
                 conditions={"all": []},
                 actions=[],
             )
-            crud.create_notification_rule(db_session, rule_data, test_user.id)
+            crud.create_notification_rule(db, rule_data, test_user.id)
 
         # Get all rules
-        all_rules = crud.get_notification_rules(db_session, test_user.id)
+        all_rules = crud.get_notification_rules(db, test_user.id)
         assert len(all_rules) == 3
 
         # Get only enabled rules
-        enabled_rules = crud.get_notification_rules(db_session, test_user.id, enabled_only=True)
+        enabled_rules = crud.get_notification_rules(db, test_user.id, enabled_only=True)
         assert len(enabled_rules) == 2
 
-    def test_update_notification_rule(self, db_session: Session, test_user: User):
+    def test_update_notification_rule(self, db: Session, test_user: User):
         """Test updating a notification rule."""
         rule_data = NotificationRuleCreate(
             name="Old Rule",
@@ -188,7 +188,7 @@ class TestNotificationRuleCRUD:
             actions=[],
         )
 
-        rule = crud.create_notification_rule(db_session, rule_data, test_user.id)
+        rule = crud.create_notification_rule(db, rule_data, test_user.id)
 
         update_data = NotificationRuleUpdate(
             name="Updated Rule",
@@ -196,14 +196,14 @@ class TestNotificationRuleCRUD:
             priority=20,
         )
 
-        updated_rule = crud.update_notification_rule(db_session, rule.id, test_user.id, update_data)
+        updated_rule = crud.update_notification_rule(db, rule.id, test_user.id, update_data)
 
         assert updated_rule is not None
         assert updated_rule.name == "Updated Rule"
         assert updated_rule.enabled is False
         assert updated_rule.priority == 20
 
-    def test_delete_notification_rule(self, db_session: Session, test_user: User):
+    def test_delete_notification_rule(self, db: Session, test_user: User):
         """Test deleting a notification rule."""
         rule_data = NotificationRuleCreate(
             name="To Delete",
@@ -213,21 +213,21 @@ class TestNotificationRuleCRUD:
             actions=[],
         )
 
-        rule = crud.create_notification_rule(db_session, rule_data, test_user.id)
+        rule = crud.create_notification_rule(db, rule_data, test_user.id)
         rule_id = rule.id
 
-        success = crud.delete_notification_rule(db_session, rule_id, test_user.id)
+        success = crud.delete_notification_rule(db, rule_id, test_user.id)
 
         assert success is True
 
-        deleted_rule = crud.get_notification_rule(db_session, rule_id, test_user.id)
+        deleted_rule = crud.get_notification_rule(db, rule_id, test_user.id)
         assert deleted_rule is None
 
 
 class TestNotificationDigestCRUD:
     """Test suite for NotificationDigest CRUD operations."""
 
-    def test_create_notification_digest(self, db_session: Session, test_user: User):
+    def test_create_notification_digest(self, db: Session, test_user: User):
         """Test creating a notification digest."""
         now = datetime.now(timezone.utc)
         period_start = now - timedelta(days=1)
@@ -248,7 +248,7 @@ class TestNotificationDigestCRUD:
             highlights=[{"title": "Important meeting", "why": "Deadline approaching"}],
         )
 
-        digest = crud.create_notification_digest(db_session, digest_data, test_user.id)
+        digest = crud.create_notification_digest(db, digest_data, test_user.id)
 
         assert digest.id is not None
         assert digest.user_id == test_user.id
@@ -257,7 +257,7 @@ class TestNotificationDigestCRUD:
         assert digest.urgent_count == 5
         assert digest.time_saved_minutes == 30
 
-    def test_get_notification_digests(self, db_session: Session, test_user: User):
+    def test_get_notification_digests(self, db: Session, test_user: User):
         """Test retrieving notification digests."""
         now = datetime.now(timezone.utc)
 
@@ -272,15 +272,15 @@ class TestNotificationDigestCRUD:
                 period_end=period_end,
                 total_notifications=10 * (i + 1),
             )
-            crud.create_notification_digest(db_session, digest_data, test_user.id)
+            crud.create_notification_digest(db, digest_data, test_user.id)
 
-        digests = crud.get_notification_digests(db_session, test_user.id)
+        digests = crud.get_notification_digests(db, test_user.id)
 
         assert len(digests) == 3
         # Should be ordered by period_start descending
         assert digests[0].total_notifications == 10  # Most recent
 
-    def test_get_latest_digest(self, db_session: Session, test_user: User):
+    def test_get_latest_digest(self, db: Session, test_user: User):
         """Test retrieving the latest digest of a type."""
         now = datetime.now(timezone.utc)
 
@@ -295,9 +295,9 @@ class TestNotificationDigestCRUD:
                 period_end=period_end,
                 total_notifications=10 * (i + 1),
             )
-            crud.create_notification_digest(db_session, digest_data, test_user.id)
+            crud.create_notification_digest(db, digest_data, test_user.id)
 
-        latest = crud.get_latest_digest(db_session, test_user.id, "daily")
+        latest = crud.get_latest_digest(db, test_user.id, "daily")
 
         assert latest is not None
         assert latest.total_notifications == 10  # Most recent one
@@ -306,7 +306,7 @@ class TestNotificationDigestCRUD:
 class TestFocusSessionCRUD:
     """Test suite for FocusSession CRUD operations."""
 
-    def test_create_focus_session(self, db_session: Session, test_user: User):
+    def test_create_focus_session(self, db: Session, test_user: User):
         """Test creating a focus session."""
         now = datetime.now(timezone.utc)
 
@@ -318,7 +318,7 @@ class TestFocusSessionCRUD:
             allow_urgent_only=True,
         )
 
-        session = crud.create_focus_session(db_session, session_data, test_user.id)
+        session = crud.create_focus_session(db, session_data, test_user.id)
 
         assert session.id is not None
         assert session.user_id == test_user.id
@@ -326,7 +326,7 @@ class TestFocusSessionCRUD:
         assert session.planned_duration_minutes == 60
         assert session.allow_urgent_only is True
 
-    def test_get_active_focus_session(self, db_session: Session, test_user: User):
+    def test_get_active_focus_session(self, db: Session, test_user: User):
         """Test retrieving the active focus session."""
         now = datetime.now(timezone.utc)
 
@@ -336,7 +336,7 @@ class TestFocusSessionCRUD:
             session_type="deep_work",
         )
 
-        active_session = crud.create_focus_session(db_session, session_data, test_user.id)
+        active_session = crud.create_focus_session(db, session_data, test_user.id)
 
         # Create an ended session
         ended_session_data = FocusSessionCreate(
@@ -345,16 +345,16 @@ class TestFocusSessionCRUD:
             session_type="meeting",
         )
 
-        crud.create_focus_session(db_session, ended_session_data, test_user.id)
+        crud.create_focus_session(db, ended_session_data, test_user.id)
 
         # Get active session
-        active = crud.get_active_focus_session(db_session, test_user.id)
+        active = crud.get_active_focus_session(db, test_user.id)
 
         assert active is not None
         assert active.id == active_session.id
         assert active.end_time is None
 
-    def test_end_focus_session(self, db_session: Session, test_user: User):
+    def test_end_focus_session(self, db: Session, test_user: User):
         """Test ending a focus session."""
         now = datetime.now(timezone.utc)
 
@@ -363,11 +363,11 @@ class TestFocusSessionCRUD:
             session_type="deep_work",
         )
 
-        session = crud.create_focus_session(db_session, session_data, test_user.id)
+        session = crud.create_focus_session(db, session_data, test_user.id)
 
         assert session.end_time is None
 
-        ended_session = crud.end_focus_session(db_session, session.id, test_user.id)
+        ended_session = crud.end_focus_session(db, session.id, test_user.id)
 
         assert ended_session is not None
         assert ended_session.end_time is not None
@@ -376,7 +376,7 @@ class TestFocusSessionCRUD:
 class TestResponseTemplateCRUD:
     """Test suite for ResponseTemplate CRUD operations."""
 
-    def test_create_response_template(self, db_session: Session, test_user: User):
+    def test_create_response_template(self, db: Session, test_user: User):
         """Test creating a response template."""
         template_data = ResponseTemplateCreate(
             name="Meeting Decline",
@@ -386,7 +386,7 @@ class TestResponseTemplateCRUD:
             variables={"reason": "prior commitments"},
         )
 
-        template = crud.create_response_template(db_session, template_data, test_user.id)
+        template = crud.create_response_template(db, template_data, test_user.id)
 
         assert template.id is not None
         assert template.user_id == test_user.id
@@ -394,7 +394,7 @@ class TestResponseTemplateCRUD:
         assert template.category == "meeting_response"
         assert "{{reason}}" in template.template_text
 
-    def test_get_response_templates_by_category(self, db_session: Session, test_user: User):
+    def test_get_response_templates_by_category(self, db: Session, test_user: User):
         """Test retrieving templates by category."""
         # Create templates in different categories
         for i, category in enumerate(["meeting_response", "project_update", "meeting_response"]):
@@ -403,52 +403,52 @@ class TestResponseTemplateCRUD:
                 category=category,
                 template_text=f"Template text {i}",
             )
-            crud.create_response_template(db_session, template_data, test_user.id)
+            crud.create_response_template(db, template_data, test_user.id)
 
         # Get all templates
-        all_templates = crud.get_response_templates(db_session, test_user.id)
+        all_templates = crud.get_response_templates(db, test_user.id)
         assert len(all_templates) == 3
 
         # Get only meeting_response templates
         meeting_templates = crud.get_response_templates(
-            db_session, test_user.id, category="meeting_response"
+            db, test_user.id, category="meeting_response"
         )
         assert len(meeting_templates) == 2
 
-    def test_increment_template_usage(self, db_session: Session, test_user: User):
+    def test_increment_template_usage(self, db: Session, test_user: User):
         """Test incrementing template usage counter."""
         template_data = ResponseTemplateCreate(
             name="Test Template",
             template_text="Test text",
         )
 
-        template = crud.create_response_template(db_session, template_data, test_user.id)
+        template = crud.create_response_template(db, template_data, test_user.id)
 
         assert template.times_used == 0
         assert template.last_used is None
 
         # Increment usage
-        success = crud.increment_template_usage(db_session, template.id, test_user.id)
+        success = crud.increment_template_usage(db, template.id, test_user.id)
 
         assert success is True
 
-        db_session.refresh(template)
+        db.refresh(template)
         assert template.times_used == 1
         assert template.last_used is not None
 
-    def test_delete_response_template(self, db_session: Session, test_user: User):
+    def test_delete_response_template(self, db: Session, test_user: User):
         """Test deleting a response template."""
         template_data = ResponseTemplateCreate(
             name="To Delete",
             template_text="Delete me",
         )
 
-        template = crud.create_response_template(db_session, template_data, test_user.id)
+        template = crud.create_response_template(db, template_data, test_user.id)
         template_id = template.id
 
-        success = crud.delete_response_template(db_session, template_id, test_user.id)
+        success = crud.delete_response_template(db, template_id, test_user.id)
 
         assert success is True
 
-        deleted_template = crud.get_response_template(db_session, template_id, test_user.id)
+        deleted_template = crud.get_response_template(db, template_id, test_user.id)
         assert deleted_template is None

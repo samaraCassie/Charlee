@@ -136,7 +136,7 @@ class TestNotificationService:
         assert "120%" in notification.message
         assert "8.5" in notification.message
         assert notification.extra_data["priority"] == "high"
-        assert notification.metadata["load_percentage"] == 120.0
+        assert notification.extra_data["load_percentage"] == 120.0
 
     def test_send_cycle_phase_change_notification(self, db, sample_user):
         """Should send cycle phase change notification."""
@@ -151,9 +151,9 @@ class TestNotificationService:
         assert notification is not None
         assert notification.type == "cycle_phase_change"
         assert "Follicular Phase" in notification.title
-        assert notification.metadata["phase"] == "follicular"
-        assert notification.metadata["priority"] == "low"
-        assert len(notification.metadata["recommendations"]) == 3
+        assert notification.extra_data["phase"] == "follicular"
+        assert notification.extra_data["priority"] == "low"
+        assert len(notification.extra_data["recommendations"]) == 3
 
     def test_send_freelance_invoice_ready_notification(self, db, sample_user):
         """Should send freelance invoice ready notification."""
@@ -170,8 +170,8 @@ class TestNotificationService:
         assert notification.type == "freelance_invoice_ready"
         assert "Acme Corp" in notification.message
         assert "5,000.00" in notification.message
-        assert notification.metadata["opportunity_id"] == 5
-        assert notification.metadata["invoice_amount"] == 5000.00
+        assert notification.extra_data["opportunity_id"] == 5
+        assert notification.extra_data["invoice_amount"] == 5000.00
 
     def test_send_system_notification(self, db, sample_user):
         """Should send system notification."""
@@ -202,8 +202,8 @@ class TestNotificationService:
         assert notification is not None
         assert notification.type == "achievement"
         assert "Week Streak" in notification.title
-        assert notification.metadata["priority"] == "low"
-        assert notification.metadata["achievement"] == "Week Streak"
+        assert notification.extra_data["priority"] == "low"
+        assert notification.extra_data["achievement"] == "Week Streak"
 
     def test_notification_with_disabled_in_app(self, db, sample_user):
         """Should NOT send notification when in_app is disabled."""

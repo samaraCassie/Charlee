@@ -1360,7 +1360,9 @@ class NotificationPatternBase(BaseModel):
     )
     pattern_key: str = Field(..., max_length=255, description="Unique identifier for the pattern")
     pattern_data: dict = Field(..., description="JSON data containing pattern details")
-    confidence_score: Optional[float] = Field(0.0, ge=0.0, le=1.0, description="Pattern confidence (0-1)")
+    confidence_score: Optional[float] = Field(
+        0.0, ge=0.0, le=1.0, description="Pattern confidence (0-1)"
+    )
     occurrences: Optional[int] = Field(1, ge=1, description="Number of times pattern occurred")
     last_occurrence: datetime
 
