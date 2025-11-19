@@ -10,30 +10,30 @@ from services.notification_cleanup import NotificationCleanupService
 
 
 @pytest.fixture
-def test_user(db_session: Session) -> User:
+def test_user(db: Session) -> User:
     """Create a test user."""
     user = User(
         username="testuser",
         email="test@example.com",
         hashed_password="hashed",
     )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user
 
 
 @pytest.fixture
-def cleanup_service(db_session: Session) -> NotificationCleanupService:
+def cleanup_service(db: Session) -> NotificationCleanupService:
     """Create cleanup service instance."""
-    return NotificationCleanupService(db=db_session)
+    return NotificationCleanupService(db=db)
 
 
 class TestNotificationCleanupService:
     """Test suite for NotificationCleanupService."""
 
     def test_auto_archive_spam(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test automatic archiving of spam notifications."""
         # Create spam notifications
@@ -46,7 +46,7 @@ class TestNotificationCleanupService:
                 categoria="spam",
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # Create non-spam notification
         notif = Notification(
@@ -57,9 +57,9 @@ class TestNotificationCleanupService:
             categoria="importante",
             arquivada=False,
         )
-        db_session.add(notif)
+        db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run auto-archive
         result = cleanup_service.auto_archive_spam(user_id=test_user.id)
@@ -69,7 +69,7 @@ class TestNotificationCleanupService:
 
         # Verify spam was archived
         spam_count = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter_by(user_id=test_user.id, categoria="spam", arquivada=True)
             .count()
         )
@@ -77,14 +77,14 @@ class TestNotificationCleanupService:
 
         # Verify important notification was not archived
         important = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter_by(user_id=test_user.id, categoria="importante")
             .first()
         )
         assert important.arquivada is False
 
     def test_delete_old_archived(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test deletion of old archived notifications."""
         now = datetime.now(timezone.utc)
@@ -99,7 +99,7 @@ class TestNotificationCleanupService:
                 arquivada=True,
                 created_at=now - timedelta(days=35),
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # Create recent archived notification (20 days old)
         notif = Notification(
@@ -110,9 +110,9 @@ class TestNotificationCleanupService:
             arquivada=True,
             created_at=now - timedelta(days=20),
         )
-        db_session.add(notif)
+        db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run deletion with 30-day retention
         result = cleanup_service.delete_old_archived(user_id=test_user.id, retention_days=30)
@@ -122,7 +122,7 @@ class TestNotificationCleanupService:
 
         # Verify old ones were deleted
         old_count = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter(
                 Notification.user_id == test_user.id,
                 Notification.arquivada == True,  # noqa: E712
@@ -134,12 +134,12 @@ class TestNotificationCleanupService:
 
         # Verify recent one remains
         recent = (
-            db_session.query(Notification).filter_by(user_id=test_user.id, title="Recent").first()
+            db.query(Notification).filter_by(user_id=test_user.id, title="Recent").first()
         )
         assert recent is not None
 
     def test_archive_old_read(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test archiving old read notifications."""
         now = datetime.now(timezone.utc)
@@ -155,7 +155,7 @@ class TestNotificationCleanupService:
                 read_at=now - timedelta(days=10),
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # Create recent read notification (5 days old)
         notif = Notification(
@@ -167,7 +167,7 @@ class TestNotificationCleanupService:
             read_at=now - timedelta(days=5),
             arquivada=False,
         )
-        db_session.add(notif)
+        db.add(notif)
 
         # Create unread notification
         notif = Notification(
@@ -178,9 +178,9 @@ class TestNotificationCleanupService:
             read=False,
             arquivada=False,
         )
-        db_session.add(notif)
+        db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run archive with 7-day threshold
         result = cleanup_service.archive_old_read(user_id=test_user.id, archive_after_days=7)
@@ -189,7 +189,7 @@ class TestNotificationCleanupService:
 
         # Verify old read were archived
         archived_count = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter(
                 Notification.user_id == test_user.id,
                 Notification.read == True,  # noqa: E712
@@ -201,19 +201,19 @@ class TestNotificationCleanupService:
 
         # Verify recent read and unread were not archived
         recent_read = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter_by(user_id=test_user.id, title="Recent Read")
             .first()
         )
         assert recent_read.arquivada is False
 
         unread = (
-            db_session.query(Notification).filter_by(user_id=test_user.id, title="Unread").first()
+            db.query(Notification).filter_by(user_id=test_user.id, title="Unread").first()
         )
         assert unread.arquivada is False
 
     def test_cleanup_informativo(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test cleanup of informativo notifications."""
         now = datetime.now(timezone.utc)
@@ -229,7 +229,7 @@ class TestNotificationCleanupService:
                 arquivada=False,
                 created_at=now - timedelta(days=5),
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # Create recent informativo (2 days old)
         notif = Notification(
@@ -241,7 +241,7 @@ class TestNotificationCleanupService:
             arquivada=False,
             created_at=now - timedelta(days=2),
         )
-        db_session.add(notif)
+        db.add(notif)
 
         # Create old important notification
         notif = Notification(
@@ -253,9 +253,9 @@ class TestNotificationCleanupService:
             arquivada=False,
             created_at=now - timedelta(days=5),
         )
-        db_session.add(notif)
+        db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run cleanup with 3-day threshold
         result = cleanup_service.cleanup_informativo(user_id=test_user.id, archive_after_days=3)
@@ -264,7 +264,7 @@ class TestNotificationCleanupService:
 
         # Verify old informativo were archived
         archived_info = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter(
                 Notification.user_id == test_user.id,
                 Notification.categoria == "informativo",
@@ -276,21 +276,21 @@ class TestNotificationCleanupService:
 
         # Verify recent informativo and important were not archived
         recent_info = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter_by(user_id=test_user.id, title="Recent Info")
             .first()
         )
         assert recent_info.arquivada is False
 
         important = (
-            db_session.query(Notification)
+            db.query(Notification)
             .filter_by(user_id=test_user.id, title="Important")
             .first()
         )
         assert important.arquivada is False
 
     def test_run_full_cleanup(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test running full cleanup routine."""
         now = datetime.now(timezone.utc)
@@ -306,7 +306,7 @@ class TestNotificationCleanupService:
                 categoria="spam",
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 2. Old read (should be archived)
         for i in range(3):
@@ -319,7 +319,7 @@ class TestNotificationCleanupService:
                 read_at=now - timedelta(days=10),
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 3. Old informativo (should be archived)
         for i in range(4):
@@ -332,7 +332,7 @@ class TestNotificationCleanupService:
                 arquivada=False,
                 created_at=now - timedelta(days=5),
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 4. Very old archived (should be deleted)
         for i in range(2):
@@ -344,9 +344,9 @@ class TestNotificationCleanupService:
                 arquivada=True,
                 created_at=now - timedelta(days=35),
             )
-            db_session.add(notif)
+            db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run full cleanup
         result = cleanup_service.run_full_cleanup(user_id=test_user.id)
@@ -356,12 +356,12 @@ class TestNotificationCleanupService:
         assert result["total_deleted"] == 2  # very old archived
 
         # Verify total count of notifications
-        remaining_count = db_session.query(Notification).filter_by(user_id=test_user.id).count()
+        remaining_count = db.query(Notification).filter_by(user_id=test_user.id).count()
         # Started with 11 (2+3+4+2), deleted 2, so should have 9
         assert remaining_count == 9
 
     def test_get_cleanup_stats(
-        self, db_session: Session, test_user: User, cleanup_service: NotificationCleanupService
+        self, db: Session, test_user: User, cleanup_service: NotificationCleanupService
     ):
         """Test getting cleanup statistics."""
         now = datetime.now(timezone.utc)
@@ -377,7 +377,7 @@ class TestNotificationCleanupService:
                 categoria="spam",
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 3 old read to archive (10 days old)
         for i in range(3):
@@ -390,7 +390,7 @@ class TestNotificationCleanupService:
                 read_at=now - timedelta(days=10),
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 4 old informativo to archive (5 days old)
         for i in range(4):
@@ -403,7 +403,7 @@ class TestNotificationCleanupService:
                 arquivada=False,
                 created_at=now - timedelta(days=5),
             )
-            db_session.add(notif)
+            db.add(notif)
 
         # 1 very old archived to delete (35 days old)
         notif = Notification(
@@ -414,9 +414,9 @@ class TestNotificationCleanupService:
             arquivada=True,
             created_at=now - timedelta(days=35),
         )
-        db_session.add(notif)
+        db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Get stats
         stats = cleanup_service.get_cleanup_stats(test_user.id)
@@ -429,7 +429,7 @@ class TestNotificationCleanupService:
         assert stats["total_to_delete"] == 1
 
     def test_cleanup_respects_user_isolation(
-        self, db_session: Session, cleanup_service: NotificationCleanupService
+        self, db: Session, cleanup_service: NotificationCleanupService
     ):
         """Test that cleanup operations don't affect other users."""
         # Create two users
@@ -443,9 +443,9 @@ class TestNotificationCleanupService:
             email="user2@example.com",
             hashed_password="hashed",
         )
-        db_session.add(user1)
-        db_session.add(user2)
-        db_session.commit()
+        db.add(user1)
+        db.add(user2)
+        db.commit()
 
         # Create spam for both users
         for user in [user1, user2]:
@@ -457,9 +457,9 @@ class TestNotificationCleanupService:
                 categoria="spam",
                 arquivada=False,
             )
-            db_session.add(notif)
+            db.add(notif)
 
-        db_session.commit()
+        db.commit()
 
         # Run cleanup only for user1
         result = cleanup_service.auto_archive_spam(user_id=user1.id)
@@ -468,11 +468,11 @@ class TestNotificationCleanupService:
 
         # Verify only user1's spam was archived
         user1_spam = (
-            db_session.query(Notification).filter_by(user_id=user1.id, categoria="spam").first()
+            db.query(Notification).filter_by(user_id=user1.id, categoria="spam").first()
         )
         assert user1_spam.arquivada is True
 
         user2_spam = (
-            db_session.query(Notification).filter_by(user_id=user2.id, categoria="spam").first()
+            db.query(Notification).filter_by(user_id=user2.id, categoria="spam").first()
         )
         assert user2_spam.arquivada is False

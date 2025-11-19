@@ -8,21 +8,21 @@ from services.rule_engine import RuleEngine
 
 
 @pytest.fixture
-def test_user(db_session: Session) -> User:
+def test_user(db: Session) -> User:
     """Create a test user."""
     user = User(
         username="testuser",
         email="test@example.com",
         hashed_password="hashed",
     )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user
 
 
 @pytest.fixture
-def test_notification(db_session: Session, test_user: User) -> Notification:
+def test_notification(db: Session, test_user: User) -> Notification:
     """Create a test notification."""
     notification = Notification(
         user_id=test_user.id,
@@ -34,14 +34,14 @@ def test_notification(db_session: Session, test_user: User) -> Notification:
             "subject": "Job Opportunity: Senior Python Developer",
         },
     )
-    db_session.add(notification)
-    db_session.commit()
-    db_session.refresh(notification)
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
     return notification
 
 
 @pytest.fixture
-def spam_rule(db_session: Session, test_user: User) -> NotificationRule:
+def spam_rule(db: Session, test_user: User) -> NotificationRule:
     """Create a spam filtering rule."""
     rule = NotificationRule(
         user_id=test_user.id,
@@ -60,9 +60,9 @@ def spam_rule(db_session: Session, test_user: User) -> NotificationRule:
             {"type": "archive"},
         ],
     )
-    db_session.add(rule)
-    db_session.commit()
-    db_session.refresh(rule)
+    db.add(rule)
+    db.commit()
+    db.refresh(rule)
     return rule
 
 
@@ -70,10 +70,10 @@ class TestRuleEngine:
     """Test suite for RuleEngine."""
 
     def test_evaluate_simple_condition_match(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that a simple condition matches correctly."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         conditions = {
             "all": [{"field": "extra_data.sender", "operator": "contains", "value": "recruiter"}]
@@ -83,10 +83,10 @@ class TestRuleEngine:
         assert result is True
 
     def test_evaluate_simple_condition_no_match(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that a simple condition doesn't match when it shouldn't."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         conditions = {
             "all": [{"field": "extra_data.sender", "operator": "contains", "value": "admin"}]
@@ -96,10 +96,10 @@ class TestRuleEngine:
         assert result is False
 
     def test_evaluate_multiple_conditions_all(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that multiple conditions with ALL logic work correctly."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         conditions = {
             "all": [
@@ -112,10 +112,10 @@ class TestRuleEngine:
         assert result is True
 
     def test_evaluate_multiple_conditions_any(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that multiple conditions with ANY logic work correctly."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         conditions = {
             "any": [
@@ -128,39 +128,39 @@ class TestRuleEngine:
         assert result is True  # Should match because subject contains "job"
 
     def test_operator_equals(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test equals operator."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         assert engine._apply_operator("test", "equals", "test") is True
         assert engine._apply_operator("test", "equals", "Test") is True  # Case insensitive
         assert engine._apply_operator("test", "equals", "other") is False
 
     def test_operator_contains(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test contains operator."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         assert engine._apply_operator("hello world", "contains", "world") is True
         assert engine._apply_operator("hello world", "contains", "WORLD") is True
         assert engine._apply_operator("hello world", "contains", "foo") is False
 
     def test_operator_starts_with(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test starts_with operator."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         assert engine._apply_operator("hello world", "starts_with", "hello") is True
         assert engine._apply_operator("hello world", "starts_with", "world") is False
 
     def test_operator_numeric_comparison(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test numeric comparison operators."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         assert engine._apply_operator(10, ">", 5) is True
         assert engine._apply_operator(10, "<", 5) is False
@@ -168,10 +168,10 @@ class TestRuleEngine:
         assert engine._apply_operator(10, "<=", 10) is True
 
     def test_execute_classify_action(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that classify action works."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         actions = [{"type": "classify", "categoria": "spam"}]
 
@@ -182,10 +182,10 @@ class TestRuleEngine:
         assert test_notification.categoria == "spam"
 
     def test_execute_archive_action(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that archive action works."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         actions = [{"type": "archive"}]
 
@@ -196,10 +196,10 @@ class TestRuleEngine:
         assert test_notification.arquivada is True
 
     def test_execute_multiple_actions(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that multiple actions execute in order."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         actions = [
             {"type": "classify", "categoria": "spam"},
@@ -216,13 +216,13 @@ class TestRuleEngine:
 
     def test_evaluate_full_rule(
         self,
-        db_session: Session,
+        db: Session,
         test_user: User,
         test_notification: Notification,
         spam_rule: NotificationRule,
     ):
         """Test evaluation of a complete rule."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         actions = engine.evaluate_notification(test_notification)
 
@@ -231,11 +231,11 @@ class TestRuleEngine:
         assert test_notification.arquivada is True
 
         # Check that rule statistics were updated
-        db_session.refresh(spam_rule)
+        db.refresh(spam_rule)
         assert spam_rule.times_triggered == 1
         assert spam_rule.last_triggered is not None
 
-    def test_rule_priority_ordering(self, db_session: Session, test_user: User):
+    def test_rule_priority_ordering(self, db: Session, test_user: User):
         """Test that rules execute in priority order."""
         # Create two rules with different priorities
         rule_low = NotificationRule(
@@ -256,9 +256,9 @@ class TestRuleEngine:
             actions=[{"type": "classify", "categoria": "importante"}],
         )
 
-        db_session.add(rule_low)
-        db_session.add(rule_high)
-        db_session.commit()
+        db.add(rule_low)
+        db.add(rule_high)
+        db.commit()
 
         notification = Notification(
             user_id=test_user.id,
@@ -266,10 +266,10 @@ class TestRuleEngine:
             title="Test",
             message="Test message",
         )
-        db_session.add(notification)
-        db_session.commit()
+        db.add(notification)
+        db.commit()
 
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
         actions = engine.evaluate_notification(notification)
 
         # High priority rule should execute first
@@ -278,7 +278,7 @@ class TestRuleEngine:
         assert notification.prioridade == 5
 
     def test_disabled_rule_not_executed(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test that disabled rules are not executed."""
         rule = NotificationRule(
@@ -289,10 +289,10 @@ class TestRuleEngine:
             conditions={"all": [{"field": "type", "operator": "equals", "value": "email"}]},
             actions=[{"type": "classify", "categoria": "spam"}],
         )
-        db_session.add(rule)
-        db_session.commit()
+        db.add(rule)
+        db.commit()
 
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
         actions = engine.evaluate_notification(test_notification)
 
         assert len(actions) == 0
@@ -300,13 +300,13 @@ class TestRuleEngine:
 
     def test_test_rule_method(
         self,
-        db_session: Session,
+        db: Session,
         test_user: User,
         test_notification: Notification,
         spam_rule: NotificationRule,
     ):
         """Test the test_rule method that doesn't execute actions."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         result = engine.test_rule(spam_rule.id, test_notification.id)
 
@@ -314,16 +314,16 @@ class TestRuleEngine:
         assert len(result["actions_that_would_execute"]) == 2
 
         # Verify actions were NOT actually executed
-        db_session.refresh(test_notification)
+        db.refresh(test_notification)
         assert test_notification.categoria is None
         assert test_notification.arquivada is False
 
         # Verify rule statistics were NOT updated
-        db_session.refresh(spam_rule)
+        db.refresh(spam_rule)
         assert spam_rule.times_triggered == 0
 
     def test_batch_processing(
-        self, db_session: Session, test_user: User, spam_rule: NotificationRule
+        self, db: Session, test_user: User, spam_rule: NotificationRule
     ):
         """Test batch processing of multiple notifications."""
         # Create multiple notifications
@@ -339,14 +339,14 @@ class TestRuleEngine:
                     "subject": f"Job Opportunity #{i}",
                 },
             )
-            db_session.add(notif)
+            db.add(notif)
             notifications.append(notif)
 
-        db_session.commit()
+        db.commit()
 
         notification_ids = [n.id for n in notifications]
 
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
         result = engine.process_batch(notification_ids)
 
         assert result["processed"] == 5
@@ -354,15 +354,15 @@ class TestRuleEngine:
 
         # Verify all were processed
         for notif in notifications:
-            db_session.refresh(notif)
+            db.refresh(notif)
             assert notif.categoria == "spam"
             assert notif.arquivada is True
 
     def test_field_extraction_nested(
-        self, db_session: Session, test_user: User, test_notification: Notification
+        self, db: Session, test_user: User, test_notification: Notification
     ):
         """Test extraction of nested fields."""
-        engine = RuleEngine(db_session, test_user.id)
+        engine = RuleEngine(db, test_user.id)
 
         # Test direct field
         value = engine._get_field_value(test_notification, "type")
