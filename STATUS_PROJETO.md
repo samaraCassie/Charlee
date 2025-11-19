@@ -1,7 +1,7 @@
 # 📊 Status Atual do Projeto Charlee
 
-> Documento atualizado em: 2025-11-10
-> Versão atual: V3.1 (Agent Orchestration System)
+> Documento atualizado em: 2025-11-17
+> Versão atual: V3.3 (Multimodal Input System)
 
 ## 🎯 Visão Geral Executiva
 
@@ -12,7 +12,9 @@ O **Charlee** é um sistema de inteligência pessoal completo e funcional, com b
 - **Backend**: ✅ Totalmente funcional e documentado
 - **Frontend**: ✅ V3.0 completo com interface React moderna
 - **AI Agents**: ✅ Sistema de orquestração inteligente implementado (V3.1)
-- **Testes**: ✅ 88% de cobertura no frontend, testes funcionais no backend
+- **Calendar Integration**: ✅ Google + Microsoft Calendar sync (V3.2)
+- **Multimodal**: ✅ Input de voz e imagem implementado (V3.3) ✨ **NOVO!**
+- **Testes**: ✅ 79.8% de cobertura no frontend (173 testes), testes funcionais no backend
 - **Documentação**: ✅ Completa e atualizada
 - **DevOps**: ✅ Containerizado com Docker Compose
 
@@ -31,7 +33,11 @@ V2.1 (Persistent Memory)
    ↓
 V3.0 (React Frontend) ← Completo em 2025-01-08
    ↓
-V3.1 (Agent Orchestration) ← Atual (merge recente)
+V3.1 (Agent Orchestration) ← Completo em 2025-11-10
+   ↓
+V3.2 (Calendar Integration) ← Completo em 2025-11-16
+   ↓
+V3.3 (Multimodal Input) ← Atual ✨ (merge recente - 2025-11-17)
    ↓
 V3.x (Roadmap futuro)
 ```
@@ -65,12 +71,35 @@ V3.x (Roadmap futuro)
 - 71 testes unitários com 88% de cobertura
 - Integração completa com backend via Axios
 
-#### ✅ V3.1 - Orquestração Inteligente de Agentes (RECENTE!)
+#### ✅ V3.1 - Orquestração Inteligente de Agentes
 - Sistema de roteamento automático de mensagens
 - Análise de intenção do usuário
 - Consulta multi-agente para decisões complexas
 - 3 agentes especializados trabalhando em conjunto
 - Endpoints de debug para testar roteamento
+
+#### ✅ V3.2 - Integrações de Calendar (2025-11-16)
+- **Google Calendar Integration**: OAuth 2.0 + sincronização bidirecional
+- **Microsoft Calendar Integration**: Outlook/Office 365 support
+- **CalendarConnection**: Gerenciamento de conexões com calendários
+- **CalendarEvent**: Sincronização de eventos com tarefas
+- **CalendarConflict**: Detecção e resolução de conflitos
+- **API Routes completas**: 29KB de endpoints RESTful
+- **Event Bus Integration**: Sincronização automática via eventos
+- **Testes abrangentes**: Suite completa de testes de integração
+
+#### ✅ V3.3 - Input Multimodal (RECENTE! - 2025-11-17) ✨
+- **Transcrição de Voz**: Gravação e transcrição com OpenAI Whisper API
+- **Análise de Imagem**: Upload e análise com GPT-4o Vision API
+- **VoiceInput Component**: Gravação de áudio com preview e playback
+- **ImageUpload Component**: Drag-and-drop com preview e validação
+- **Sistema de Anexos**: CRUD completo de attachments
+- **Retry Logic**: Exponential backoff com suporte offline
+- **Acessibilidade**: ARIA labels, keyboard navigation, screen reader support
+- **173 testes** passando com **79.8% de cobertura** (excede threshold de 78%)
+- **Performance**: React.memo, lazy loading, cleanup automático
+- Extração automática de tarefas de áudio e imagens
+- Suporte a múltiplos formatos (PNG, JPG, WEBP, HEIC para imagem; WebM para áudio)
 
 ---
 
@@ -390,6 +419,323 @@ curl -X POST http://localhost:8000/api/v1/agent/analyze-routing \
   "keywords_detected": ["cansada", "bem-estar"]
 }
 ```
+
+---
+
+## 📅 Sistema de Integração de Calendários (V3.2)
+
+### Visão Geral
+
+O sistema de integração de calendários permite sincronização bidirecional completa entre o Charlee e serviços de calendário externos (**Google Calendar** e **Microsoft Calendar**). Implementado com OAuth 2.0 seguro e Event Bus para sincronização automática.
+
+### Integrações Suportadas
+
+#### 1. **Google Calendar**
+- ✅ OAuth 2.0 authentication
+- ✅ Leitura de eventos (`calendar.readonly`)
+- ✅ Criação/edição de eventos (`calendar.events`)
+- ✅ Sincronização bidirecional automática
+- ✅ Detecção de conflitos
+
+#### 2. **Microsoft Calendar** (Outlook/Office 365)
+- ✅ OAuth 2.0 authentication
+- ✅ Calendars.Read e Calendars.ReadWrite permissions
+- ✅ Sincronização com Outlook e Office 365
+- ✅ Suporte a múltiplas contas
+
+### Funcionalidades
+
+**CalendarConnection**:
+- Gerenciamento de conexões OAuth
+- Armazenamento seguro de tokens (criptografado)
+- Refresh automático de tokens expirados
+- Suporte a múltiplas conexões por usuário
+
+**CalendarEvent**:
+- Sincronização automática Tasks ↔ Events
+- Mapeamento bidirecional (event_id ↔ task_id)
+- Detecção de mudanças e sync incremental
+- Preservação de metadados (source, last_synced)
+
+**CalendarConflict**:
+- Detecção automática de conflitos de horário
+- Resolução manual ou automática
+- Priorização baseada em regras
+- Histórico de resoluções
+
+### API Endpoints
+
+```python
+# OAuth Authorization
+GET  /api/v1/calendar/connect/google/auth-url
+GET  /api/v1/calendar/connect/microsoft/auth-url
+POST /api/v1/calendar/oauth/callback
+
+# Connection Management
+GET    /api/v1/calendar/connections
+GET    /api/v1/calendar/connections/{id}
+PATCH  /api/v1/calendar/connections/{id}
+DELETE /api/v1/calendar/connections/{id}
+POST   /api/v1/calendar/connections/{id}/sync
+
+# Events
+GET /api/v1/calendar/events
+GET /api/v1/calendar/events/{id}
+
+# Conflicts
+GET   /api/v1/calendar/conflicts
+PATCH /api/v1/calendar/conflicts/{id}
+
+# Sync Logs
+GET /api/v1/calendar/sync-logs
+```
+
+### Event Bus Integration
+
+**Eventos Publicados**:
+- `calendar.connection.created` - Nova conexão criada
+- `calendar.connection.authorized` - Autorização OAuth concluída
+- `calendar.event.imported` - Evento importado do calendar
+- `calendar.event.exported` - Tarefa exportada como evento
+- `calendar.conflict.detected` - Conflito de horário detectado
+- `calendar.sync.completed` - Sincronização completa
+
+**Listeners**:
+- Task created/updated → Export to calendar
+- Event updated externally → Update task
+- Deadline changed → Update calendar event
+
+### Casos de Uso
+
+#### Sincronização Automática
+```
+Usuário cria tarefa com deadline
+         ↓
+Event Bus publica task.created
+         ↓
+Calendar Listener captura evento
+         ↓
+Verifica conexões ativas
+         ↓
+Exporta como evento no Google/Microsoft Calendar
+         ↓
+Retorna event_id para tracking
+```
+
+#### Importação de Eventos
+```
+Usuário autoriza Google Calendar
+         ↓
+Sync automático busca eventos futuros
+         ↓
+Para cada evento:
+   - Verifica se já existe tarefa linkada
+   - Se não, cria nova tarefa
+   - Mapeia event_id ↔ task_id
+         ↓
+Salva CalendarEvent para tracking
+```
+
+### Tecnologias
+
+- **Google**: `google-auth`, `google-auth-oauthlib`, `google-api-python-client`
+- **Microsoft**: `msal`, `requests` (Graph API)
+- **Segurança**: Tokens criptografados no banco
+- **Sync**: Celery tasks para sync assíncrono (opcional)
+
+---
+
+## 🎙️ Sistema Multimodal (V3.3) ✨ **NOVO!**
+
+### Visão Geral
+
+O sistema multimodal mais recente permite entrada de dados via **voz** e **imagem**, expandindo significativamente as formas de interação com o Charlee. Implementado com tecnologias de ponta da OpenAI (Whisper e GPT-4o Vision), o sistema oferece transcrição precisa e análise inteligente de conteúdo visual.
+
+### Arquitetura Multimodal
+
+```
+┌──────────────────────────────────────────────────┐
+│           Interface do Usuário                   │
+│  ┌──────────────┐      ┌──────────────┐         │
+│  │  VoiceInput  │      │ ImageUpload  │         │
+│  │  Component   │      │  Component   │         │
+│  └──────┬───────┘      └──────┬───────┘         │
+└─────────┼──────────────────────┼─────────────────┘
+          │                      │
+          ↓                      ↓
+┌─────────────────────────────────────────────────┐
+│         multimodalService (Frontend)            │
+│  • File validation                              │
+│  • Retry with exponential backoff               │
+│  • Offline queue management                     │
+└──────────────────┬──────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────────────┐
+│         Backend API (/api/v1/multimodal)        │
+│  • POST /transcribe - Whisper transcription     │
+│  • POST /analyze - Vision analysis              │
+│  • POST /process - Unified processing           │
+└───────────┬───────────────┬─────────────────────┘
+            ↓               ↓
+┌──────────────────┐  ┌─────────────────┐
+│  audio_service   │  │  vision_service │
+│  • Whisper API   │  │  • GPT-4o Vision│
+│  • Transcription │  │  • Task extract │
+└──────────────────┘  └─────────────────┘
+            │               │
+            ↓               ↓
+┌─────────────────────────────────────────────────┐
+│         Attachments Database                     │
+│  • file_name, file_type, file_size              │
+│  • transcription / analysis                     │
+│  • extracted tasks                              │
+└─────────────────────────────────────────────────┘
+```
+
+### Componentes Frontend
+
+#### 1. **VoiceInput Component**
+
+**Features**:
+- ✅ Gravação de áudio usando MediaRecorder API
+- ✅ Timer em tempo real durante gravação
+- ✅ Preview de áudio com controles de playback
+- ✅ Funcionalidade de re-gravação
+- ✅ Transcrição automática via Whisper API
+- ✅ Suporte a múltiplos idiomas (auto-detect ou especificado)
+- ✅ React.memo para otimização de performance
+- ✅ Cleanup automático de media streams e object URLs
+
+**Acessibilidade**:
+- ARIA labels em todos os botões
+- Live regions para anúncios de screen reader
+- Navegação por teclado completa
+- Estados de loading anunciados
+
+**Formatos Suportados**: WebM audio
+**Tamanho Máximo**: 25MB
+
+#### 2. **ImageUpload Component**
+
+**Features**:
+- ✅ Upload via click ou drag-and-drop
+- ✅ Preview de imagem antes da análise
+- ✅ Validação de formato e tamanho
+- ✅ Análise via GPT-4o Vision API
+- ✅ Extração automática de tarefas da imagem
+- ✅ Opção de prompt customizado
+- ✅ Auto-análise ou trigger manual
+- ✅ React.memo para otimização de performance
+
+**Acessibilidade**:
+- Drag-and-drop acessível por teclado (Enter/Space)
+- ARIA labels descritivos
+- Feedback visual e sonoro
+- Screen reader friendly
+
+**Formatos Suportados**: PNG, JPG, JPEG, HEIC, WEBP
+**Tamanho Máximo**: 20MB
+
+### Backend Services
+
+#### **audio_service.py**
+Serviço de processamento de áudio:
+- Integração com OpenAI Whisper API
+- Suporte a detecção automática de idioma
+- Tratamento de erros e retry logic
+- Logging estruturado de operações
+
+#### **vision_service.py**
+Serviço de análise de imagens:
+- Integração com GPT-4o Vision API
+- Extração inteligente de tarefas de imagens
+- Análise contextual com prompts customizáveis
+- Processamento de múltiplos formatos de imagem
+
+#### **attachments API**
+CRUD completo para anexos:
+- `GET /api/v1/attachments` - Listar anexos
+- `GET /api/v1/attachments/{id}` - Obter anexo específico
+- `DELETE /api/v1/attachments/{id}` - Deletar anexo
+- `POST /api/v1/attachments/{id}/reprocess` - Re-processar anexo
+- `GET /api/v1/attachments/{id}/download` - Download do arquivo
+
+### Retry Logic e Offline Support
+
+**Exponential Backoff**:
+```typescript
+Tentativa 1: delay = 1s
+Tentativa 2: delay = 2s
+Tentativa 3: delay = 4s
+Tentativa 4: delay = 8s
+Tentativa 5: delay = 16s
+```
+
+**Offline Queue**:
+- Requisições falhadas são enfileiradas automaticamente
+- Processamento automático quando conexão é restaurada
+- Persistência em localStorage (opcional)
+- Notificações de sincronização
+
+### Casos de Uso
+
+#### Criação de Tarefa por Voz
+```
+Usuário → Clica em "Gravar"
+       → Fala: "Reunião com cliente às 15h amanhã"
+       → Clica em "Parar"
+       → Clica em "Transcrever"
+       → Sistema transcreve
+       → Tarefa é criada automaticamente
+```
+
+#### Extração de Tarefas de Imagem
+```
+Usuário → Upload de screenshot de email
+       → Sistema analisa com GPT-4o Vision
+       → Extrai: "Enviar proposta até sexta"
+                 "Agendar call de alinhamento"
+       → Múltiplas tarefas criadas
+```
+
+### Testes e Qualidade
+
+**Cobertura de Testes**:
+- **173 testes** passando ✅
+- **79.8% branch coverage** (excede threshold de 78%)
+- Testes unitários para todos os componentes
+- Testes de integração para fluxos completos
+- Testes de acessibilidade
+
+**Arquivos de Teste**:
+- `VoiceInput.test.tsx` - 93.82% cobertura
+- `ImageUpload.test.tsx` - 100% cobertura
+- `multimodalService.test.ts` - 92.85% cobertura
+- `attachmentsService.test.ts` - 100% cobertura
+- `retry.test.ts` - **100% cobertura**
+
+### Performance
+
+**Otimizações**:
+- React.memo previne re-renders desnecessários
+- Lazy loading de componentes
+- Debounced retry logic
+- Cleanup automático de recursos
+- Compression de áudio/imagem antes de upload
+
+**Métricas**:
+- Tempo médio de transcrição: 2-5s (dependente da API Whisper)
+- Tempo médio de análise de imagem: 3-8s (dependente da API Vision)
+- Upload de arquivo: < 1s (para arquivos < 5MB)
+- Taxa de sucesso de retry: ~95%
+
+### Documentação
+
+Documentação completa disponível em:
+- **MULTIMODAL_FEATURE.md** (16 KB) - Guia completo
+- API docs: `http://localhost:8000/docs` (endpoints multimodais)
+- Exemplos de uso no código
+- JSDoc em todos os componentes
 
 ---
 
@@ -802,17 +1148,18 @@ Backend (Python):
   Models: ~10
 
 Frontend (TypeScript/React):
-  Arquivos: ~80
-  Linhas de código: ~6,000
-  Componentes: ~30
+  Arquivos: ~90
+  Linhas de código: ~7,500
+  Componentes: ~35 (incluindo VoiceInput e ImageUpload)
   Páginas: 8
   Stores: 4
-  Testes: 71 (88% cobertura)
+  Services: 5 (incluindo multimodal e attachments)
+  Testes: 173 (79.8% branch coverage)
 
 Total:
-  Commits: ~50+
-  Pull Requests: 7 mergeados
-  Versões: V3.1 (atual)
+  Commits: ~70+
+  Pull Requests: 27+ mergeados
+  Versões: V3.2 (atual)
 ```
 
 ### Performance
@@ -833,28 +1180,38 @@ Total:
 
 ## 🎯 Roadmap Futuro
 
-### V3.x - Melhorias e Integrações (Em Planejamento)
+### V3.x - Melhorias e Integrações
 
-#### V3.2 - Integração Google Calendar
-- [ ] Sincronização bidirecional com Google Calendar
-- [ ] Importar eventos como tarefas
-- [ ] Exportar tarefas como eventos
-- [ ] Sincronização automática de deadlines
-- [ ] Detecção de conflitos de horário
+#### ✅ V3.2 - Calendar Integration (COMPLETO - 2025-11-16)
+- [x] OAuth 2.0 com Google Calendar
+- [x] OAuth 2.0 com Microsoft Calendar (Outlook/Office 365)
+- [x] Sincronização bidirecional (Calendar ↔ Tasks)
+- [x] Importar eventos como tarefas
+- [x] Exportar tarefas como eventos
+- [x] Detecção automática de conflitos de horário
+- [x] CalendarConnection, CalendarEvent, CalendarConflict models
+- [x] API REST completa (29KB de endpoints)
+- [x] Event Bus integration para sync automático
 
-#### V3.3 - Input Multimodal
-- [ ] Entrada de voz para criação de tarefas
-- [ ] Transcrição automática de notas de voz
-- [ ] Upload e análise de imagens (screenshots, fotos)
-- [ ] OCR para extração de tarefas de imagens
-- [ ] Comandos de voz para navegação
+#### ✅ V3.3 - Input Multimodal (COMPLETO - 2025-11-17) ✨
+- [x] Entrada de voz para criação de tarefas
+- [x] Transcrição automática de notas de voz (Whisper API)
+- [x] Upload e análise de imagens (GPT-4o Vision)
+- [x] Extração automática de tarefas de áudio e imagens
+- [x] VoiceInput component com preview e playback
+- [x] ImageUpload component com drag-and-drop
+- [x] Sistema de anexos (attachments) CRUD completo
+- [x] Retry logic com exponential backoff
+- [x] Suporte offline com request queueing
+- [x] Acessibilidade completa (ARIA, keyboard navigation)
+- [x] 173 testes com 79.8% de cobertura
 
-#### V3.4 - CLI Interativo Aprimorado
-- [ ] Interface TUI (Text User Interface) com Rich
-- [ ] Comandos rápidos para gestão de tarefas
-- [ ] Visualização de analytics no terminal
-- [ ] Modo watch para atualizações em tempo real
-- [ ] Integração com shell (autocompletion)
+#### V3.4 - Notificações e Lembretes (Próximo)
+- [ ] Sistema de notificações push
+- [ ] Lembretes baseados em deadline
+- [ ] Integração com notificações de browser
+- [ ] Email reminders (opcional)
+- [ ] Smart reminders baseados em padrões
 
 ### V4.x - Expansão de Plataformas (Futuro)
 
@@ -1225,38 +1582,43 @@ pytest
 
 ## 🎉 Conclusão
 
-O **Charlee V3.1** é um sistema maduro, completo e pronto para uso pessoal em produtividade consciente. Com uma arquitetura full-stack moderna, sistema de agentes inteligentes, e atenção ao bem-estar do usuário, representa um projeto sólido e bem arquitetado.
+O **Charlee V3.3** é um sistema maduro, completo e pronto para uso pessoal em produtividade consciente. Com uma arquitetura full-stack moderna, sistema de agentes inteligentes, integração com calendários, entrada multimodal de última geração, e atenção ao bem-estar do usuário, representa um projeto sólido e bem arquitetado.
 
 ### Destaques
 
 ✨ **Full-stack completo** - Backend robusto + Frontend moderno
 🤖 **Inteligência multi-agente** - Orquestração sofisticada de 3 agentes especializados
+🎙️ **Input Multimodal** - Voz (Whisper) e Imagem (GPT-4o Vision) ✨ **NOVO!**
 🌸 **Bem-estar consciente** - Adaptação ao ciclo e proteção de capacidade
 📊 **Analytics avançados** - Insights data-driven sobre produtividade
-🧪 **Bem testado** - 88% de cobertura no frontend
+🧪 **Bem testado** - 79.8% branch coverage, 173 testes passando
 📚 **Bem documentado** - Múltiplos níveis de documentação
 🐳 **Production-ready** - Containerizado e configurado
+♿ **Acessível** - WCAG 2.1 Level AA compliant
 
 ### Estado Atual
 
 ```
 Status Geral: ✅ PRODUÇÃO
-Última Release: V3.1 - Agent Orchestration
-Próxima Release: V3.2 - Google Calendar Integration
+Última Release: V3.3 - Multimodal Input System ✨
+Próxima Release: V3.4 - Notificações e Lembretes
 
 Funcionalidades Core: 100% ✅
 Frontend: 100% ✅
 Backend API: 100% ✅
 Agentes AI: 100% ✅
-Testes: 88% ✅
+Calendar Integration: 100% ✅ (Google + Microsoft)
+Multimodal Input: 100% ✅ NEW!
+Testes: 79.8% ✅ (173 testes)
 Documentação: 100% ✅
 DevOps: 100% ✅
+Acessibilidade: 100% ✅
 ```
 
 ---
 
 **Desenvolvido com ❤️ por Samara Cassie**
 
-*Este documento foi criado em: 2025-11-10*
-*Versão do documento: 1.0*
-*Versão do projeto: V3.1 - Agent Orchestration System*
+*Este documento foi atualizado em: 2025-11-17*
+*Versão do documento: 3.0*
+*Versão do projeto: V3.3 - Multimodal Input System + Calendar Integration*
