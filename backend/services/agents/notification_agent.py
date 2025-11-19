@@ -930,10 +930,6 @@ class WhatsAppCollector(SourceCollector):
         collected_notifications = []
 
         try:
-            credentials = self.source.credentials
-
-            access_token = credentials.get("access_token")
-
             # Note: WhatsApp Cloud API primarily uses webhooks
             # This is a placeholder implementation
             # Real implementation would store webhook data and retrieve it here
