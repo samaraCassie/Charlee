@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.auth.dependencies import get_current_user
-from database.config import get_db
+from database.config import get_db, settings as app_settings
 from database.models import User, UserSettings as DBUserSettings
+from services.system_monitor import system_monitor
 
 router = APIRouter()
 
@@ -154,15 +155,53 @@ async def get_system_stats(
     total_big_rocks = db.query(BigRock).filter(BigRock.user_id == current_user.id).count()
     total_users = db.query(User).count()
 
-    # TODO: Implement uptime tracking and backup system in future
+    # Get uptime from system monitor
+    uptime_seconds = system_monitor.get_uptime_seconds()
+
+    # Get last backup info
+    last_backup = None
+    backup_info = system_monitor.get_last_backup_info()
+    if backup_info:
+        last_backup = backup_info.get("created_at")
+
     return {
-        "version": "3.1.0",  # Updated to reflect integration layer
-        "uptime_seconds": 0,  # Placeholder for future uptime tracking
+        "version": "3.3.0",  # Updated to reflect multimodal system
+        "uptime_seconds": uptime_seconds,
         "total_users": total_users,
         "total_tasks": total_tasks,
         "total_big_rocks": total_big_rocks,
-        "last_backup": None,  # Placeholder for future backup system
+        "last_backup": last_backup,
     }
+
+
+@router.post("/backup")
+async def create_backup(
+    current_user: User = Depends(get_current_user),
+):
+    """Criar backup manual do banco de dados."""
+    try:
+        backup_path = system_monitor.create_database_backup(app_settings.database_url)
+
+        if backup_path:
+            # Cleanup old backups (keep last 5)
+            removed = system_monitor.cleanup_old_backups(keep_last_n=5)
+
+            backup_info = system_monitor.get_last_backup_info()
+            return {
+                "success": True,
+                "message": "Backup criado com sucesso",
+                "backup_info": backup_info,
+                "old_backups_removed": removed,
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Falha ao criar backup",
+                "error": "Verifique os logs para mais detalhes",
+            }
+
+    except Exception as e:
+        return {"success": False, "message": "Erro ao criar backup", "error": str(e)}
 
 
 @router.post("/reset")
@@ -178,8 +217,24 @@ async def reset_user_data(
             "message": "Para resetar os dados, envie confirm=true",
         }
 
-    # TODO: Implementar reset seguro com backup
-    return {"message": "Reset de dados ainda não implementado", "status": "safe"}
+    # Criar backup antes de resetar
+    backup_path = system_monitor.create_database_backup(
+        app_settings.database_url, backup_name=f"pre_reset_{current_user.username}.sql"
+    )
+
+    if not backup_path:
+        return {
+            "error": "Backup falhou",
+            "message": "Por segurança, não é possível resetar sem criar backup",
+            "status": "safe",
+        }
+
+    # TODO: Implementar reset real (deletar tasks, big rocks, etc do usuário)
+    return {
+        "message": "Reset de dados ainda não totalmente implementado",
+        "status": "safe",
+        "backup_created": backup_path,
+    }
 
 
 @router.post("/export")

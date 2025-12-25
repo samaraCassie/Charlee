@@ -23,6 +23,69 @@ def get_db() -> Session:
     return SessionLocal()
 
 
+def fetch_external_event_version(
+    connection: CalendarConnection, event: CalendarEvent
+) -> Optional[dict]:
+    """
+    Fetch current version of an event from external calendar provider.
+
+    Args:
+        connection: Calendar connection to use
+        event: Event to fetch external version for
+
+    Returns:
+        Dict with external event data or None if not found
+    """
+    try:
+        if not event.external_event_id:
+            logger.warning(
+                "Event has no external_event_id",
+                extra={"event_id": event.id},
+            )
+            return None
+
+        # Fetch from provider based on connection type
+        if connection.provider == "google":
+            external_event = google_calendar.get_event(
+                connection, event.external_event_id
+            )
+        elif connection.provider == "microsoft":
+            import asyncio
+
+            external_event = asyncio.run(
+                microsoft_calendar.get_event(
+                    connection, event.external_event_id
+                )
+            )
+        else:
+            logger.error(
+                "Unsupported provider",
+                extra={"provider": connection.provider},
+            )
+            return None
+
+        if external_event:
+            return {
+                "title": external_event.get("summary") or external_event.get("subject"),
+                "start_time": external_event.get("start", {}).get("dateTime"),
+                "end_time": external_event.get("end", {}).get("dateTime"),
+                "description": external_event.get("description") or external_event.get("body", {}).get("content"),
+                "location": external_event.get("location"),
+                "updated": external_event.get("updated") or external_event.get("lastModifiedDateTime"),
+                "raw_data": external_event,
+            }
+
+        return None
+
+    except Exception as e:
+        logger.error(
+            "Failed to fetch external event version",
+            extra={"event_id": event.id, "error": str(e)},
+            exc_info=True,
+        )
+        return None
+
+
 @shared_task(
     name="calendar.sync_all_connections",
     bind=True,
@@ -333,13 +396,16 @@ def detect_conflicts(self, connection_id: int) -> int:
                         )
 
                         if not existing_conflict:
+                            # Fetch external version
+                            external_version = fetch_external_event_version(connection, event)
+
                             # Create conflict
                             conflict = CalendarConflict(
                                 event_id=event.id,
                                 user_id=connection.user_id,
                                 conflict_type="both_modified",
                                 charlee_version=event.to_dict(),
-                                external_version=event.to_dict(),  # TODO: fetch from external
+                                external_version=external_version or event.to_dict(),
                                 resolution_strategy="last_modified_wins",
                                 status="detected",
                             )

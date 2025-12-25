@@ -178,6 +178,8 @@ Documentação detalhada em [`docs/`](docs/):
 - [ ] V3.4: Notificações e Lembretes
 - [ ] V4: Bot Telegram/WhatsApp
 
+> 📊 **Status Detalhado:** Veja [MODULES_STATUS.md](MODULES_STATUS.md) para informações completas sobre cada módulo (implementado, parcial ou planejado).
+
 ## 🤝 Contribuindo
 
 Este é um projeto pessoal, mas sugestões são bem-vindas!
