@@ -486,6 +486,7 @@ Priorizar módulos V4+ baseado em:
 - ✅ Redirect URIs em env vars
 - ✅ Calendar sync Celery trigger
 - ✅ External event version fetching
+- ⚡ **Performance Indexes (Migration 011)** - 30+ índices para otimizar queries comuns
 
 ### Nov 2024
 - ✅ V3.3 Multimodal Input completo

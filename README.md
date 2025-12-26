@@ -136,7 +136,7 @@ Documentação detalhada em [`docs/`](docs/):
 
 - **Backend**: FastAPI + Python 3.12
 - **AI Framework**: Agno (com OpenAI GPT-4o-mini)
-- **Database**: PostgreSQL + pgvector
+- **Database**: PostgreSQL + pgvector + 30+ performance indexes (migration 011)
 - **Cache/Sessions**: Redis
 - **Containers**: Docker + Docker Compose
 

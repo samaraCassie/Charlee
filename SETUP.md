@@ -2,6 +2,8 @@
 
 Este guia detalha como configurar o projeto Charlee do zero, incluindo todas as dependências e features implementadas.
 
+> **⚡ Performance:** Migration 011 adiciona 30+ índices de database para otimizar queries comuns (melhoria de 10-100x).
+
 ## 📋 Pré-requisitos
 
 - **Docker** e **Docker Compose** instalados
