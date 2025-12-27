@@ -252,7 +252,9 @@ async def productivity_stats(
 
         # Mês anterior
         if current_month_start.month == 1:
-            prev_month_start = current_month_start.replace(year=current_month_start.year - 1, month=12)
+            prev_month_start = current_month_start.replace(
+                year=current_month_start.year - 1, month=12
+            )
         else:
             prev_month_start = current_month_start.replace(month=current_month_start.month - 1)
 

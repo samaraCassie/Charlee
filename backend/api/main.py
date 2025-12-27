@@ -380,6 +380,7 @@ async def health_check():
     # Check Redis connection
     try:
         import redis
+
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         r = redis.from_url(redis_url)
         r.ping()
@@ -398,6 +399,7 @@ async def health_check():
     # Check Celery workers
     try:
         from celery_app import app as celery_app
+
         inspector = celery_app.control.inspect()
         active_workers = inspector.active()
         if active_workers:
@@ -459,8 +461,6 @@ async def health_check():
     elif health_status["status"] == "degraded":
         from fastapi.responses import JSONResponse
 
-        return JSONResponse(
-            status_code=http_status.HTTP_200_OK, content=health_status
-        )
+        return JSONResponse(status_code=http_status.HTTP_200_OK, content=health_status)
 
     return health_status

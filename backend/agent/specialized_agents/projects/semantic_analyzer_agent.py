@@ -281,7 +281,8 @@ Return ONLY valid JSON, no markdown formatting.
 
             # Use pgvector's <-> operator for L2 distance (or <#> for inner product, <=> for cosine)
             # Lower distance = more similar
-            query = text("""
+            query = text(
+                """
                 SELECT
                     id,
                     title,
@@ -297,7 +298,8 @@ Return ONLY valid JSON, no markdown formatting.
                     AND status = 'completed'
                 ORDER BY embedding <-> :query_embedding::vector
                 LIMIT :limit
-            """)
+            """
+            )
 
             result = self.db.execute(
                 query,
@@ -314,7 +316,11 @@ Return ONLY valid JSON, no markdown formatting.
                     {
                         "id": row.id,
                         "title": row.title,
-                        "description": row.description[:200] + "..." if row.description and len(row.description) > 200 else row.description,
+                        "description": (
+                            row.description[:200] + "..."
+                            if row.description and len(row.description) > 200
+                            else row.description
+                        ),
                         "category": row.category,
                         "skill_level": row.skill_level,
                         "client_budget": row.client_budget,
@@ -323,9 +329,7 @@ Return ONLY valid JSON, no markdown formatting.
                     }
                 )
 
-            logger.info(
-                f"Found {len(similar_projects)} similar projects using vector search"
-            )
+            logger.info(f"Found {len(similar_projects)} similar projects using vector search")
             return similar_projects
 
         except Exception as e:
@@ -353,7 +357,11 @@ Return ONLY valid JSON, no markdown formatting.
                     {
                         "id": opp.id,
                         "title": opp.title,
-                        "description": opp.description[:200] + "..." if opp.description and len(opp.description) > 200 else opp.description,
+                        "description": (
+                            opp.description[:200] + "..."
+                            if opp.description and len(opp.description) > 200
+                            else opp.description
+                        ),
                         "category": opp.category,
                         "skill_level": opp.skill_level,
                         "client_budget": opp.client_budget,

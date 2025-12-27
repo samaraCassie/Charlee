@@ -80,6 +80,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # preload = Allow inclusion in HSTS preload list
         # Only set in production with HTTPS
         import os
+
         environment = os.getenv("ENVIRONMENT", "development").lower()
         if environment == "production":
             response.headers["Strict-Transport-Security"] = (

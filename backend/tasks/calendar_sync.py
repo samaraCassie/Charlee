@@ -46,16 +46,12 @@ def fetch_external_event_version(
 
         # Fetch from provider based on connection type
         if connection.provider == "google":
-            external_event = google_calendar.get_event(
-                connection, event.external_event_id
-            )
+            external_event = google_calendar.get_event(connection, event.external_event_id)
         elif connection.provider == "microsoft":
             import asyncio
 
             external_event = asyncio.run(
-                microsoft_calendar.get_event(
-                    connection, event.external_event_id
-                )
+                microsoft_calendar.get_event(connection, event.external_event_id)
             )
         else:
             logger.error(
@@ -69,9 +65,11 @@ def fetch_external_event_version(
                 "title": external_event.get("summary") or external_event.get("subject"),
                 "start_time": external_event.get("start", {}).get("dateTime"),
                 "end_time": external_event.get("end", {}).get("dateTime"),
-                "description": external_event.get("description") or external_event.get("body", {}).get("content"),
+                "description": external_event.get("description")
+                or external_event.get("body", {}).get("content"),
                 "location": external_event.get("location"),
-                "updated": external_event.get("updated") or external_event.get("lastModifiedDateTime"),
+                "updated": external_event.get("updated")
+                or external_event.get("lastModifiedDateTime"),
                 "raw_data": external_event,
             }
 

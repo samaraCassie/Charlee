@@ -60,10 +60,7 @@ def has_permission(user: User, required_role: Union[Role, str]) -> bool:
     return user_level >= required_level
 
 
-def require_role(
-    *roles: Union[Role, str],
-    allow_self: bool = False
-) -> Callable:
+def require_role(*roles: Union[Role, str], allow_self: bool = False) -> Callable:
     """
     Decorator to require specific role(s) for a route.
 
@@ -86,6 +83,7 @@ def require_role(
             # Moderators can see any user, users can see themselves
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -106,9 +104,7 @@ def require_role(
                 )
 
             # Check if user has any of the required roles
-            has_required_role = any(
-                has_permission(current_user, role) for role in roles
-            )
+            has_required_role = any(has_permission(current_user, role) for role in roles)
 
             if not has_required_role:
                 # Check allow_self exception
@@ -159,9 +155,7 @@ def is_moderator_or_above(user: User) -> bool:
 
 
 def check_permission_or_raise(
-    user: User,
-    required_role: Union[Role, str],
-    custom_message: str = None
+    user: User, required_role: Union[Role, str], custom_message: str = None
 ) -> None:
     """
     Check permission and raise HTTPException if insufficient.

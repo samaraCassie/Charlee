@@ -420,9 +420,7 @@ class ProjectEvaluatorAgent(Agent):
         try:
             # Get user's portfolio items to extract skills
             portfolio_items = (
-                self.db.query(PortfolioItem)
-                .filter(PortfolioItem.user_id == self.user_id)
-                .all()
+                self.db.query(PortfolioItem).filter(PortfolioItem.user_id == self.user_id).all()
             )
 
             # Collect all skills and technologies from portfolio
