@@ -363,14 +363,17 @@ class ProjectEvaluatorAgent(Agent):
         else:
             viability_score = 0.5  # Neutral if no budget specified
 
-        # 2. Alignment score (skills match)
-        # TODO: Implement proper skill matching with user profile
-        # For now, use a simple heuristic based on category and red flags
-        alignment_score = 0.7  # Default neutral-positive
+        # 2. Alignment score (skills match with user profile)
+        alignment_score = self._calculate_skill_alignment(opportunity)
+
+        # Adjust based on red flags
         if opportunity.red_flags and len(opportunity.red_flags) > 3:
             alignment_score -= 0.2
+
+        # Bonus for matching skill level
         if opportunity.skill_level == "expert":
             alignment_score += 0.1
+
         alignment_score = max(0.0, min(1.0, alignment_score))
 
         # 3. Strategic score (career value)
@@ -401,6 +404,112 @@ class ProjectEvaluatorAgent(Agent):
             "strategic": round(strategic_score, 2),
             "final": round(final_score, 2),
         }
+
+    def _calculate_skill_alignment(self, opportunity: FreelanceOpportunity) -> float:
+        """
+        Calculate skill alignment score based on user's portfolio and experience.
+
+        Args:
+            opportunity: Opportunity to evaluate
+
+        Returns:
+            Alignment score from 0.0 to 1.0
+        """
+        from database.models import PortfolioItem
+
+        try:
+            # Get user's portfolio items to extract skills
+            portfolio_items = (
+                self.db.query(PortfolioItem).filter(PortfolioItem.user_id == self.user_id).all()
+            )
+
+            # Collect all skills and technologies from portfolio
+            user_skills = set()
+            user_technologies = set()
+
+            for item in portfolio_items:
+                if item.technologies_used:
+                    for tech in item.technologies_used:
+                        user_technologies.add(tech.lower())
+
+                if item.key_features:
+                    # Extract potential skills from features
+                    for feature in item.key_features:
+                        user_skills.add(feature.lower())
+
+            # Also get skills from executed projects
+            from database.models import ProjectExecution
+
+            executions = (
+                self.db.query(ProjectExecution)
+                .filter(
+                    ProjectExecution.user_id == self.user_id,
+                    ProjectExecution.status == "completed",
+                )
+                .all()
+            )
+
+            for execution in executions:
+                if execution.new_skills_acquired:
+                    for skill in execution.new_skills_acquired:
+                        user_skills.add(skill.lower())
+                if execution.technologies_used:
+                    for tech in execution.technologies_used:
+                        user_technologies.add(tech.lower())
+
+            # Combine all skills
+            all_user_skills = user_skills.union(user_technologies)
+
+            if not all_user_skills:
+                # No portfolio data, return neutral score
+                return 0.6
+
+            # Get required skills from opportunity
+            required_skills = set()
+            if opportunity.required_skills:
+                for skill in opportunity.required_skills:
+                    required_skills.add(skill.lower())
+
+            # Also extract skills from category and title
+            if opportunity.category:
+                required_skills.add(opportunity.category.lower())
+            if opportunity.title:
+                # Simple extraction of technology keywords
+                common_techs = [
+                    "python",
+                    "javascript",
+                    "react",
+                    "node",
+                    "django",
+                    "fastapi",
+                    "docker",
+                    "aws",
+                    "sql",
+                    "mongodb",
+                ]
+                title_lower = opportunity.title.lower()
+                for tech in common_techs:
+                    if tech in title_lower:
+                        required_skills.add(tech)
+
+            if not required_skills:
+                # No requirements specified, return neutral-positive
+                return 0.7
+
+            # Calculate overlap
+            matching_skills = required_skills.intersection(all_user_skills)
+            match_ratio = len(matching_skills) / len(required_skills)
+
+            # Convert to score with some baseline
+            # Even with no matches, give some credit (0.4 base)
+            alignment_score = 0.4 + (match_ratio * 0.6)
+
+            return round(alignment_score, 2)
+
+        except Exception as e:
+            logger.error(f"Error calculating skill alignment: {e}")
+            # Return neutral score on error
+            return 0.6
 
     def _generate_recommendation(
         self, opportunity: FreelanceOpportunity, scores: Dict[str, float]

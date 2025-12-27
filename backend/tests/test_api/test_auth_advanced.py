@@ -300,6 +300,7 @@ class TestOAuthUser:
             oauth_provider="google",
             oauth_id="google_12345",
             avatar_url="https://example.com/avatar.jpg",
+            role="user",
         )
 
         db.add(user)
@@ -319,6 +320,7 @@ class TestOAuthUser:
             username="testuser2",
             email="test2@example.com",
             hashed_password=hash_password("TestPass123"),
+            role="user",
         )
 
         db.add(user)
@@ -385,11 +387,13 @@ class TestSecurityEnhancements:
             username="user1",
             email="user1@example.com",
             hashed_password=hash_password("Pass123"),
+            role="user",
         )
         user2 = User(
             username="user2",
             email="user2@example.com",
             hashed_password=hash_password("Pass123"),
+            role="user",
         )
 
         db.add_all([user1, user2])

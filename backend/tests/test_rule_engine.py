@@ -14,6 +14,7 @@ def test_user(db: Session) -> User:
         username="testuser",
         email="test@example.com",
         hashed_password="hashed",
+        role="user",
     )
     db.add(user)
     db.commit()

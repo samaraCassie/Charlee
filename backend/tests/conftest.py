@@ -96,11 +96,53 @@ def sample_user(db):
         hashed_password=hash_password("TestPass123"),
         full_name="Test User",
         is_active=True,
+        role="user",  # Add default role for RBAC
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
+
+@pytest.fixture
+def sample_admin(db):
+    """Create a sample Admin User for testing RBAC."""
+    from api.auth.password import hash_password
+    from database.models import User
+
+    admin = User(
+        username="adminuser",
+        email="admin@example.com",
+        hashed_password=hash_password("AdminPass123"),
+        full_name="Admin User",
+        is_active=True,
+        is_superuser=True,
+        role="admin",
+    )
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+    return admin
+
+
+@pytest.fixture
+def sample_moderator(db):
+    """Create a sample Moderator User for testing RBAC."""
+    from api.auth.password import hash_password
+    from database.models import User
+
+    moderator = User(
+        username="moduser",
+        email="moderator@example.com",
+        hashed_password=hash_password("ModPass123"),
+        full_name="Moderator User",
+        is_active=True,
+        role="moderator",
+    )
+    db.add(moderator)
+    db.commit()
+    db.refresh(moderator)
+    return moderator
 
 
 @pytest.fixture
@@ -112,6 +154,20 @@ def auth_headers(sample_user):
         "user_id": sample_user.id,
         "username": sample_user.username,
         "email": sample_user.email,
+    }
+    access_token = create_access_token(token_data)
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def admin_headers(sample_admin):
+    """Create authentication headers with admin JWT token."""
+    from api.auth.jwt import create_access_token
+
+    token_data = {
+        "user_id": sample_admin.id,
+        "username": sample_admin.username,
+        "email": sample_admin.email,
     }
     access_token = create_access_token(token_data)
     return {"Authorization": f"Bearer {access_token}"}

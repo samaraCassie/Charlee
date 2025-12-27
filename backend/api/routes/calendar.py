@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from api.auth.dependencies import get_current_user
-from database.config import get_db
+from database.config import get_db, settings
 from database.models import (
     CalendarConflict,
     CalendarConnection,
@@ -75,7 +75,7 @@ async def get_google_auth_url(
     """
     try:
         state = secrets.token_urlsafe(32)
-        redirect_uri = "http://localhost:3000/calendar/callback/google"  # TODO: from env
+        redirect_uri = settings.google_calendar_redirect_uri
 
         auth_url = google_calendar.get_authorization_url(redirect_uri, state)
 
@@ -117,7 +117,7 @@ async def get_microsoft_auth_url(
     """
     try:
         state = secrets.token_urlsafe(32)
-        redirect_uri = "http://localhost:3000/calendar/callback/microsoft"  # TODO: from env
+        redirect_uri = settings.microsoft_calendar_redirect_uri
 
         auth_url = microsoft_calendar.get_authorization_url(redirect_uri, state)
 
@@ -167,7 +167,7 @@ async def connect_google_calendar(
         HTTPException 500: If connection creation fails
     """
     try:
-        redirect_uri = "http://localhost:3000/calendar/callback/google"  # TODO: from env
+        redirect_uri = settings.google_calendar_redirect_uri
 
         # Exchange code for tokens
         token_info = google_calendar.exchange_code_for_tokens(callback.code, redirect_uri)
@@ -250,7 +250,7 @@ async def connect_microsoft_calendar(
         HTTPException 500: If connection creation fails
     """
     try:
-        redirect_uri = "http://localhost:3000/calendar/callback/microsoft"  # TODO: from env
+        redirect_uri = settings.microsoft_calendar_redirect_uri
 
         # Exchange code for tokens
         token_info = microsoft_calendar.exchange_code_for_tokens(callback.code, redirect_uri)
@@ -686,16 +686,21 @@ async def trigger_sync(
     db.refresh(sync_log)
 
     try:
-        # TODO: Trigger async Celery task for sync
-        # For now, return the sync log with started status
-        logger.info(
-            "Triggered manual sync",
-            extra={
-                "user_id": current_user.id,
-                "connection_id": connection.id,
-                "sync_log_id": sync_log.id,
-            },
-        )
+        # Trigger async Celery task for sync
+        if sync_connection is not None:
+            task = sync_connection.delay(connection.id, sync_request.direction)
+
+            logger.info(
+                "Triggered manual sync",
+                extra={
+                    "user_id": current_user.id,
+                    "connection_id": connection.id,
+                    "sync_log_id": sync_log.id,
+                    "task_id": task.id,
+                },
+            )
+        else:
+            logger.warning("Celery tasks not available, sync will not be performed")
 
         return sync_log
 

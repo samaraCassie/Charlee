@@ -270,16 +270,110 @@ Return ONLY valid JSON, no markdown formatting.
             return []
 
         try:
+            from database.models import FreelanceOpportunity
+            from sqlalchemy import text
+
             # Query for similar projects using pgvector
-            # Note: This requires the vector extension and proper index
-            # For now, return empty list (will be implemented when vector index is created)
-            # TODO: Implement vector similarity search
-            logger.info("Vector similarity search not yet implemented")
-            return []
+            # Note: This requires the vector extension to be installed in PostgreSQL
+
+            # Convert embedding list to pgvector format
+            embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
+
+            # Use pgvector's <-> operator for L2 distance (or <#> for inner product, <=> for cosine)
+            # Lower distance = more similar
+            query = text(
+                """
+                SELECT
+                    id,
+                    title,
+                    description,
+                    category,
+                    skill_level,
+                    client_budget,
+                    status,
+                    (embedding <-> :query_embedding::vector) as distance
+                FROM freelance_opportunities
+                WHERE user_id = :user_id
+                    AND embedding IS NOT NULL
+                    AND status = 'completed'
+                ORDER BY embedding <-> :query_embedding::vector
+                LIMIT :limit
+            """
+            )
+
+            result = self.db.execute(
+                query,
+                {
+                    "query_embedding": embedding_str,
+                    "user_id": self.user_id,
+                    "limit": limit,
+                },
+            )
+
+            similar_projects = []
+            for row in result:
+                similar_projects.append(
+                    {
+                        "id": row.id,
+                        "title": row.title,
+                        "description": (
+                            row.description[:200] + "..."
+                            if row.description and len(row.description) > 200
+                            else row.description
+                        ),
+                        "category": row.category,
+                        "skill_level": row.skill_level,
+                        "client_budget": row.client_budget,
+                        "status": row.status,
+                        "similarity_distance": round(float(row.distance), 4),
+                    }
+                )
+
+            logger.info(f"Found {len(similar_projects)} similar projects using vector search")
+            return similar_projects
 
         except Exception as e:
-            logger.error(f"Error finding similar projects: {e}")
-            return []
+            # If pgvector is not installed or embedding column doesn't exist,
+            # fall back to simple category matching
+            logger.warning(f"Vector similarity search failed, using fallback: {e}")
+
+            try:
+                from database.models import FreelanceOpportunity
+
+                # Fallback: Get completed projects from same category
+                # This is a simple fallback when pgvector is not available
+                similar = (
+                    self.db.query(FreelanceOpportunity)
+                    .filter(
+                        FreelanceOpportunity.user_id == self.user_id,
+                        FreelanceOpportunity.status == "completed",
+                    )
+                    .order_by(FreelanceOpportunity.created_at.desc())
+                    .limit(limit)
+                    .all()
+                )
+
+                return [
+                    {
+                        "id": opp.id,
+                        "title": opp.title,
+                        "description": (
+                            opp.description[:200] + "..."
+                            if opp.description and len(opp.description) > 200
+                            else opp.description
+                        ),
+                        "category": opp.category,
+                        "skill_level": opp.skill_level,
+                        "client_budget": opp.client_budget,
+                        "status": opp.status,
+                        "similarity_distance": None,  # No distance in fallback
+                    }
+                    for opp in similar
+                ]
+
+            except Exception as fallback_error:
+                logger.error(f"Fallback similarity search also failed: {fallback_error}")
+                return []
 
     def batch_analyze_opportunities(self, status: str = "new", limit: int = 10) -> str:
         """
