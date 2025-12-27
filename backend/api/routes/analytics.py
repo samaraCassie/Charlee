@@ -1,7 +1,7 @@
 """Analytics API routes - Métricas e estatísticas."""
 
 from datetime import date, datetime, timedelta
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel

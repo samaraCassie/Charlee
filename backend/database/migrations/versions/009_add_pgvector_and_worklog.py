@@ -10,7 +10,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "009_add_pgvector_and_worklog"
@@ -120,13 +119,13 @@ def downgrade() -> None:
     # Drop vector index
     try:
         op.execute("DROP INDEX IF EXISTS idx_freelance_opportunities_embedding")
-    except:
+    except Exception:
         pass
 
     # Remove embedding column
     try:
         op.execute("ALTER TABLE freelance_opportunities DROP COLUMN IF EXISTS embedding")
-    except:
+    except Exception:
         pass
 
     # Note: We don't drop the vector extension as other things might depend on it

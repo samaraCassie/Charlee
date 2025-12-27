@@ -2,7 +2,7 @@
 
 from enum import Enum
 from functools import wraps
-from typing import Callable, List, Union
+from typing import Callable, Union
 
 from fastapi import HTTPException, status
 
