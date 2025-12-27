@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -10,8 +10,45 @@ from api.auth.jwt import TokenData, decode_access_token
 from database.config import get_db
 from database.models import User
 
-# HTTP Bearer token scheme
-security = HTTPBearer()
+
+class HTTPBearerCustom(HTTPBearer):
+    """
+    Custom HTTPBearer that returns HTTP 401 instead of HTTP 403.
+
+    The default HTTPBearer returns HTTP 403 when no credentials are provided,
+    but for authentication endpoints, HTTP 401 (Unauthorized) is more appropriate
+    as per RFC 7235.
+    """
+
+    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
+        authorization = request.headers.get("Authorization")
+        if not authorization:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Not authenticated",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            else:
+                return None
+
+        # Parse Authorization header: "Bearer <token>"
+        scheme, _, credentials = authorization.partition(" ")
+        if not (scheme and credentials):
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Not authenticated",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            else:
+                return None
+
+        return HTTPAuthorizationCredentials(scheme=scheme, credentials=credentials)
+
+
+# HTTP Bearer token scheme with correct HTTP 401 response
+security = HTTPBearerCustom()
 
 
 async def get_current_user(
