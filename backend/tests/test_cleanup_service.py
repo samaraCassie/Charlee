@@ -16,6 +16,7 @@ def test_user(db: Session) -> User:
         username="testuser",
         email="test@example.com",
         hashed_password="hashed",
+        role="user",
     )
     db.add(user)
     db.commit()
@@ -425,11 +426,13 @@ class TestNotificationCleanupService:
             username="user1",
             email="user1@example.com",
             hashed_password="hashed",
+            role="user",
         )
         user2 = User(
             username="user2",
             email="user2@example.com",
             hashed_password="hashed",
+            role="user",
         )
         db.add(user1)
         db.add(user2)

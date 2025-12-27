@@ -15,6 +15,7 @@ class TestOAuthHelpers:
             email="existing@example.com",
             hashed_password="dummy",
             is_active=True,
+            role="user",
         )
         db.add(existing_user)
         db.commit()
@@ -201,6 +202,7 @@ class TestOAuthHelpers:
                 email=f"user{i}@example.com",
                 hashed_password=hash_password("pass123"),
                 is_active=True,
+                role="user",
             )
             db.add(user)
         db.commit()

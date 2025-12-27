@@ -219,6 +219,7 @@ class TestCalendarConnectionManagement:
             username="otheruser",
             email="other@example.com",
             hashed_password=hash_password("Pass123"),
+            role="user",
         )
         db.add(other_user)
         db.commit()
