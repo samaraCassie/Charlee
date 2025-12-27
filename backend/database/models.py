@@ -50,6 +50,13 @@ class User(Base):
     full_name = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    role = Column(
+        String(20),
+        CheckConstraint("role IN ('user', 'admin', 'moderator')"),
+        default="user",
+        nullable=False,
+        index=True,
+    )  # RBAC role
 
     # OAuth fields
     oauth_provider = Column(String(50), nullable=True)  # 'google', 'github', None (local)

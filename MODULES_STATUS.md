@@ -488,6 +488,10 @@ Priorizar módulos V4+ baseado em:
 - ✅ External event version fetching
 - ⚡ **Performance Indexes (Migration 011)** - 30+ índices para otimizar queries comuns
 - 🛡️ **Input Sanitization** - XSS prevention em 100% dos schemas principais
+- 🔐 **RBAC System** - Role-based access control com admin/moderator/user
+- 🏥 **Advanced Health Check** - Redis, Celery, migrations status
+- 🛡️ **Security Headers** - CSP, HSTS, X-Frame-Options, etc.
+- 📖 **Deployment Guide** - DEPLOYMENT.md completo para produção
 
 ### Nov 2024
 - ✅ V3.3 Multimodal Input completo
