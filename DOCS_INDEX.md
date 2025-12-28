@@ -10,7 +10,8 @@ Guia completo de toda a documentação do projeto.
 
 1. **[QUICKSTART.md](QUICKSTART.md)** ⚡ - Setup em 3 comandos
 2. **[README.md](README.md)** - Visão geral do projeto
-3. **[MODULES_STATUS.md](MODULES_STATUS.md)** 📊 - Status de implementação de cada módulo
+3. **[docs/MODULES_STATUS.md](docs/MODULES_STATUS.md)** 📊 - Status de implementação de cada módulo
+4. **[docs/STATUS_PROJETO.md](docs/STATUS_PROJETO.md)** 📈 - Status completo e métricas do projeto
 
 ---
 
@@ -20,7 +21,7 @@ Guia completo de toda a documentação do projeto.
 |-----------|-----------|-------------|
 | **[SETUP.md](SETUP.md)** | Guia completo de instalação e configuração | Setup detalhado com troubleshooting |
 | **[QUICKSTART.md](QUICKSTART.md)** | Setup rápido e automatizado | Primeiro setup ou reinstalação |
-| **[VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md)** | Checklist pós-instalação | Validar que tudo está funcionando |
+| **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)** | Checklist pós-instalação | Validar que tudo está funcionando |
 | **[docker/.env.example](docker/.env.example)** | Template de variáveis de ambiente | Configurar credenciais |
 
 **Scripts de Setup:**
@@ -33,10 +34,11 @@ Guia completo de toda a documentação do projeto.
 
 | Documento | Descrição | Atualização |
 |-----------|-----------|-------------|
-| **[MODULES_STATUS.md](MODULES_STATUS.md)** | Estado de cada módulo (completo/parcial/planejado) | A cada sprint |
+| **[docs/MODULES_STATUS.md](docs/MODULES_STATUS.md)** | Estado de cada módulo (completo/parcial/planejado) | A cada sprint |
+| **[docs/STATUS_PROJETO.md](docs/STATUS_PROJETO.md)** | Status detalhado do projeto (português) ✨ | Semanal |
 | **[docs/ROADMAP_BRANCHES.md](docs/ROADMAP_BRANCHES.md)** | Roadmap de desenvolvimento por versão | Mensal |
-| **[PROJECT_STATUS.md](PROJECT_STATUS.md)** | Status detalhado do projeto (inglês) | Semanal |
-| **[STATUS_PROJETO.md](STATUS_PROJETO.md)** | Status detalhado (português) | Semanal |
+| **[docs/QUALITY_ROADMAP.md](docs/QUALITY_ROADMAP.md)** | Roadmap de qualidade e melhorias | Trimestral |
+| **[docs/ANALISE_QUALIDADE.md](docs/ANALISE_QUALIDADE.md)** | Análise de qualidade do código | Sob demanda |
 
 ---
 
@@ -59,6 +61,37 @@ Guia completo de toda a documentação do projeto.
 
 ### V3.3 - Multimodal Input
 - Documentação integrada em MODULES_STATUS.md
+
+---
+
+## 🔐 Segurança e Autenticação
+
+| Documento | Descrição | Status |
+|-----------|-----------|--------|
+| **[docs/ADVANCED_AUTH_FEATURES.md](docs/ADVANCED_AUTH_FEATURES.md)** | Features avançadas de autenticação | ✅ Implementado |
+| **[docs/AUTHENTICATION_MIGRATION_GUIDE.md](docs/AUTHENTICATION_MIGRATION_GUIDE.md)** | Guia de migração de auth | 📖 Referência |
+| **[backend/api/SECURITY_SANITIZATION.md](backend/api/SECURITY_SANITIZATION.md)** | Sanitização e prevenção XSS | ✅ Implementado |
+| **[docs/QUALITY_STANDARDS.md](docs/QUALITY_STANDARDS.md)** | Padrões de qualidade e segurança | 📋 Guia |
+
+---
+
+## 🚀 Deploy e Produção
+
+| Documento | Descrição | Status |
+|-----------|-----------|--------|
+| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Guia completo de deploy em produção | ✅ Pronto |
+| **[docs/QUALITY_ROADMAP.md](docs/QUALITY_ROADMAP.md)** | Roadmap de melhorias para produção | 📋 Planejamento |
+| **[docker/README.md](docker/README.md)** | Setup Docker e compose | ✅ Funcionando |
+
+---
+
+## 📊 Qualidade e Monitoramento
+
+| Documento | Descrição | Status |
+|-----------|-----------|--------|
+| **[docs/ANALISE_QUALIDADE.md](docs/ANALISE_QUALIDADE.md)** | Análise de qualidade do código | 📈 Atualizar |
+| **[docs/NOTIFICATION_SYSTEM_SUMMARY.md](docs/NOTIFICATION_SYSTEM_SUMMARY.md)** | Resumo do sistema de notificações | ✅ Implementado |
+| **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)** | Checklist de verificação pós-deploy | ✅ Guia |
 
 ---
 
