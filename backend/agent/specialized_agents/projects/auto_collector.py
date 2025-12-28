@@ -4,7 +4,7 @@ Automatically collects opportunities from configured platforms at scheduled inte
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -52,7 +52,14 @@ class AutoCollector:
             minutes=platform.collection_interval_minutes
         )
 
-        return datetime.now() >= next_collection
+        # Ensure both datetimes are timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+
+        # If last_collection_at is naive, make it UTC-aware
+        if next_collection.tzinfo is None:
+            next_collection = next_collection.replace(tzinfo=timezone.utc)
+
+        return now >= next_collection
 
     def collect_from_platform(self, platform: FreelancePlatform, max_results: int = 50) -> int:
         """
@@ -90,7 +97,7 @@ class AutoCollector:
             logger.info(f"Collected {len(opportunities)} opportunities from {platform.name}")
 
             # Update platform stats
-            platform.last_collection_at = datetime.now()
+            platform.last_collection_at = datetime.now(timezone.utc)
             platform.last_collection_count = len(opportunities)
             platform.total_projects_collected += len(opportunities)
             self.db.commit()
