@@ -11,7 +11,8 @@ from database.config import get_db
 from database.models import User
 
 # HTTP Bearer token scheme
-security = HTTPBearer()
+# auto_error=True ensures 403 Forbidden when no token is provided
+security = HTTPBearer(auto_error=True)
 
 
 async def get_current_user(
