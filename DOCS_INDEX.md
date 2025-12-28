@@ -10,8 +10,8 @@ Guia completo de toda a documentação do projeto.
 
 1. **[QUICKSTART.md](QUICKSTART.md)** ⚡ - Setup em 3 comandos
 2. **[README.md](README.md)** - Visão geral do projeto
-3. **[docs/MODULES_STATUS.md](docs/MODULES_STATUS.md)** 📊 - Status de implementação de cada módulo
-4. **[docs/STATUS_PROJETO.md](docs/STATUS_PROJETO.md)** 📈 - Status completo e métricas do projeto
+3. **[docs/status-modulos.md](docs/status-modulos.md)** 📊 - Status de implementação de cada módulo
+4. **[docs/status-projeto.md](docs/status-projeto.md)** 📈 - Status completo e métricas do projeto
 
 ---
 
@@ -21,7 +21,7 @@ Guia completo de toda a documentação do projeto.
 |-----------|-----------|-------------|
 | **[SETUP.md](SETUP.md)** | Guia completo de instalação e configuração | Setup detalhado com troubleshooting |
 | **[QUICKSTART.md](QUICKSTART.md)** | Setup rápido e automatizado | Primeiro setup ou reinstalação |
-| **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)** | Checklist pós-instalação | Validar que tudo está funcionando |
+| **[docs/qualidade/checklist-verificacao.md](docs/qualidade/checklist-verificacao.md)** | Checklist pós-instalação | Validar que tudo está funcionando |
 | **[docker/.env.example](docker/.env.example)** | Template de variáveis de ambiente | Configurar credenciais |
 
 **Scripts de Setup:**
@@ -34,33 +34,43 @@ Guia completo de toda a documentação do projeto.
 
 | Documento | Descrição | Atualização |
 |-----------|-----------|-------------|
-| **[docs/MODULES_STATUS.md](docs/MODULES_STATUS.md)** | Estado de cada módulo (completo/parcial/planejado) | A cada sprint |
-| **[docs/STATUS_PROJETO.md](docs/STATUS_PROJETO.md)** | Status detalhado do projeto (português) ✨ | Semanal |
-| **[docs/ROADMAP_BRANCHES.md](docs/ROADMAP_BRANCHES.md)** | Roadmap de desenvolvimento por versão | Mensal |
-| **[docs/QUALITY_ROADMAP.md](docs/QUALITY_ROADMAP.md)** | Roadmap de qualidade e melhorias | Trimestral |
-| **[docs/ANALISE_QUALIDADE.md](docs/ANALISE_QUALIDADE.md)** | Análise de qualidade do código | Sob demanda |
+| **[docs/status-modulos.md](docs/status-modulos.md)** | Estado de cada módulo (completo/parcial/planejado) | A cada sprint |
+| **[docs/status-projeto.md](docs/status-projeto.md)** | Status detalhado do projeto (português) ✨ | Semanal |
+| **[docs/roadmap-branches.md](docs/roadmap-branches.md)** | Roadmap de desenvolvimento por versão | Mensal |
+| **[docs/qualidade/roadmap.md](docs/qualidade/roadmap.md)** | Roadmap de qualidade e melhorias | Trimestral |
+| **[docs/qualidade/analise.md](docs/qualidade/analise.md)** | Análise de qualidade do código | Sob demanda |
 
 ---
 
-## 📖 Documentação Técnica por Versão
+## 🏗️ Arquitetura do Sistema
+
+| Documento | Descrição | Status |
+|-----------|-----------|--------|
+| **[docs/arquitetura/visao-geral-sistema.md](docs/arquitetura/visao-geral-sistema.md)** | Documentação completa da arquitetura | 📖 Referência |
+| **[docs/arquitetura/camada-integracao.md](docs/arquitetura/camada-integracao.md)** | Integração entre módulos | 📖 Arquitetura |
+| **[docs/arquitetura/v3.1-camada-integracao.md](docs/arquitetura/v3.1-camada-integracao.md)** | Event Bus, Context Manager, Orchestrator | 📖 V3.1 |
+
+---
+
+## 📖 Implementações por Versão
 
 ### V1.0 - Sistema Base
-- **[docs/V1_IMPLEMENTATION.md](docs/V1_IMPLEMENTATION.md)** - Big Rocks, Tasks, CRUD
+- **[docs/implementacao/v1-sistema-base.md](docs/implementacao/v1-sistema-base.md)** - Big Rocks, Tasks, CRUD
 
 ### V2.0 - Wellness + Capacity
-- **[docs/V2_IMPLEMENTATION.md](docs/V2_IMPLEMENTATION.md)** - Cycle-aware, Capacity Guard
+- **[docs/implementacao/v2-wellness-capacidade.md](docs/implementacao/v2-wellness-capacidade.md)** - Cycle-aware, Capacity Guard
 
-### V2.1 - Memória
-- **[docs/MEMORY_IMPLEMENTATION.md](docs/MEMORY_IMPLEMENTATION.md)** - Redis, Sessions, Persistência
+### V2.1 - Sistema de Memória
+- **[docs/implementacao/sistema-memoria.md](docs/implementacao/sistema-memoria.md)** - Redis, Sessions, Persistência
 
-### V3.1 - Integration Layer
-- **[docs/V3.1_INTEGRATION_LAYER.md](docs/V3.1_INTEGRATION_LAYER.md)** - Event Bus, Context Manager, Orchestrator
+### V3.0+ - Sistema de Notificações
+- **[docs/implementacao/sistema-notificacoes.md](docs/implementacao/sistema-notificacoes.md)** - Multi-source, AI Classification, Rule Engine
 
 ### V3.2 - Calendar Integration
-- Documentação integrada em MODULES_STATUS.md
+- Documentação integrada em status-modulos.md
 
 ### V3.3 - Multimodal Input
-- Documentação integrada em MODULES_STATUS.md
+- Documentação integrada em status-modulos.md
 
 ---
 
@@ -68,10 +78,10 @@ Guia completo de toda a documentação do projeto.
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| **[docs/ADVANCED_AUTH_FEATURES.md](docs/ADVANCED_AUTH_FEATURES.md)** | Features avançadas de autenticação | ✅ Implementado |
-| **[docs/AUTHENTICATION_MIGRATION_GUIDE.md](docs/AUTHENTICATION_MIGRATION_GUIDE.md)** | Guia de migração de auth | 📖 Referência |
+| **[docs/seguranca/recursos-auth-avancados.md](docs/seguranca/recursos-auth-avancados.md)** | Features avançadas de autenticação | ✅ Implementado |
+| **[docs/seguranca/guia-migracao-auth.md](docs/seguranca/guia-migracao-auth.md)** | Guia de migração de auth | 📖 Referência |
 | **[backend/api/SECURITY_SANITIZATION.md](backend/api/SECURITY_SANITIZATION.md)** | Sanitização e prevenção XSS | ✅ Implementado |
-| **[docs/QUALITY_STANDARDS.md](docs/QUALITY_STANDARDS.md)** | Padrões de qualidade e segurança | 📋 Guia |
+| **[docs/qualidade/padroes.md](docs/qualidade/padroes.md)** | Padrões de qualidade e segurança | 📋 Guia |
 
 ---
 
@@ -79,8 +89,8 @@ Guia completo de toda a documentação do projeto.
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Guia completo de deploy em produção | ✅ Pronto |
-| **[docs/QUALITY_ROADMAP.md](docs/QUALITY_ROADMAP.md)** | Roadmap de melhorias para produção | 📋 Planejamento |
+| **[docs/deploy/guia-producao.md](docs/deploy/guia-producao.md)** | Guia completo de deploy em produção | ✅ Pronto |
+| **[docs/qualidade/roadmap.md](docs/qualidade/roadmap.md)** | Roadmap de melhorias para produção | 📋 Planejamento |
 | **[docker/README.md](docker/README.md)** | Setup Docker e compose | ✅ Funcionando |
 
 ---
@@ -89,57 +99,25 @@ Guia completo de toda a documentação do projeto.
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| **[docs/ANALISE_QUALIDADE.md](docs/ANALISE_QUALIDADE.md)** | Análise de qualidade do código | 📈 Atualizar |
-| **[docs/NOTIFICATION_SYSTEM_SUMMARY.md](docs/NOTIFICATION_SYSTEM_SUMMARY.md)** | Resumo do sistema de notificações | ✅ Implementado |
-| **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)** | Checklist de verificação pós-deploy | ✅ Guia |
+| **[docs/qualidade/analise.md](docs/qualidade/analise.md)** | Análise de qualidade do código | 📈 Atualizar |
+| **[docs/qualidade/padroes.md](docs/qualidade/padroes.md)** | Padrões de código e segurança | ✅ Guia |
+| **[docs/qualidade/checklist-verificacao.md](docs/qualidade/checklist-verificacao.md)** | Checklist de verificação pós-deploy | ✅ Guia |
 
 ---
 
-## 🤖 Documentação de Agentes Especializados
-
-### Módulos Implementados (V5.0+)
+## 🤖 Módulos Planejados (V5.0+)
 
 | Documento | Agente | Status |
 |-----------|--------|--------|
-| **[docs/CHARLEE_LISTENER.md](docs/CHARLEE_LISTENER.md)** | Listener (Escuta Ativa) | 📋 Planejado |
-| **[docs/CHARLEE_DIPLOMAT.md](docs/CHARLEE_DIPLOMAT.md)** | Diplomat (Networking) | 📋 Planejado |
-| **[docs/CHARLEE_BRAND.md](docs/CHARLEE_BRAND.md)** | Brand (Personal Branding) | 📋 Planejado |
-| **[docs/CHARLEE_WEALTH.md](docs/CHARLEE_WEALTH.md)** | Wealth (Finanças) | 📋 Planejado |
-| **[docs/CHARLEE_ROUTINES.md](docs/CHARLEE_ROUTINES.md)** | Routines (Automação) | 📋 Planejado |
-| **[docs/CHARLEE_WARDROBE.md](docs/CHARLEE_WARDROBE.md)** | Wardrobe (Estilo) | 📋 Planejado |
-| **[docs/CHARLEE_PODER_FEMININO.md](docs/CHARLEE_PODER_FEMININO.md)** | Poder Feminino | 📋 Planejado |
-
-### Freelance/Projects (Parcialmente Implementado)
-
-- **[docs/Charlee_modulo_gerenciamento_projetos_e_freelancers.md](docs/Charlee_modulo_gerenciamento_projetos_e_freelancers.md)** - Sistema freelance
-- **[docs/Charlee_modulo_gestao_de_notificacao.md](docs/Charlee_modulo_gestao_de_notificacao.md)** - Notificações
-- **[docs/Charlee_integracao_modulos.md](docs/Charlee_integracao_modulos.md)** - Integração entre módulos
-
----
-
-## 🏗️ Documentação de Arquitetura
-
-### Backend
-
-| Documento | Descrição |
-|-----------|-----------|
-| **[backend/README.md](backend/README.md)** | Estrutura do backend (se existir) |
-| **[backend/database/models.py](backend/database/models.py)** | 25+ models do banco de dados |
-| **[backend/agent/](backend/agent/)** | 12 agentes AI especializados |
-
-### Frontend
-
-| Documento | Descrição |
-|-----------|-----------|
-| **[interfaces/web/README.md](interfaces/web/README.md)** | Frontend React (se existir) |
-| **[interfaces/web/package.json](interfaces/web/package.json)** | Dependências e scripts |
-
-### Infraestrutura
-
-| Documento | Descrição |
-|-----------|-----------|
-| **[docker/docker-compose.yml](docker/docker-compose.yml)** | Configuração de containers |
-| **[backend/Dockerfile](backend/Dockerfile)** | Build do backend |
+| **[docs/modulos-planejados/charlee-listener.md](docs/modulos-planejados/charlee-listener.md)** | Listener (Escuta Ativa) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-diplomat.md](docs/modulos-planejados/charlee-diplomat.md)** | Diplomat (Networking) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-brand.md](docs/modulos-planejados/charlee-brand.md)** | Brand (Personal Branding) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-wealth.md](docs/modulos-planejados/charlee-wealth.md)** | Wealth (Finanças) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-routines.md](docs/modulos-planejados/charlee-routines.md)** | Routines (Automação) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-wardrobe.md](docs/modulos-planejados/charlee-wardrobe.md)** | Wardrobe (Estilo) | 📋 Planejado |
+| **[docs/modulos-planejados/charlee-poder-feminino.md](docs/modulos-planejados/charlee-poder-feminino.md)** | Poder Feminino | 📋 Planejado |
+| **[docs/modulos-planejados/gestao-projetos-freelancers.md](docs/modulos-planejados/gestao-projetos-freelancers.md)** | Gestão Projetos/Freelancers | 📋 Planejado |
+| **[docs/modulos-planejados/gestao-notificacoes.md](docs/modulos-planejados/gestao-notificacoes.md)** | Gestão de Notificações | 📋 Planejado |
 
 ---
 
@@ -185,17 +163,10 @@ Guia completo de toda a documentação do projeto.
 | Problema | Documentação |
 |----------|--------------|
 | Setup inicial | [SETUP.md](SETUP.md) seção Troubleshooting |
-| Verificação pós-setup | [VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md) |
+| Verificação pós-setup | [docs/qualidade/checklist-verificacao.md](docs/qualidade/checklist-verificacao.md) |
 | pgvector não funciona | [SETUP.md](SETUP.md#verificar-pgvector) |
 | Backups falhando | [SETUP.md](SETUP.md#backups-não-funcionam) |
 | Migrations com erro | [SETUP.md](SETUP.md#migrations-falham) |
-
----
-
-## 📝 Documentação Legacy/Histórica
-
-- **[docs/Charlee_Documentacao.docx.md](docs/Charlee_Documentacao.docx.md)** - Documentação original convertida
-- **[docs/README.md](docs/README.md)** - Índice da pasta docs
 
 ---
 
@@ -205,33 +176,38 @@ Guia completo de toda a documentação do projeto.
 
 1. Ler [README.md](README.md) - Visão geral
 2. Executar [QUICKSTART.md](QUICKSTART.md) - Setup rápido
-3. Verificar com [VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md)
-4. Estudar [MODULES_STATUS.md](MODULES_STATUS.md) - Entender o que está pronto
+3. Verificar com [docs/qualidade/checklist-verificacao.md](docs/qualidade/checklist-verificacao.md)
+4. Estudar [docs/status-modulos.md](docs/status-modulos.md) - Entender o que está pronto
 5. Ler [standards/](standards/) - Aprender padrões do projeto
 
 ### Para Implementação de Features
 
-1. Verificar [MODULES_STATUS.md](MODULES_STATUS.md) - Status atual
-2. Consultar doc específica da versão (V1, V2, V3.x)
+1. Verificar [docs/status-modulos.md](docs/status-modulos.md) - Status atual
+2. Consultar doc específica da versão (V1, V2, V3.x) em [docs/implementacao/](docs/implementacao/)
 3. Seguir [standards/](standards/) apropriados
-4. Atualizar [MODULES_STATUS.md](MODULES_STATUS.md) quando concluir
+4. Atualizar [docs/status-modulos.md](docs/status-modulos.md) quando concluir
 
 ### Para Deploy
 
 1. Seguir [SETUP.md](SETUP.md) - Configuração completa
-2. Usar [VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md) - Validação
-3. Configurar backup via instruções em SETUP.md
+2. Usar [docs/qualidade/checklist-verificacao.md](docs/qualidade/checklist-verificacao.md) - Validação
+3. Consultar [docs/deploy/guia-producao.md](docs/deploy/guia-producao.md) para produção
 
 ---
 
 ## 📊 Estatísticas de Documentação
 
-- **Total de arquivos .md:** 40+
-- **Standards:** 6 documentos
-- **Documentação técnica:** 8 versões/módulos
-- **Guias de setup:** 3 documentos
-- **Checklists:** 2 documentos
-- **Docs de agentes planejados:** 8 documentos
+- **Total de arquivos .md:** 26 documentos organizados
+- **Estrutura:**
+  - `docs/arquitetura/` - 3 documentos
+  - `docs/implementacao/` - 4 documentos
+  - `docs/modulos-planejados/` - 9 documentos
+  - `docs/seguranca/` - 2 documentos
+  - `docs/qualidade/` - 4 documentos
+  - `docs/deploy/` - 1 documento
+  - `docs/` (raiz) - 3 documentos de status
+- **Standards:** 6 documentos em `/standards`
+- **Guias de setup:** 3 documentos na raiz do projeto
 
 ---
 
@@ -247,20 +223,20 @@ Guia completo de toda a documentação do projeto.
 
 ### Responsabilidades
 
-- **MODULES_STATUS.md:** Atualizar a cada sprint ou release
-- **ROADMAP_BRANCHES.md:** Atualizar mensalmente
-- **PROJECT_STATUS.md:** Atualizar semanalmente
+- **status-modulos.md:** Atualizar a cada sprint ou release
+- **roadmap-branches.md:** Atualizar mensalmente
+- **status-projeto.md:** Atualizar semanalmente
 - **Standards:** Atualizar conforme necessário
 
 ### Antes de Cada Release
 
-- [ ] Atualizar MODULES_STATUS.md com novos módulos
+- [ ] Atualizar status-modulos.md com novos módulos
 - [ ] Atualizar README.md com novas features
 - [ ] Atualizar SETUP.md se houve mudanças de configuração
-- [ ] Verificar VERIFICATION_CHECKLIST.md ainda está válido
-- [ ] Atualizar PROJECT_STATUS.md com métricas atuais
+- [ ] Verificar checklist-verificacao.md ainda está válido
+- [ ] Atualizar status-projeto.md com métricas atuais
 
 ---
 
-**Última atualização deste índice:** 2024-12-24  
+**Última atualização deste índice:** 2024-12-28
 **Mantido por:** Samara Cassie
