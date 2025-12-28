@@ -1,14 +1,27 @@
-﻿# 📘 Documentação Completa: Projeto Charlee
+﻿# 📘 Visão de Produto Completa: Projeto Charlee
 
+> ⚠️ **DOCUMENTO DE PLANEJAMENTO ESTRATÉGICO**
+>
+> Este documento representa o **plano original e visão de longo prazo** do projeto Charlee.
+> Descreve o produto completo (V1-V5) conforme idealizado em Novembro 2025.
+>
+> **Para informações sobre a implementação ATUAL:**
+> - 📊 [Status dos Módulos](../status-modulos.md) - O que está implementado agora
+> - 🏗️ [Implementações por Versão](../implementacao/) - Documentação técnica atual
+> - 📈 [Status do Projeto](../status-projeto.md) - Progresso e métricas atuais
+> - 🗺️ [Roadmap de Branches](../roadmap-branches.md) - Desenvolvimento em andamento
+>
+> **Tipo de Documento:** Visão de Produto / Especificação de Requisitos
+> **Uso:** Documento de referência estratégica ("norte estrela" do projeto)
+
+---
 
 ## Sistema de Inteligência Pessoal com IA
 
-
-**Versão:** 1.0  
-**Data:** Novembro 2025  
-**Autora:** Samara  
-**Status:** Em Desenvolvimento
-
+**Versão do Documento:** 1.0
+**Data de Criação:** Novembro 2025
+**Autora:** Samara
+**Status da Visão:** Planejamento Estratégico V1-V5
 
 ---
 

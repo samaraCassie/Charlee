@@ -42,11 +42,26 @@ Guia completo de toda a documentação do projeto.
 
 ---
 
+## 🎯 Planejamento Estratégico
+
+**Visão de longo prazo do produto (V1-V6+)**
+
+| Documento | Descrição | Tipo |
+|-----------|-----------|------|
+| **[docs/planejamento/visao-produto-completa.md](docs/planejamento/visao-produto-completa.md)** | Visão completa do produto Charlee - Roadmap V1 a V6+ (4060 linhas) | 📋 Planejamento |
+
+> ℹ️ Este documento representa o **plano original e idealizado** do projeto criado em Novembro 2025.
+> Descreve a visão completa desde MVP (V1) até features avançadas (V6+).
+> **Para o estado atual da implementação**, consulte [Status do Projeto](docs/status-projeto.md) e [Status dos Módulos](docs/status-modulos.md).
+
+---
+
 ## 🏗️ Arquitetura do Sistema
+
+**Documentação técnica da arquitetura implementada**
 
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| **[docs/arquitetura/visao-geral-sistema.md](docs/arquitetura/visao-geral-sistema.md)** | Documentação completa da arquitetura | 📖 Referência |
 | **[docs/arquitetura/camada-integracao.md](docs/arquitetura/camada-integracao.md)** | Integração entre módulos | 📖 Arquitetura |
 | **[docs/arquitetura/v3.1-camada-integracao.md](docs/arquitetura/v3.1-camada-integracao.md)** | Event Bus, Context Manager, Orchestrator | 📖 V3.1 |
 
