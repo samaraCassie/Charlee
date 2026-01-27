@@ -8,10 +8,9 @@ This module contains periodic tasks for:
 
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict
 
 from celery import shared_task
-from sqlalchemy.orm import Session
 
 from database.config import SessionLocal
 from database.models import NotificationSource
@@ -42,7 +41,7 @@ def collect_all_sources() -> Dict[str, any]:
         logger.info("Starting notification collection from all sources")
 
         # Get all enabled notification sources
-        sources = db.query(NotificationSource).filter(NotificationSource.enabled == True).all()
+        sources = db.query(NotificationSource).filter(NotificationSource.enabled).all()
 
         if not sources:
             logger.info("No enabled notification sources found")

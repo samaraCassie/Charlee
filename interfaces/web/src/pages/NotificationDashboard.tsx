@@ -10,21 +10,19 @@ import { notificationRulesService } from '@/services/notificationRulesService';
 import {
   BarChart,
   Bell,
-  BellOff,
   TrendingUp,
-  TrendingDown,
   Zap,
   Database,
   FileText,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function NotificationDashboard() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [generatingDigest, setGeneratingDigest] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Stats
   const [totalNotifications, setTotalNotifications] = useState(0);
@@ -257,14 +255,42 @@ export default function NotificationDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="daily" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="daily">Diário</TabsTrigger>
-              <TabsTrigger value="weekly">Semanal</TabsTrigger>
-              <TabsTrigger value="monthly">Mensal</TabsTrigger>
-            </TabsList>
+          <div className="w-full">
+            <div className="mb-4 grid w-full grid-cols-3 gap-2">
+              <button
+                onClick={() => setActiveTab('daily')}
+                className={`rounded-md px-3 py-2 text-sm font-medium ${
+                  activeTab === 'daily'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Diário
+              </button>
+              <button
+                onClick={() => setActiveTab('weekly')}
+                className={`rounded-md px-3 py-2 text-sm font-medium ${
+                  activeTab === 'weekly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Semanal
+              </button>
+              <button
+                onClick={() => setActiveTab('monthly')}
+                className={`rounded-md px-3 py-2 text-sm font-medium ${
+                  activeTab === 'monthly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Mensal
+              </button>
+            </div>
 
-            <TabsContent value="daily" className="space-y-4">
+            {activeTab === 'daily' && (
+              <div className="space-y-4">
               {dailyDigest ? (
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -301,9 +327,11 @@ export default function NotificationDashboard() {
                   </>
                 )}
               </Button>
-            </TabsContent>
+              </div>
+            )}
 
-            <TabsContent value="weekly" className="space-y-4">
+            {activeTab === 'weekly' && (
+              <div className="space-y-4">
               {weeklyDigest ? (
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -340,9 +368,11 @@ export default function NotificationDashboard() {
                   </>
                 )}
               </Button>
-            </TabsContent>
+              </div>
+            )}
 
-            <TabsContent value="monthly" className="space-y-4">
+            {activeTab === 'monthly' && (
+              <div className="space-y-4">
               {monthlyDigest ? (
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center justify-between">
@@ -379,8 +409,9 @@ export default function NotificationDashboard() {
                   </>
                 )}
               </Button>
-            </TabsContent>
-          </Tabs>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
