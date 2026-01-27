@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
 
+    # Calendar Integration
+    google_calendar_redirect_uri: str = "http://localhost:3000/calendar/callback/google"
+    microsoft_calendar_redirect_uri: str = "http://localhost:3000/calendar/callback/microsoft"
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False
     )

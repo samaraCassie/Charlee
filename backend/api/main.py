@@ -16,6 +16,7 @@ from api.middleware.rate_limit import (
     rate_limit_exceeded_handler,
 )
 from api.middleware.request_logging import RequestLoggingMiddleware
+from api.middleware.security_headers import SecurityHeadersMiddleware
 from api.routes import (
     agent as agent_routes,
 )
@@ -214,6 +215,11 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # typ
 app.add_middleware(SlowAPIMiddleware)
 
 # ========================================
+# SECURITY HEADERS
+# ========================================
+app.add_middleware(SecurityHeadersMiddleware)
+
+# ========================================
 # ERROR HANDLING
 # ========================================
 app.add_middleware(GlobalErrorHandlerMiddleware)
@@ -321,7 +327,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Detailed health check endpoint with database connectivity."""
+    """Comprehensive health check endpoint with all service dependencies."""
     from datetime import datetime, timezone
 
     from fastapi import status as http_status
@@ -358,6 +364,7 @@ async def health_check():
         db = SessionLocal()
         db.execute(text("SELECT COUNT(*) FROM big_rocks"))
         db.execute(text("SELECT COUNT(*) FROM tasks"))
+        db.execute(text("SELECT COUNT(*) FROM users"))
         db.close()
         health_status["checks"]["tables"] = {
             "status": "healthy",
@@ -370,10 +377,78 @@ async def health_check():
             "message": f"Tables check failed: {str(e)}",
         }
 
+    # Check Redis connection
+    try:
+        import redis
+
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        r = redis.from_url(redis_url)
+        r.ping()
+        r.close()
+        health_status["checks"]["redis"] = {
+            "status": "healthy",
+            "message": "Redis connection successful",
+        }
+    except Exception as e:
+        health_status["status"] = "degraded"
+        health_status["checks"]["redis"] = {
+            "status": "unhealthy",
+            "message": f"Redis connection failed: {str(e)}",
+        }
+
+    # Check Celery workers
+    try:
+        from celery_app import app as celery_app
+
+        inspector = celery_app.control.inspect()
+        active_workers = inspector.active()
+        if active_workers:
+            health_status["checks"]["celery"] = {
+                "status": "healthy",
+                "message": f"{len(active_workers)} worker(s) active",
+                "workers": list(active_workers.keys()),
+            }
+        else:
+            health_status["status"] = "degraded"
+            health_status["checks"]["celery"] = {
+                "status": "unhealthy",
+                "message": "No active Celery workers found",
+            }
+    except Exception as e:
+        health_status["status"] = "degraded"
+        health_status["checks"]["celery"] = {
+            "status": "degraded",
+            "message": f"Could not check Celery workers: {str(e)}",
+        }
+
+    # Check migrations status
+    try:
+        db = SessionLocal()
+        result = db.execute(text("SELECT version_num FROM alembic_version")).fetchone()
+        if result:
+            current_version = result[0]
+            health_status["checks"]["migrations"] = {
+                "status": "healthy",
+                "message": f"Migrations up to date: {current_version}",
+                "version": current_version,
+            }
+        else:
+            health_status["checks"]["migrations"] = {
+                "status": "warning",
+                "message": "No migration version found (fresh database?)",
+            }
+        db.close()
+    except Exception as e:
+        health_status["checks"]["migrations"] = {
+            "status": "unknown",
+            "message": f"Could not check migrations: {str(e)}",
+        }
+
     # Environment info
     health_status["environment"] = {
         "python_version": os.sys.version.split()[0],
         "debug_mode": os.getenv("DEBUG", "false").lower() == "true",
+        "environment": os.getenv("ENVIRONMENT", "development"),
     }
 
     # Return appropriate HTTP status code
@@ -383,5 +458,9 @@ async def health_check():
         return JSONResponse(
             status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE, content=health_status
         )
+    elif health_status["status"] == "degraded":
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=http_status.HTTP_200_OK, content=health_status)
 
     return health_status

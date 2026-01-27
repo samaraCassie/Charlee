@@ -11,11 +11,13 @@ from database.config import get_db
 from database.models import User
 
 # HTTP Bearer token scheme
-security = HTTPBearer()
+# auto_error=False makes HTTPBearer return None instead of raising 401
+# This allows our dependency to handle the error and return 403
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
     """
@@ -31,6 +33,15 @@ async def get_current_user(
     Raises:
         HTTPException: If token is invalid or user not found
     """
+    # When auto_error=False, HTTPBearer returns None if no token provided
+    # We return 403 Forbidden for missing credentials
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

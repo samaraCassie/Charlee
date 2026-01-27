@@ -518,6 +518,7 @@ class TestUserIsolation:
             email="other@example.com",
             hashed_password=hash_password("OtherPass123"),
             is_active=True,
+            role="user",
         )
         db.add(other_user)
         db.commit()
@@ -554,6 +555,7 @@ class TestUserIsolation:
             email="other2@example.com",
             hashed_password=hash_password("OtherPass123"),
             is_active=True,
+            role="user",
         )
         db.add(other_user)
         db.commit()
