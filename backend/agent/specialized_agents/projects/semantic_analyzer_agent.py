@@ -281,8 +281,7 @@ Return ONLY valid JSON, no markdown formatting.
 
             # Use pgvector's <-> operator for L2 distance (or <#> for inner product, <=> for cosine)
             # Lower distance = more similar
-            query = text(
-                """
+            query = text("""
                 SELECT
                     id,
                     title,
@@ -298,8 +297,7 @@ Return ONLY valid JSON, no markdown formatting.
                     AND status = 'completed'
                 ORDER BY embedding <-> :query_embedding::vector
                 LIMIT :limit
-            """
-            )
+            """)
 
             result = self.db.execute(
                 query,
