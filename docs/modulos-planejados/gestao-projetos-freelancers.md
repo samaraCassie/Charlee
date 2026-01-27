@@ -63,11 +63,197 @@ Agente	Função Principal	Descrição
 
 ---
 
-🧩 3. Requisitos Funcionais (RF)
+📥 2.2. Estratégias de Coleta de Dados (RF01)
+
+O sistema suporta múltiplos métodos de entrada de oportunidades, priorizando abordagens legais e sustentáveis.
+
+#### Métodos de Coleta Implementados
+
+| Método | Prioridade | Status | Descrição |
+|--------|------------|--------|-----------|
+| **Smart Paste (LLM)** | Alta | 🎯 MVP | Usuário cola texto → LLM extrai dados estruturados |
+| **Bookmarklet** | Média | 🎯 MVP | 1 clique no browser → extrai dados da página |
+| **APIs Oficiais** | Alta | 🔜 Pós-MVP | Upwork API, Freelancer.com API (requer aprovação) |
+| **RSS Feeds** | Baixa | 🔜 Futuro | Job boards com feeds públicos |
+| **Manual Entry** | Baixa | ✅ Existe | Formulário tradicional (fallback) |
+
+---
+
+#### 2.2.1 Smart Paste (Extração Inteligente com LLM)
+
+**Fluxo:**
+```
+┌─────────────────────────────────────────────────────┐
+│  Usuário cola URL ou texto completo do projeto      │
+│  ↓                                                  │
+│  "https://upwork.com/jobs/~01abc123"               │
+│  OU                                                 │
+│  "Looking for Python developer to build..."         │
+└─────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────┐
+│  LLM (GPT-4) extrai automaticamente:                │
+│  • Título                                           │
+│  • Descrição limpa                                  │
+│  • Budget (se mencionado)                           │
+│  • Skills requeridas                                │
+│  • Deadline estimado                                │
+│  • Nome do cliente (se disponível)                  │
+└─────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────┐
+│  Usuário confirma/edita os dados extraídos          │
+│  ↓                                                  │
+│  Salva no banco → Análise semântica → Scoring       │
+└─────────────────────────────────────────────────────┘
+```
+
+**Vantagens:**
+- ✅ Funciona com qualquer fonte (Upwork, email, WhatsApp, LinkedIn)
+- ✅ LLM adapta a diferentes formatos automaticamente
+- ✅ Não depende de APIs externas ou aprovações
+- ✅ 100% legal (usuário controla o input)
+
+**Exemplo de Input:**
+```
+Estou procurando um desenvolvedor Python experiente para construir
+uma API REST com FastAPI. O projeto inclui integração com PostgreSQL,
+autenticação JWT e deploy na AWS. Budget: $2000-3000.
+Preciso que seja concluído em 2 semanas.
+```
+
+**Output Estruturado:**
+```json
+{
+  "title": "API REST com FastAPI",
+  "description": "Construir API REST com FastAPI incluindo integração
+                  com PostgreSQL, autenticação JWT e deploy na AWS",
+  "skills": ["Python", "FastAPI", "PostgreSQL", "JWT", "AWS"],
+  "budget_min": 2000,
+  "budget_max": 3000,
+  "deadline_days": 14,
+  "complexity_estimate": 7
+}
+```
+
+---
+
+#### 2.2.2 Bookmarklet (Extração via Browser)
+
+**O que é:** Um "bookmark inteligente" - código JavaScript salvo como favorito que extrai dados da página atual com 1 clique.
+
+**Fluxo:**
+```
+┌─────────────────────────────────────────────────────┐
+│ Usuário no Upwork vê projeto interessante           │
+│           ↓                                         │
+│ Clica no bookmark "⭐ Charlee"                      │
+│           ↓                                         │
+│ JavaScript extrai dados do DOM da página            │
+│           ↓                                         │
+│ Abre Charlee em nova aba com dados preenchidos      │
+└─────────────────────────────────────────────────────┘
+Passos: 1 clique
+```
+
+**Plataformas Suportadas:**
+- ✅ Upwork (seletores CSS mapeados)
+- ✅ Freelancer.com (seletores CSS mapeados)
+- ✅ LinkedIn Jobs (seletores CSS mapeados)
+- 🔜 Extensível para outras plataformas
+
+**Código do Bookmarklet:**
+```javascript
+javascript:(function(){
+  /* Charlee Project Extractor v1.0 */
+
+  const CHARLEE_URL = 'http://localhost:8501'; // ou URL de produção
+  const url = window.location.href;
+  let project = { url, source: 'unknown' };
+
+  // Detector de plataforma e extração
+  if (url.includes('upwork.com')) {
+    project.source = 'upwork';
+    project.title = document.querySelector('h2[itemprop="title"]')?.innerText?.trim();
+    project.description = document.querySelector('[data-test="Description"]')?.innerText?.trim();
+    project.budget = document.querySelector('[data-test="budget"]')?.innerText?.trim();
+    project.skills = Array.from(document.querySelectorAll('.skill-tag, [data-test="skill"]'))
+      .map(s => s.innerText.trim()).join(', ');
+  }
+  else if (url.includes('freelancer.com')) {
+    project.source = 'freelancer';
+    project.title = document.querySelector('h1.project-title')?.innerText?.trim();
+    project.description = document.querySelector('.project-description')?.innerText?.trim();
+    project.budget = document.querySelector('.budget-amount')?.innerText?.trim();
+  }
+  else if (url.includes('linkedin.com/jobs')) {
+    project.source = 'linkedin';
+    project.title = document.querySelector('.job-details-jobs-unified-top-card__job-title')?.innerText?.trim();
+    project.description = document.querySelector('.jobs-description__content')?.innerText?.trim();
+  }
+
+  // Abre Charlee com dados
+  const encoded = encodeURIComponent(JSON.stringify(project));
+  window.open(`${CHARLEE_URL}?project=${encoded}`, 'charlee_analysis');
+})();
+```
+
+**Vantagens:**
+- ✅ Zero instalação (só arrastar para favoritos)
+- ✅ Instantâneo (sem chamada de API)
+- ✅ 100% legal (roda no browser do usuário)
+- ✅ Funciona offline (extração local)
+
+**Manutenção:**
+- ⚠️ Seletores CSS podem quebrar se plataforma mudar layout
+- 📝 Atualizar seletores periodicamente
+
+---
+
+#### 2.2.3 APIs Oficiais (Pós-MVP)
+
+Quando aprovação for obtida, integrar com APIs oficiais:
+
+| Plataforma | API | Status | Processo |
+|------------|-----|--------|----------|
+| **Upwork** | [Developer API](https://www.upwork.com/services/api/apply) | 🔜 Pendente | Requer aprovação (2-4 semanas) |
+| **Freelancer.com** | [Freelancer API](https://developers.freelancer.com/) | 🔜 Pendente | API pública disponível |
+| **RemoteOK** | JSON público | ✅ Disponível | Sem aprovação necessária |
+| **We Work Remotely** | RSS/JSON | ✅ Disponível | Sem aprovação necessária |
+
+**Nota sobre Web Scraping:**
+> ❌ **NÃO implementar web scraping automático**
+>
+> Plataformas como Upwork e Freelancer têm proteções anti-bot e proíbem scraping nos ToS.
+> Riscos: bloqueio de conta, ações legais.
+>
+> ✅ Usar apenas: APIs oficiais, bookmarklet (usuário controla), smart paste (usuário cola).
+
+---
+
+#### 2.2.4 Comparação: Smart Paste vs Bookmarklet
+
+| Aspecto | Smart Paste | Bookmarklet |
+|---------|-------------|-------------|
+| **Onde roda** | Backend (servidor) | Browser (cliente) |
+| **Input do usuário** | Cola texto | Clica 1 botão |
+| **Extração de dados** | LLM analisa texto | JavaScript lê DOM |
+| **Precisão** | Alta (LLM entende contexto) | Média (depende de seletores) |
+| **Manutenção** | Baixa (LLM adapta) | Média (seletores quebram) |
+| **Custo** | ~$0.01-0.05/extração | Zero |
+| **Velocidade** | 2-5 segundos | Instantâneo |
+
+**Recomendação:** Usar ambos!
+- **Bookmarklet** → Navegando em plataformas conhecidas (1 clique)
+- **Smart Paste** → Projetos de email, WhatsApp, sites sem suporte
+
+---
+
+�� 3. Requisitos Funcionais (RF)
 
 ID	Requisito	Descrição	Prioridade
 
-RF01	Monitorar plataformas freelancer	O sistema deve integrar-se a APIs (Upwork, Freelancer.com etc.) e coletar novos projetos.	Alta
+RF01	Coletar oportunidades de projetos	O sistema deve permitir entrada via Smart Paste, Bookmarklet, APIs oficiais (quando disponíveis) ou manual entry.	Alta
 RF02	Analisar semanticamente descrições	O agente deve interpretar o escopo mesmo que não haja termos técnicos.	Alta
 RF03	Classificar nível técnico	Determinar se o projeto é júnior, pleno, sênior ou especializado.	Alta
 RF04	Estimar valor e prazo	Calcular preço sugerido e prazo realista conforme complexidade.	Alta
@@ -117,6 +303,337 @@ RN07	O agente não deve enviar mensagens automáticas a clientes sem confirmaç�
 RN08	Aumentos automáticos no valor/hora só podem ocorrer com base em 3 ou mais entregas bem-sucedidas.	
 
 
+
+---
+
+🤖 5.1. Sistema de Machine Learning e Aprendizado Contínuo (RF08)
+
+> ⏳ **STATUS: PLANEJADO PARA V2 DO MÓDULO FREELANCER**
+>
+> Esta seção documenta o sistema de ML que será implementado na **próxima versão** deste módulo.
+> O MVP do módulo Freelancer funcionará com regras fixas de precificação.
+
+O sistema não deve apenas **coletar dados**, mas **aprender e melhorar** com o tempo.
+
+#### Analogia: A Diferença entre "Estrutura" e "Aprendizado Real"
+
+**Situação ERRADA (só estrutura):**
+```
+Academia:
+- ✅ Você comprou balança digital
+- ✅ Você anota o peso todo dia: 70kg, 71kg, 70.5kg...
+- ❌ Você não faz NADA com os dados
+
+Resultado: Dados existem, mas não há melhoria
+```
+
+**Situação CORRETA (aprendizado real):**
+```
+Academia:
+- ✅ Balança + caderno
+- ✅ Personal trainer (algoritmo) analisa padrões
+- ✅ Sistema ajusta: "peso aumentou após comer X → reduza Y"
+- ✅ Próxima semana: peso diminuiu!
+
+Resultado: Sistema APRENDE e MELHORA
+```
+
+#### No Contexto do Charlee Projects
+
+**SEM aprendizado (problema atual):**
+```python
+# Mês 1
+projeto = analyzer.analyze("chatbot e-commerce Python+React")
+# Sistema diz: "$2,500"
+# Você aceita por: $3,200 (cliente pagou mais!)
+# Erro: -21.8%
+
+# Mês 2 - projeto similar
+novo_projeto = analyzer.analyze("chatbot e-commerce similar")
+# Sistema AINDA diz: "$2,500" ❌
+# Sistema NÃO aprendeu que errou!
+```
+
+**COM aprendizado (objetivo):**
+```python
+# Mês 1
+projeto = analyzer.analyze("chatbot e-commerce Python+React")
+# Sistema diz: "$2,500"
+# Você aceita por: $3,200
+
+# Sistema ANALISA o erro:
+learner.record_feedback(project_id=123, actual_price=3200)
+# "Hmm, projetos 'chatbot e-commerce' eu subestimei 28%"
+
+# Sistema AJUSTA:
+# fator_especializacao['chatbot_ecommerce'] = 1.35 (era 1.0)
+
+# Mês 2 - projeto similar
+novo_projeto = analyzer.analyze("chatbot e-commerce similar")
+# Sistema AGORA diz: "$3,100" ✅
+# Sistema APRENDEU!
+```
+
+---
+
+#### 5.1.1 Componentes de Aprendizado
+
+| Componente | Função | Prioridade |
+|------------|--------|------------|
+| **PricingLearner** | Ajusta fatores de precificação por categoria | Alta |
+| **RejectionPatternLearner** | Detecta red flags que causam rejeições | Média |
+| **HourlyRateOptimizer** | Otimiza valor/hora baseado em aceitação | Alta |
+| **ProjectSimilarityLearner** | Usa embeddings para prever outcomes | Baixa (V3+) |
+
+---
+
+#### 5.1.2 PricingLearner - Ajuste por Categoria
+
+```python
+class PricingLearner:
+    """Aprende com decisões reais e ajusta precificação"""
+
+    def __init__(self, db):
+        self.db = db
+        self.min_samples = 3  # Precisa 3+ exemplos para ajustar
+
+    def record_outcome(self, project_id: int, outcome: ProjectOutcome):
+        """Registra resultado de um projeto"""
+
+        project = self.db.get_project(project_id)
+
+        # Calcula erros
+        price_error = None
+        if outcome.actual_price:
+            price_error = (outcome.actual_price - project.suggested_price) / project.suggested_price
+            # Ex: (3200 - 2500) / 2500 = 0.28 = +28% erro
+
+        hours_error = None
+        if outcome.actual_hours:
+            hours_error = (outcome.actual_hours - project.estimated_hours) / project.estimated_hours
+
+        # Salva no banco
+        learning_record = LearningRecord(
+            project_id=project_id,
+            user_decision=outcome.decision,
+            actual_price=outcome.actual_price,
+            actual_hours=outcome.actual_hours,
+            price_error=price_error,
+            hours_error=hours_error,
+            recorded_at=datetime.now()
+        )
+
+        self.db.save(learning_record)
+
+        # Dispara análise de aprendizado
+        self.analyze_and_adjust(project)
+
+    def analyze_and_adjust(self, project):
+        """Analisa padrões e ajusta parâmetros"""
+
+        # Busca projetos similares no histórico
+        similar_projects = self.db.query("""
+            SELECT * FROM freelance_opportunities fo
+            JOIN learning_records lr ON fo.id = lr.project_id
+            WHERE fo.category = %s
+              AND fo.complexity_estimated BETWEEN %s - 1 AND %s + 1
+              AND lr.actual_price IS NOT NULL
+            ORDER BY lr.recorded_at DESC
+            LIMIT 10
+        """, (project.category, project.complexity, project.complexity))
+
+        if len(similar_projects) < self.min_samples:
+            return  # Não tem dados suficientes ainda
+
+        # Calcula erro médio nessa categoria
+        avg_price_error = sum(p.price_error for p in similar_projects) / len(similar_projects)
+
+        # Se erro consistente > 15%, ajusta
+        if abs(avg_price_error) > 0.15:
+            self._adjust_category_factor(
+                category=project.category,
+                complexity=project.complexity,
+                error=avg_price_error
+            )
+
+    def _adjust_category_factor(self, category: str, complexity: int, error: float):
+        """Ajusta fator multiplicador para categoria/complexidade"""
+
+        params = self.db.get_pricing_params()
+
+        # Calcula novo fator (ajuste gradual de 50% do erro)
+        current_factor = params['fator_especializacao'].get(category, 1.0)
+        adjustment = 1 + (error * 0.5)  # Ajuste conservador
+        new_factor = current_factor * adjustment
+
+        # Limita entre 0.5x e 3.0x (proteção contra outliers)
+        new_factor = max(0.5, min(3.0, new_factor))
+
+        # Atualiza no banco
+        params['fator_especializacao'][category] = new_factor
+        self.db.update_pricing_params(params)
+
+        logger.info(f"📊 Ajustado fator de '{category}': {current_factor:.2f} → {new_factor:.2f}")
+        logger.info(f"   Baseado em erro médio de {error:.1%} em {self.min_samples}+ projetos")
+```
+
+---
+
+#### 5.1.3 RejectionPatternLearner - Detecta Red Flags
+
+```python
+class RejectionPatternLearner:
+    """Aprende por que a usuária rejeita projetos"""
+
+    def learn_from_rejections(self):
+        """Identifica red flags que causam rejeições"""
+
+        # Busca projetos rejeitados que tinham score alto
+        # (falsos positivos - sistema recomendou mas usuária rejeitou)
+        false_positives = self.db.query("""
+            SELECT * FROM freelance_opportunities
+            WHERE score_final > 0.7
+              AND user_decision = 'rejected'
+        """)
+
+        # Extrai palavras/padrões em comum
+        rejection_keywords = []
+
+        for project in false_positives:
+            # Palavras que aparecem em rejeitados mas não em aceitos
+            rejection_keywords.extend(
+                self._extract_negative_keywords(project.description)
+            )
+
+        # Encontra padrões (palavras que aparecem em 3+ rejeições)
+        common_keywords = Counter(rejection_keywords).most_common(10)
+
+        for keyword, count in common_keywords:
+            if count >= 3:
+                self._add_red_flag_pattern(keyword)
+                logger.info(f"🚩 Novo red flag detectado: '{keyword}' (aparece em {count} rejeições)")
+
+        return common_keywords
+
+    def _add_red_flag_pattern(self, keyword: str):
+        """Adiciona nova regra de red flag ao sistema"""
+
+        self.db.execute("""
+            INSERT INTO red_flag_patterns (keyword, severity, count, created_at)
+            VALUES (%s, 'medium', 1, NOW())
+            ON CONFLICT (keyword) DO UPDATE SET count = count + 1
+        """, (keyword,))
+```
+
+---
+
+#### 5.1.4 HourlyRateOptimizer - Otimiza Valor/Hora
+
+```python
+class HourlyRateOptimizer:
+    """Otimiza valor/hora baseado em taxa de aceitação real"""
+
+    def optimize_hourly_rate(self):
+        """Ajusta valor/hora para maximizar aceitação de bons projetos"""
+
+        # Analisa últimos 30 dias
+        recent_projects = self.db.query("""
+            SELECT
+                fo.suggested_price / fo.estimated_hours as suggested_hourly,
+                lr.actual_price / lr.actual_hours as actual_hourly,
+                lr.user_decision,
+                fo.score_final
+            FROM freelance_opportunities fo
+            JOIN learning_records lr ON fo.id = lr.project_id
+            WHERE lr.recorded_at > NOW() - INTERVAL '30 days'
+              AND lr.actual_price IS NOT NULL
+        """)
+
+        if len(recent_projects) < 5:
+            return None  # Dados insuficientes
+
+        # Calcula taxa de aceitação por faixa de preço
+        acceptance_by_rate = {}
+
+        for project in recent_projects:
+            rate_bucket = round(project.suggested_hourly / 10) * 10  # Faixas de $10
+
+            if rate_bucket not in acceptance_by_rate:
+                acceptance_by_rate[rate_bucket] = {'accepted': 0, 'total': 0}
+
+            acceptance_by_rate[rate_bucket]['total'] += 1
+            if project.user_decision == 'accepted':
+                acceptance_by_rate[rate_bucket]['accepted'] += 1
+
+        # Encontra taxa com melhor aceitação
+        best_rate = max(
+            acceptance_by_rate.keys(),
+            key=lambda r: acceptance_by_rate[r]['accepted'] / max(acceptance_by_rate[r]['total'], 1)
+        )
+
+        # Atualiza gradualmente (80% atual + 20% ótimo)
+        current_rate = self.db.get_pricing_params()['valor_hora_base']
+        new_rate = current_rate * 0.8 + best_rate * 0.2
+
+        self.db.update_pricing_params({'valor_hora_base': new_rate})
+
+        logger.info(f"💰 Valor/hora ajustado: ${current_rate:.0f} → ${new_rate:.0f}")
+
+        return {
+            'old_rate': current_rate,
+            'new_rate': new_rate,
+            'change': new_rate - current_rate
+        }
+```
+
+---
+
+#### 5.1.5 Evolução Esperada do Sistema
+
+| Período | Estado | Precisão | Comportamento |
+|---------|--------|----------|---------------|
+| **Mês 1** | "Burro" | ~60% | Usa apenas regras fixas |
+| **Mês 2** | Aprendendo | ~75% | Começa a ajustar fatores |
+| **Mês 3** | "Esperto" | ~85% | Detecta padrões de rejeição |
+| **Mês 6+** | Personalizado | ~90%+ | Totalmente calibrado para o usuário |
+
+**Resultado esperado:**
+- Taxa de aceitação das recomendações: 45% → 78%
+- Erro médio de precificação: 25% → 5%
+- Red flags detectados automaticamente: 0 → 15+
+
+---
+
+#### 5.1.6 Implementação Faseada
+
+| Fase | Componente | Esforço | Impacto |
+|------|------------|---------|---------|
+| **V1 (MVP)** | Sem ML - Regras fixas de precificação | - | Base funcional |
+| **V2** | PricingLearner + HourlyRateOptimizer | 8-12h | Alto |
+| **V2** | RejectionPatternLearner | 3-5h | Médio |
+| **V3** | ProjectSimilarityLearner (embeddings) | 10-15h | Alto |
+
+> 📌 **Decisão:** ML será implementado na **V2 do módulo Freelancer**, não no MVP.
+
+**Versão para V2 (pós-MVP):**
+```python
+# Adicionar ao ProjectEvaluatorAgent existente:
+
+def learn_from_outcome(self, project_id: int, actual_price: float):
+    """Versão simples: apenas ajusta valor/hora base"""
+
+    project = self.db.get(project_id)
+    error = (actual_price - project.suggested_price) / project.suggested_price
+
+    # Se erro consistente > 15%, ajusta valor/hora
+    if abs(error) > 0.15:
+        params = self.db.get_pricing_params()
+        adjustment = 1 + (error * 0.1)  # Ajuste de 10% do erro
+        params['valor_hora_base'] *= adjustment
+        self.db.update_pricing_params(params)
+
+        logger.info(f"💡 Valor/hora ajustado para ${params['valor_hora_base']:.0f}")
+```
 
 ---
 
@@ -752,10 +1269,158 @@ class ProjectCollectorAgent(Agent):
         
         return all_projects
     
+    def smart_add_opportunity(self, raw_text: str, source_url: Optional[str] = None) -> dict:
+        """
+        Adiciona oportunidade a partir de texto colado pelo usuário.
+
+        LLM extrai automaticamente: título, descrição, skills, budget, deadline.
+
+        Args:
+            raw_text: Texto colado pelo usuário (descrição do projeto)
+            source_url: URL de origem opcional
+
+        Returns:
+            Dados estruturados extraídos + ID da oportunidade criada
+        """
+        # Prompt para extração estruturada
+        extraction_prompt = f"""
+Extraia informações estruturadas deste texto de oportunidade de projeto freelance.
+
+TEXTO:
+{raw_text}
+
+URL DE ORIGEM (se disponível): {source_url or 'Não informada'}
+
+Retorne JSON com os seguintes campos (use null se não encontrar):
+{{
+    "title": "Título do projeto (inferir se não explícito)",
+    "description": "Descrição limpa e organizada",
+    "client_name": "Nome do cliente/empresa",
+    "budget_min": 0,
+    "budget_max": 0,
+    "currency": "USD",
+    "deadline_days": 0,
+    "required_skills": ["skill1", "skill2"],
+    "contract_type": "fixed | hourly | milestone",
+    "complexity_estimate": 1-10,
+    "category": "full-stack | backend | frontend | ai-ml | devops | mobile | other",
+    "red_flags": ["alerta1", "alerta2"],
+    "opportunities": ["oportunidade1", "oportunidade2"]
+}}
+
+Seja preciso na extração. Se o budget estiver em range (ex: $2000-3000),
+extraia min e max separadamente.
+"""
+
+        # Chama LLM para extração
+        response = self.run(extraction_prompt)
+        extracted = json.loads(response.content)
+
+        # Cria oportunidade no banco
+        opportunity = FreelanceOpportunity(
+            user_id=self.user_id,
+            platform_id=None,  # Smart paste não tem plataforma específica
+            title=extracted['title'],
+            description=extracted['description'],
+            client_name=extracted.get('client_name'),
+            required_skills=extracted.get('required_skills', []),
+            client_budget=extracted.get('budget_max'),
+            client_budget_min=extracted.get('budget_min'),
+            currency=extracted.get('currency', 'USD'),
+            client_deadline_days=extracted.get('deadline_days'),
+            contract_type=extracted.get('contract_type'),
+            source_url=source_url,
+            raw_input_text=raw_text,
+            status="new",
+            collected_at=datetime.now(timezone.utc),
+            # Pré-análise do LLM
+            complexity_estimated=extracted.get('complexity_estimate'),
+            category=extracted.get('category'),
+            red_flags=extracted.get('red_flags', []),
+            opportunities=extracted.get('opportunities', []),
+        )
+
+        self.db.add(opportunity)
+        self.db.commit()
+
+        return {
+            "id": opportunity.id,
+            "extracted": extracted,
+            "message": f"✅ Oportunidade '{extracted['title']}' criada com sucesso!"
+        }
+
+    def add_from_bookmarklet(self, bookmarklet_data: dict) -> dict:
+        """
+        Adiciona oportunidade a partir de dados do bookmarklet.
+
+        Args:
+            bookmarklet_data: JSON enviado pelo bookmarklet do browser
+                {
+                    "source": "upwork" | "freelancer" | "linkedin",
+                    "url": "https://...",
+                    "title": "...",
+                    "description": "...",
+                    "budget": "$1000-2000",
+                    "skills": "Python, React, ..."
+                }
+
+        Returns:
+            Oportunidade criada
+        """
+        # Parse budget string se necessário
+        budget_min, budget_max = self._parse_budget(bookmarklet_data.get('budget'))
+
+        # Parse skills string se necessário
+        skills = bookmarklet_data.get('skills', '')
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(',') if s.strip()]
+
+        opportunity = FreelanceOpportunity(
+            user_id=self.user_id,
+            platform_id=self._get_platform_id(bookmarklet_data['source']),
+            title=bookmarklet_data['title'],
+            description=bookmarklet_data['description'],
+            required_skills=skills,
+            client_budget=budget_max,
+            client_budget_min=budget_min,
+            source_url=bookmarklet_data.get('url'),
+            status="new",
+            collected_at=datetime.now(timezone.utc),
+        )
+
+        self.db.add(opportunity)
+        self.db.commit()
+
+        return {
+            "id": opportunity.id,
+            "message": f"✅ Oportunidade do {bookmarklet_data['source'].title()} importada!"
+        }
+
+    def _parse_budget(self, budget_str: str) -> tuple:
+        """Parse budget string like '$1000-2000' into (min, max)"""
+        if not budget_str:
+            return None, None
+
+        import re
+        numbers = re.findall(r'[\d,]+', budget_str.replace(',', ''))
+        if len(numbers) >= 2:
+            return float(numbers[0]), float(numbers[1])
+        elif len(numbers) == 1:
+            return float(numbers[0]), float(numbers[0])
+        return None, None
+
+    def _get_platform_id(self, source: str) -> Optional[int]:
+        """Get platform ID by source name"""
+        platform = self.db.query(FreelancePlatform).filter(
+            FreelancePlatform.user_id == self.user_id,
+            FreelancePlatform.name.ilike(f"%{source}%")
+        ).first()
+        return platform.id if platform else None
+
     def save_projects(self, projects):
         """Salva projetos no banco (evita duplicatas)"""
         saved_count = 0
-        
+
         for proj in projects:
             # Verifica duplicata
             existing = self.db.execute("""
