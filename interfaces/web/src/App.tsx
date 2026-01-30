@@ -10,6 +10,10 @@ import Chat from './pages/Chat';
 import Tasks from './pages/Tasks';
 import Wellness from './pages/Wellness';
 import TranscriptionHistory from './pages/TranscriptionHistory';
+import FreelancerOpportunities from './pages/FreelancerOpportunities';
+import OpportunityDetail from './pages/OpportunityDetail';
+import FreelancerAnalytics from './pages/FreelancerAnalytics';
+import PricingParameters from './pages/PricingParameters';
 import { Button } from './components/ui/button';
 import {
   Sheet,
@@ -106,6 +110,16 @@ function AppContent() {
             >
               Histórico
             </Link>
+            <Link
+              to="/freelancer/opportunities"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive('/freelancer/opportunities') || isActive('/freelancer/analytics') || isActive('/freelancer/pricing')
+                  ? ''
+                  : 'text-muted-foreground'
+              }`}
+            >
+              Freelancer
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -138,6 +152,10 @@ function AppContent() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/wellness" element={<Wellness />} />
           <Route path="/transcriptions" element={<TranscriptionHistory />} />
+          <Route path="/freelancer/opportunities" element={<FreelancerOpportunities />} />
+          <Route path="/freelancer/opportunities/:id" element={<OpportunityDetail />} />
+          <Route path="/freelancer/analytics" element={<FreelancerAnalytics />} />
+          <Route path="/freelancer/pricing" element={<PricingParameters />} />
         </Routes>
       </main>
 
@@ -210,6 +228,15 @@ function AppContent() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Histórico
+            </Link>
+            <Link
+              to="/freelancer/opportunities"
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent ${
+                isActive('/freelancer/opportunities') ? '' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Freelancer
             </Link>
           </nav>
         </SheetContent>
