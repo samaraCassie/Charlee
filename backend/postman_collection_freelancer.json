@@ -1,0 +1,736 @@
+{
+  "info": {
+    "name": "Charlee - Freelancer System API",
+    "description": "Complete API collection for testing the Freelancer Management System\n\n**Features:**\n- 7 AI Agents (Collector, Analyzer, Evaluator, Negotiator, Auto-learning, Analytics, Branding)\n- 5 MVP Requirements (RN09-RN13)\n- 3 Learning Components (PricingLearner, RejectionPatternLearner, HourlyRateOptimizer)\n\n**Setup:**\n1. Import this collection into Postman\n2. Create environment with variables: `base_url` and `token`\n3. Get JWT token from Login endpoint\n4. Start testing!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Save token to environment",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.access_token);",
+                  "    console.log('Token saved to environment');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@charlee.ai\",\n  \"password\": \"test123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login to get JWT token. Token will be automatically saved to environment."
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if backend is running"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "1. RN09 - Duplication Prevention",
+      "item": [
+        {
+          "name": "Create Opportunity #1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Python Backend API Development\",\n  \"description\": \"Need a Python FastAPI developer for building RESTful APIs with PostgreSQL database. Must have experience with async programming and SQLAlchemy ORM.\",\n  \"client_budget\": 5000,\n  \"platform_name\": \"upwork\",\n  \"external_id\": \"upwork_001\",\n  \"client_rating\": 4.5,\n  \"client_projects_count\": 25,\n  \"estimated_hours\": 80\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/opportunities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "opportunities"]
+            },
+            "description": "Create first opportunity for testing duplication"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Duplicate (Should Detect)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Python Backend API Development\",\n  \"description\": \"Looking for FastAPI expert to build REST APIs with PostgreSQL. Need async programming skills and SQLAlchemy experience.\",\n  \"platform_name\": \"upwork\",\n  \"external_id\": \"upwork_002\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/opportunities/check-duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "opportunities", "check-duplicate"]
+            },
+            "description": "Should detect as duplicate (>70% similarity)"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Non-Duplicate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"React Frontend Developer Needed\",\n  \"description\": \"Looking for React developer to build responsive UI with TypeScript and Redux.\",\n  \"platform_name\": \"upwork\",\n  \"external_id\": \"upwork_003\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/opportunities/check-duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "opportunities", "check-duplicate"]
+            },
+            "description": "Should NOT detect as duplicate (different project)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Opportunities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/opportunities?limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "opportunities"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List all opportunities"
+          },
+          "response": []
+        }
+      ],
+      "description": "RN09: Project Duplication Prevention using Jaccard similarity"
+    },
+    {
+      "name": "2. RN11 - Financial Calculator",
+      "item": [
+        {
+          "name": "Calculate Net Income (Upwork + Simples Nacional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gross_usd\": 5000,\n  \"platform\": \"upwork\",\n  \"tax_regime\": \"simples_nacional\",\n  \"include_breakdown\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/financial/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "financial", "calculate"]
+            },
+            "description": "Calculate net income with USD→BRL conversion + Brazilian taxes (Upwork 10% + Simples Nacional 6%)"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Net Income (Freelancer.com + MEI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gross_usd\": 3000,\n  \"platform\": \"freelancer\",\n  \"tax_regime\": \"mei\",\n  \"include_breakdown\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/financial/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "financial", "calculate"]
+            },
+            "description": "Calculate with Freelancer.com (15% fee) + MEI (fixed monthly tax)"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Net Income (Toptal + Lucro Presumido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gross_usd\": 10000,\n  \"platform\": \"toptal\",\n  \"tax_regime\": \"lucro_presumido\",\n  \"include_breakdown\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/financial/calculate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "financial", "calculate"]
+            },
+            "description": "Calculate with Toptal (no platform fee) + Lucro Presumido (13.33% tax)"
+          },
+          "response": []
+        }
+      ],
+      "description": "RN11: Financial Calculator with USD→BRL conversion and Brazilian tax regimes"
+    },
+    {
+      "name": "3. RN12 - Client Risk Assessment",
+      "item": [
+        {
+          "name": "Assess High-Risk Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_rating\": 2.5,\n  \"client_projects_count\": 2,\n  \"project_description\": \"Need this ASAP! Budget is flexible but looking for cheapest option. Must deliver in 2 days. Payment after completion.\",\n  \"client_payment_verified\": false,\n  \"client_country\": \"Unknown\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/assess",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "assess"]
+            },
+            "description": "Assess high-risk client (low rating, red flags in description)"
+          },
+          "response": []
+        },
+        {
+          "name": "Assess Low-Risk Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_rating\": 4.8,\n  \"client_projects_count\": 50,\n  \"project_description\": \"Looking for experienced Python developer for 3-month project. Clear requirements attached. Payment via Upwork milestones. Previous successful projects in portfolio.\",\n  \"client_payment_verified\": true,\n  \"client_country\": \"United States\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/assess",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "assess"]
+            },
+            "description": "Assess low-risk client (high rating, many projects, green flags)"
+          },
+          "response": []
+        },
+        {
+          "name": "Assess Medium-Risk Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_rating\": 3.8,\n  \"client_projects_count\": 10,\n  \"project_description\": \"Building e-commerce platform. Need full-stack developer. Budget is negotiable. Timeline is flexible.\",\n  \"client_payment_verified\": true,\n  \"client_country\": \"Canada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/assess",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "assess"]
+            },
+            "description": "Assess medium-risk client (moderate rating and project count)"
+          },
+          "response": []
+        }
+      ],
+      "description": "RN12: Client Risk Assessment with red/green flags and scoring"
+    },
+    {
+      "name": "4. Learning - PricingLearner",
+      "item": [
+        {
+          "name": "Get Pricing Performance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/pricing/performance?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "pricing", "performance"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "90"
+                }
+              ]
+            },
+            "description": "Analyze pricing accuracy over last 90 days"
+          },
+          "response": []
+        },
+        {
+          "name": "Suggest Pricing Adjustment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/pricing/suggest-adjustment?min_records=10&threshold=0.75",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "pricing", "suggest-adjustment"],
+              "query": [
+                {
+                  "key": "min_records",
+                  "value": "10"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.75"
+                }
+              ]
+            },
+            "description": "Get suggested pricing parameter adjustments based on accuracy"
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Pricing Adjustment (Auto)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"auto_apply\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/pricing/apply-adjustment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "pricing", "apply-adjustment"]
+            },
+            "description": "Automatically apply suggested pricing adjustments"
+          },
+          "response": []
+        }
+      ],
+      "description": "PricingLearner: Adaptive pricing parameter optimization based on project outcomes"
+    },
+    {
+      "name": "5. Learning - RejectionPatternLearner",
+      "item": [
+        {
+          "name": "Analyze Rejection Patterns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rejection/patterns?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rejection", "patterns"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "90"
+                }
+              ]
+            },
+            "description": "Analyze which red flags correlate with rejection"
+          },
+          "response": []
+        },
+        {
+          "name": "Suggest Risk Weight Adjustments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rejection/suggest-weights",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rejection", "suggest-weights"]
+            },
+            "description": "Get suggested adjustments for red flag weights based on rejection probability"
+          },
+          "response": []
+        },
+        {
+          "name": "Discover New Red Flags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rejection/discover-flags?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rejection", "discover-flags"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "90"
+                }
+              ]
+            },
+            "description": "Discover potential new red flags from user feedback"
+          },
+          "response": []
+        }
+      ],
+      "description": "RejectionPatternLearner: Learns which red flags predict rejection"
+    },
+    {
+      "name": "6. Learning - HourlyRateOptimizer",
+      "item": [
+        {
+          "name": "Analyze Acceptance by Rate Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rate/analyze?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rate", "analyze"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "90"
+                }
+              ]
+            },
+            "description": "Analyze acceptance rates across different hourly rate ranges ($40-60, $60-80, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Category-Specific Rates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rate/analyze-categories?days=90",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rate", "analyze-categories"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "90"
+                }
+              ]
+            },
+            "description": "Analyze optimal rates by project category (AI/ML vs. frontend, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Suggest Rate Adjustment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rate/suggest?target_acceptance_rate=0.60",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rate", "suggest"],
+              "query": [
+                {
+                  "key": "target_acceptance_rate",
+                  "value": "0.60"
+                }
+              ]
+            },
+            "description": "Get suggested hourly rate adjustment based on acceptance patterns"
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Rate Adjustment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"suggested_rate\": 120.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/learning/rate/apply-adjustment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "learning", "rate", "apply-adjustment"]
+            },
+            "description": "Apply hourly rate adjustment (creates new PricingParameter version)"
+          },
+          "response": []
+        }
+      ],
+      "description": "HourlyRateOptimizer: Dynamic hourly rate optimization based on acceptance patterns"
+    },
+    {
+      "name": "7. Integration Service (Full Pipeline)",
+      "item": [
+        {
+          "name": "Process Opportunity (Full Pipeline)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"AI/ML Model Development with PyTorch\",\n  \"description\": \"Looking for ML engineer to build recommendation system using PyTorch. Must have experience with transformers and large-scale data processing. 3-month contract, remote work.\",\n  \"client_budget\": 8000,\n  \"platform_name\": \"upwork\",\n  \"external_id\": \"upwork_ml_001\",\n  \"client_rating\": 4.5,\n  \"client_projects_count\": 25,\n  \"client_payment_verified\": true,\n  \"client_country\": \"United States\",\n  \"estimated_hours\": 120\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/process-opportunity",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "integration", "process-opportunity"]
+            },
+            "description": "Process opportunity through full pipeline (RN09-RN13): duplication check → risk assessment → financial calculation → rate limiting → LGPD compliance"
+          },
+          "response": []
+        },
+        {
+          "name": "Process High-Risk Opportunity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quick Website Fix URGENT\",\n  \"description\": \"Need someone to fix my website ASAP! Budget is flexible. Must be done in 24 hours. Payment after work is completed.\",\n  \"client_budget\": 500,\n  \"platform_name\": \"freelancer\",\n  \"external_id\": \"freelancer_urgent_001\",\n  \"client_rating\": 2.0,\n  \"client_projects_count\": 1,\n  \"client_payment_verified\": false,\n  \"client_country\": \"Unknown\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/process-opportunity",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "integration", "process-opportunity"]
+            },
+            "description": "Test full pipeline with high-risk opportunity (should flag as high risk)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Integration Service: Orchestrates all 5 MVP requirements (RN09-RN13)"
+    },
+    {
+      "name": "8. RN10 - Rate Limiting",
+      "item": [
+        {
+          "name": "Check Rate Limit Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rate-limit/status?platform=upwork",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rate-limit", "status"],
+              "query": [
+                {
+                  "key": "platform",
+                  "value": "upwork"
+                }
+              ]
+            },
+            "description": "Check current rate limit status for Upwork API"
+          },
+          "response": []
+        },
+        {
+          "name": "Test Rate Limit (Bulk Requests)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"upwork\",\n  \"request_count\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/rate-limit/test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rate-limit", "test"]
+            },
+            "description": "Test rate limiting by making multiple requests (should hit limit)"
+          },
+          "response": []
+        }
+      ],
+      "description": "RN10: Rate Limiting for external APIs using leaky bucket algorithm"
+    },
+    {
+      "name": "9. RN13 - LGPD Compliance",
+      "item": [
+        {
+          "name": "Encrypt PII Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/lgpd/encrypt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lgpd", "encrypt"]
+            },
+            "description": "Encrypt PII data (email, phone, CPF, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Decrypt PII Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"encrypted_data\": \"gAAAAABl...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/lgpd/decrypt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lgpd", "decrypt"]
+            },
+            "description": "Decrypt PII data (requires encrypted_data from previous request)"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Data Retention Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/lgpd/retention-status?record_type=opportunity&record_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "lgpd", "retention-status"],
+              "query": [
+                {
+                  "key": "record_type",
+                  "value": "opportunity"
+                },
+                {
+                  "key": "record_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Check if data should be retained or deleted per LGPD"
+          },
+          "response": []
+        }
+      ],
+      "description": "RN13: LGPD Compliance (PII encryption + data retention)"
+    }
+  ]
+}
