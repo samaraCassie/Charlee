@@ -20,7 +20,6 @@ from database.models import (
     ProjectExecution,
 )
 
-
 # ==================== Fixtures ====================
 
 
