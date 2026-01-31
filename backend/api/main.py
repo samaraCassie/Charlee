@@ -20,7 +20,6 @@ from api.middleware.security_headers import SecurityHeadersMiddleware
 from api.routes import (
     agent as agent_routes,
 )
-from api.websockets import websocket_endpoint
 from api.routes import (
     analytics,
     attachments,
@@ -46,6 +45,7 @@ from api.routes import (
     tasks,
     wellness,
 )
+from api.websockets import websocket_endpoint
 from database.config import Base, engine
 
 # Initialize logger

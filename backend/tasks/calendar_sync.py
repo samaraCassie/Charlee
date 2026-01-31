@@ -12,7 +12,7 @@ from celery import shared_task
 from sqlalchemy.orm import Session
 
 from database.config import SessionLocal
-from database.models import CalendarConnection, CalendarConflict, CalendarEvent, CalendarSyncLog
+from database.models import CalendarConflict, CalendarConnection, CalendarEvent, CalendarSyncLog
 from integrations import google_calendar, microsoft_calendar
 
 logger = logging.getLogger(__name__)

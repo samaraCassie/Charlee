@@ -5,12 +5,13 @@ and generate insights automatically.
 """
 
 import logging
-from typing import Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from celery import Task
-from celery_app import celery_app
 from database.session import SessionLocal
+
+from celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +55,8 @@ def analyze_new_opportunities(self) -> Dict[str, Any]:
         Dict with analysis statistics
     """
     try:
-        from database.models import FreelanceOpportunity
         from agent.specialized_agents.projects import create_semantic_analyzer_agent
+        from database.models import FreelanceOpportunity
 
         logger.info("Starting automatic opportunity analysis")
 
@@ -245,11 +246,11 @@ def generate_daily_report(self, user_id: int = None) -> Dict[str, Any]:
         Dict with report generation status
     """
     try:
-        from database.models import FreelanceOpportunity, UserNotification
         from agent.specialized_agents.projects import (
             create_career_insights_agent,
             create_portfolio_builder_agent,
         )
+        from database.models import FreelanceOpportunity, UserNotification
 
         logger.info(f"Generating daily report for user {user_id}")
 

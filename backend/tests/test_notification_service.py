@@ -1,10 +1,10 @@
 """Tests for notification service."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
-from services.notification_service import NotificationService
 from database import crud
 from database.schemas import NotificationPreferenceCreate
+from services.notification_service import NotificationService
 
 
 class TestNotificationService:

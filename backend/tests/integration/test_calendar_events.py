@@ -1,8 +1,10 @@
 """Integration tests for Calendar Event Bus integration."""
 
-import pytest
 from datetime import datetime, timedelta, timezone
-from database.models import CalendarConnection, CalendarEvent, CalendarConflict
+
+import pytest
+
+from database.models import CalendarConflict, CalendarConnection, CalendarEvent
 from events.calendar_events import CalendarEventPublisher
 from integration.event_bus import EventBus
 from integration.event_types import EventType, ModuleName

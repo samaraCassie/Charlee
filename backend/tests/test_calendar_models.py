@@ -1,8 +1,10 @@
 """Tests for Calendar Integration Models and Schemas."""
 
-import pytest
 from datetime import datetime, timedelta, timezone
-from database.models import CalendarConnection, CalendarEvent, CalendarSyncLog, CalendarConflict
+
+import pytest
+
+from database.models import CalendarConflict, CalendarConnection, CalendarEvent, CalendarSyncLog
 from database.schemas import (
     CalendarConnectionCreate,
     CalendarConnectionUpdate,

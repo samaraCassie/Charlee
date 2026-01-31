@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database.connection import SessionLocal
+
 from database.models import (
     FreelanceOpportunity,
     FreelancePlatform,

@@ -1,14 +1,14 @@
 """Integration between Task Manager and Wellness Coach."""
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from sqlalchemy.orm import Session
 
 from database.models import Task
+from integration.context_manager import ContextManager
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType
-from integration.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 

@@ -4,20 +4,21 @@ This test module covers all three learning components that enable the freelancer
 module to continuously improve through feedback and historical data analysis.
 """
 
-import pytest
 from datetime import date, datetime, timedelta, timezone
 
-from services.freelancer import (
-    PricingLearner,
-    RejectionPatternLearner,
-    HourlyRateOptimizer,
-)
+import pytest
+
 from database.models import (
     FreelanceOpportunity,
     LearningRecord,
     Negotiation,
     PricingParameter,
     ProjectExecution,
+)
+from services.freelancer import (
+    HourlyRateOptimizer,
+    PricingLearner,
+    RejectionPatternLearner,
 )
 
 # ==================== Fixtures ====================

@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from database.models import CalendarConnection, CalendarConflict, CalendarEvent
+from database.models import CalendarConflict, CalendarConnection, CalendarEvent
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType, ModuleName
 

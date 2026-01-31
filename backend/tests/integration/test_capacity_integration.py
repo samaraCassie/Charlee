@@ -1,12 +1,13 @@
 """Integration tests for Capacity Integration."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.config import Base
-from database.models import Task, User, BigRock
+from database.models import BigRock, Task, User
 from integration.capacity_integration import CapacityIntegration
 from integration.context_manager import ContextManager
 from integration.event_bus import Event, EventBus

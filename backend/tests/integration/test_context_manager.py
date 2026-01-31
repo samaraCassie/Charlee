@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.config import Base
-from database.models import GlobalContext, Task, User, BigRock
+from database.models import BigRock, GlobalContext, Task, User
 from integration.context_manager import ContextManager
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType, ModuleName

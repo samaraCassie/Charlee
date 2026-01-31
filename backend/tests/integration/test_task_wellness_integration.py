@@ -1,16 +1,17 @@
 """Integration tests for Task-Wellness Integration."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.config import Base
-from database.models import Task, User, BigRock
-from integration.task_wellness_integration import TaskWellnessIntegration
+from database.models import BigRock, Task, User
 from integration.context_manager import ContextManager
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType, ModuleName
+from integration.task_wellness_integration import TaskWellnessIntegration
 
 
 @pytest.fixture

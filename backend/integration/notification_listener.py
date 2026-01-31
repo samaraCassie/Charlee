@@ -3,11 +3,11 @@
 import logging
 from datetime import datetime
 
+from api.websockets import get_connection_manager
 from database.config import SessionLocal
-from integration.event_bus import EventBus, Event
+from integration.event_bus import Event, EventBus
 from integration.event_types import EventType
 from services.notification_service import NotificationService
-from api.websockets import get_connection_manager
 
 logger = logging.getLogger(__name__)
 

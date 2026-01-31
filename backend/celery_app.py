@@ -8,6 +8,7 @@ This module configures Celery for handling asynchronous tasks like:
 """
 
 import os
+
 from celery import Celery
 from celery.schedules import crontab
 

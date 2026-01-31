@@ -344,8 +344,9 @@ class CharleeAgent(Agent):
             notificacao_id: ID da notificação
         """
         try:
-            from database.models import UserNotification
             from datetime import datetime, timezone
+
+            from database.models import UserNotification
 
             # Get numeric user_id
             try:
@@ -386,8 +387,9 @@ class CharleeAgent(Agent):
         Marca todas as notificações não lidas como lidas.
         """
         try:
-            from database.models import UserNotification
             from datetime import datetime, timezone
+
+            from database.models import UserNotification
 
             # Get numeric user_id
             try:

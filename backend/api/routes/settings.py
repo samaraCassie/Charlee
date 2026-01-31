@@ -8,8 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.auth.dependencies import get_current_user
-from database.config import get_db, settings as app_settings
-from database.models import User, UserSettings as DBUserSettings
+from database.config import get_db
+from database.config import settings as app_settings
+from database.models import User
+from database.models import UserSettings as DBUserSettings
 from services.system_monitor import system_monitor
 
 router = APIRouter()

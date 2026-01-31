@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-
 from agent.specialized_agents.projects.auto_collector import (
     create_auto_collector,
 )

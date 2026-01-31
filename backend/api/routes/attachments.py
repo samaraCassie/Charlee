@@ -199,9 +199,10 @@ async def reprocess_attachment(
     Raises:
         HTTPException: If attachment not found or user doesn't own it
     """
+    import os
+
     from multimodal.audio_service import get_audio_service
     from multimodal.vision_service import get_vision_service
-    import os
 
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:
@@ -273,8 +274,9 @@ async def download_attachment(
     Raises:
         HTTPException: If attachment not found or user doesn't own it
     """
-    from fastapi.responses import FileResponse
     import os
+
+    from fastapi.responses import FileResponse
 
     attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
     if not attachment:

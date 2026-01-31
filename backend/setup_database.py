@@ -25,15 +25,15 @@ def create_tables():
 
         # Importar todos os modelos para garantir que estão registrados
         from database.models import (  # noqa: F401
-            User,
-            RefreshToken,
             AuditLog,
             BigRock,
-            Task,
-            MenstrualCycle,
             CyclePatterns,
-            Workload,
             DailyLog,
+            MenstrualCycle,
+            RefreshToken,
+            Task,
+            User,
+            Workload,
         )
 
         Base.metadata.create_all(bind=engine, checkfirst=True)
@@ -50,6 +50,7 @@ def seed_data():
 
     try:
         # Importar e executar seed_database
+        from database.config import SessionLocal
         from seed_database import (
             clear_database,
             print_summary,
@@ -61,7 +62,6 @@ def seed_data():
             seed_tasks,
             seed_users,
         )
-        from database.config import SessionLocal
 
         db = SessionLocal()
 

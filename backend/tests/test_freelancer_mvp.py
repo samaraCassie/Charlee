@@ -737,6 +737,7 @@ class TestEdgeCases:
     def test_financial_calculator_with_zero_budget(self):
         """Test financial calculator rejects zero budget."""
         from pydantic import ValidationError
+
         from services.freelancer.financial_calculator import FinancialCalculationInput
 
         with pytest.raises(ValidationError):
@@ -749,6 +750,7 @@ class TestEdgeCases:
     def test_financial_calculator_with_negative_budget(self):
         """Test financial calculator rejects negative budget."""
         from pydantic import ValidationError
+
         from services.freelancer.financial_calculator import FinancialCalculationInput
 
         with pytest.raises(ValidationError):
@@ -786,6 +788,7 @@ class TestEdgeCases:
     def test_lgpd_encryption_with_empty_string(self):
         """Test LGPD encryption handles empty strings."""
         from cryptography.fernet import Fernet
+
         from services.freelancer import PIIEncryption
 
         encryption_key = Fernet.generate_key().decode()
@@ -802,6 +805,7 @@ class TestEdgeCases:
     def test_lgpd_decryption_of_invalid_token(self):
         """Test LGPD decryption handles invalid tokens gracefully."""
         from cryptography.fernet import Fernet
+
         from services.freelancer import PIIEncryption
 
         encryption_key = Fernet.generate_key().decode()
@@ -845,6 +849,7 @@ class TestEdgeCases:
     def test_integration_service_with_missing_encryption_key(self):
         """Test integration service fails gracefully without encryption key."""
         import os
+
         from services.freelancer import create_integration_service
 
         redis_client = FakeRedis()

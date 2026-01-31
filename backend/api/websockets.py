@@ -10,8 +10,8 @@ from fastapi import WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
 
 from api.auth.jwt import JWTConfig
-from database.config import SessionLocal
 from database import crud
+from database.config import SessionLocal
 
 logger = logging.getLogger(__name__)
 
