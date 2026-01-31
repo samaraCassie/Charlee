@@ -25,21 +25,21 @@ from database.models import (
 
 
 @pytest.fixture
-def pricing_learner(db):
+def pricing_learner(db, sample_user):
     """PricingLearner fixture."""
-    return PricingLearner(db, user_id=1)
+    return PricingLearner(db, user_id=sample_user.id)
 
 
 @pytest.fixture
-def rejection_learner(db):
+def rejection_learner(db, sample_user):
     """RejectionPatternLearner fixture."""
-    return RejectionPatternLearner(db, user_id=1)
+    return RejectionPatternLearner(db, user_id=sample_user.id)
 
 
 @pytest.fixture
-def rate_optimizer(db):
+def rate_optimizer(db, sample_user):
     """HourlyRateOptimizer fixture."""
-    return HourlyRateOptimizer(db, user_id=1)
+    return HourlyRateOptimizer(db, user_id=sample_user.id)
 
 
 @pytest.fixture
@@ -80,7 +80,7 @@ def sample_pricing_params(db, sample_user):
 @pytest.fixture
 def sample_completed_execution(db, sample_user, sample_platform):
     """Create a completed project execution for learning."""
-    # Create opportunity
+    # Create opportunity using actual model fields
     opportunity = FreelanceOpportunity(
         user_id=sample_user.id,
         platform_id=sample_platform.id,
@@ -91,17 +91,14 @@ def sample_completed_execution(db, sample_user, sample_platform):
         client_rating=4.5,
         client_projects_count=10,
         estimated_hours=50.0,
-        suggested_pricing={
-            "suggested_value": 5500.0,
-            "suggested_hourly_rate": 110.0,
-        },
-        semantic_analysis={
+        estimated_complexity=6,
+        suggested_price=5500.0,
+        category="full_stack",
+        red_flags=["unrealistic_budget"],
+        extracted_context={
             "complexity": 6,
             "category": "full_stack",
-        },
-        risk_analysis={
             "risk_score": 75,
-            "red_flags": ["unrealistic_budget"],
             "risk_level": "safe_to_accept",
         },
         recommendation="accept",
@@ -307,10 +304,8 @@ class TestRejectionPatternLearner:
                 external_id=f"rejected_{i}",
                 title=f"Rejected Project {i}",
                 description="Test",
-                risk_analysis={
-                    "red_flags": ["unrealistic_budget", "vague_requirements"],
-                    "risk_score": 30,
-                },
+                red_flags=["unrealistic_budget", "vague_requirements"],
+                extracted_context={"risk_score": 30},
                 recommendation="reject",
                 status="rejected",
             )
@@ -324,10 +319,8 @@ class TestRejectionPatternLearner:
                 external_id=f"accepted_{i}",
                 title=f"Accepted Project {i}",
                 description="Test",
-                risk_analysis={
-                    "red_flags": ["vague_requirements"],  # Only one flag
-                    "risk_score": 65,
-                },
+                red_flags=["vague_requirements"],  # Only one flag
+                extracted_context={"risk_score": 65},
                 recommendation="accept",
                 status="accepted",
             )
@@ -372,8 +365,8 @@ class TestRejectionPatternLearner:
             external_id="reject_learn_001",
             title="Rejected Learning Test",
             description="Test",
-            risk_analysis={
-                "red_flags": ["suspicious_client", "impossible_deadline"],
+            red_flags=["suspicious_client", "impossible_deadline"],
+            extracted_context={
                 "risk_score": 25,
                 "risk_level": "reject_high_risk",
             },
@@ -410,32 +403,36 @@ class TestRejectionPatternLearner:
         Expected: Suggests increasing weight for high-rejection flags.
         """
         # Create opportunities with specific red flag patterns
-        # High rejection flag: "impossible_deadline" (appears in 4/5 rejections)
-        for i in range(4):
+        # Need at least 10 total opportunities for suggestions to work
+        # High rejection flag: "impossible_deadline" (appears in 8/10 rejections)
+        for i in range(8):
             opp = FreelanceOpportunity(
                 user_id=sample_user.id,
                 platform_id=sample_platform.id,
                 external_id=f"reject_high_{i}",
                 title="Test",
                 description="Test",
-                risk_analysis={"red_flags": ["impossible_deadline"], "risk_score": 20},
+                red_flags=["impossible_deadline"],
+                extracted_context={"risk_score": 20},
                 recommendation="reject",
                 status="rejected",
             )
             db.add(opp)
 
-        # One acceptance even with the flag
-        opp = FreelanceOpportunity(
-            user_id=sample_user.id,
-            platform_id=sample_platform.id,
-            external_id="accept_despite_flag",
-            title="Test",
-            description="Test",
-            risk_analysis={"red_flags": ["impossible_deadline"], "risk_score": 55},
-            recommendation="accept",
-            status="accepted",
-        )
-        db.add(opp)
+        # Two acceptances even with the flag
+        for i in range(2):
+            opp = FreelanceOpportunity(
+                user_id=sample_user.id,
+                platform_id=sample_platform.id,
+                external_id=f"accept_despite_flag_{i}",
+                title="Test",
+                description="Test",
+                red_flags=["impossible_deadline"],
+                extracted_context={"risk_score": 55},
+                recommendation="accept",
+                status="accepted",
+            )
+            db.add(opp)
 
         db.commit()
 
@@ -445,7 +442,7 @@ class TestRejectionPatternLearner:
         # Assert
         assert "impossible_deadline" in suggestions
         flag_suggestion = suggestions["impossible_deadline"]
-        assert flag_suggestion["rejection_probability"] == 0.8  # 4/5
+        assert flag_suggestion["rejection_probability"] == 0.8  # 8/10
         assert flag_suggestion["suggested_weight"] > flag_suggestion["current_weight"]
 
     def test_discover_new_red_flags(self, rejection_learner, db, sample_user):
@@ -514,10 +511,9 @@ class TestHourlyRateOptimizer:
                 title="High Rate Project",
                 description="Test",
                 client_budget=6000.0,
-                suggested_pricing={
-                    "suggested_hourly_rate": 150.0,
-                    "suggested_value": 6000.0,
-                },
+                suggested_price=6000.0,
+                estimated_hours=40.0,  # 150/hr effective rate
+                extracted_context={"suggested_hourly_rate": 150.0},
                 status="rejected",  # High rate rejected
             )
             db.add(opp)
@@ -531,10 +527,9 @@ class TestHourlyRateOptimizer:
                 title="Mid Rate Project",
                 description="Test",
                 client_budget=5000.0,
-                suggested_pricing={
-                    "suggested_hourly_rate": 100.0,
-                    "suggested_value": 5000.0,
-                },
+                suggested_price=5000.0,
+                estimated_hours=50.0,  # 100/hr effective rate
+                extracted_context={"suggested_hourly_rate": 100.0},
                 status="accepted",  # Mid rate accepted
                 recommendation="accept",
             )
@@ -549,13 +544,17 @@ class TestHourlyRateOptimizer:
         assert result["total_opportunities"] == 8
         assert "rate_range_stats" in result
 
-        # Check that mid range has higher acceptance than premium
+        # Check that senior range ($100/hr) has higher acceptance than premium ($150/hr)
         stats = result["rate_range_stats"]
-        mid_range = stats.get("mid", stats.get("senior"))  # $100/hr falls in mid or senior
-        premium_range = stats.get("premium")  # $150/hr falls in premium
+        senior_range = stats.get("senior")  # $100/hr falls in senior (100-125)
+        premium_range = stats.get("premium")  # $150/hr falls in premium (150-200)
 
-        if mid_range and premium_range:
-            assert mid_range["acceptance_rate"] > premium_range["acceptance_rate"]
+        if senior_range and premium_range:
+            # Senior should have 100% acceptance (5 accepted), premium should have 0% (3 rejected)
+            assert senior_range["acceptance_rate"] > premium_range["acceptance_rate"]
+        elif senior_range:
+            # At minimum, senior range should have high acceptance
+            assert senior_range["acceptance_rate"] > 0.5
 
     def test_suggest_rate_adjustment_with_high_acceptance(
         self, rate_optimizer, db, sample_user, sample_platform, sample_pricing_params
@@ -574,10 +573,9 @@ class TestHourlyRateOptimizer:
                 external_id=f"accepted_{i}",
                 title="Accepted Project",
                 description="Test",
-                suggested_pricing={
-                    "suggested_hourly_rate": 100.0,
-                    "suggested_value": 5000.0,
-                },
+                suggested_price=5000.0,
+                estimated_hours=50.0,  # 100/hr effective rate
+                extracted_context={"suggested_hourly_rate": 100.0},
                 status="accepted",
                 recommendation="accept",
             )
@@ -590,10 +588,9 @@ class TestHourlyRateOptimizer:
             external_id="rejected_1",
             title="Rejected Project",
             description="Test",
-            suggested_pricing={
-                "suggested_hourly_rate": 100.0,
-                "suggested_value": 5000.0,
-            },
+            suggested_price=5000.0,
+            estimated_hours=50.0,  # 100/hr effective rate
+            extracted_context={"suggested_hourly_rate": 100.0},
             status="rejected",
         )
         db.add(opp)
@@ -646,8 +643,10 @@ class TestHourlyRateOptimizer:
                 external_id=f"aiml_{i}",
                 title="AI Project",
                 description="Test",
-                semantic_analysis={"category": "ai_ml"},
-                suggested_pricing={"suggested_hourly_rate": 150.0},
+                category="ai_ml",
+                suggested_price=7500.0,
+                estimated_hours=50.0,  # 150/hr effective rate
+                extracted_context={"suggested_hourly_rate": 150.0},
                 status="accepted",
             )
             db.add(opp)
@@ -660,8 +659,10 @@ class TestHourlyRateOptimizer:
                 external_id=f"frontend_{i}",
                 title="Frontend Project",
                 description="Test",
-                semantic_analysis={"category": "frontend"},
-                suggested_pricing={"suggested_hourly_rate": 90.0},
+                category="frontend",
+                suggested_price=4500.0,
+                estimated_hours=50.0,  # 90/hr effective rate
+                extracted_context={"suggested_hourly_rate": 90.0},
                 status="accepted",
             )
             db.add(opp)
