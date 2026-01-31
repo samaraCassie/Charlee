@@ -158,14 +158,16 @@ class ProjectDuplicationPrevention:
             # Get recent similar projects
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.LOOKBACK_DAYS)
 
-            query = text("""
+            query = text(
+                """
                 SELECT id, title, client_name, client_budget, external_id
                 FROM freelance_opportunities
                 WHERE user_id = :user_id
                     AND collected_at >= :cutoff_date
                 ORDER BY collected_at DESC
                 LIMIT 50
-            """)
+            """
+            )
 
             result = self.db.execute(
                 query,

@@ -80,22 +80,26 @@ def upgrade() -> None:
     # 4. Create vector index for similarity search (HNSW or IVFFlat)
     try:
         # HNSW index is faster for similarity search
-        op.execute("""
+        op.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_freelance_opportunities_embedding
             ON freelance_opportunities
             USING hnsw (embedding vector_cosine_ops)
-        """)
+        """
+        )
         print("Created HNSW index for embedding similarity search")
     except Exception as e:
         print(f"Warning: Could not create HNSW index: {e}")
         # Fallback to simpler index
         try:
-            op.execute("""
+            op.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_freelance_opportunities_embedding
                 ON freelance_opportunities
                 USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100)
-            """)
+            """
+            )
             print("Created IVFFlat index as fallback")
         except Exception as e2:
             print(f"Warning: Could not create any vector index: {e2}")
