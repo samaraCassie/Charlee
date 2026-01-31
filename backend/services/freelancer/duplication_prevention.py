@@ -117,9 +117,7 @@ class ProjectDuplicationPrevention:
         self.db = db
         self.redis = redis_client
 
-    def detect_duplicate(
-        self, new_project: ProjectData, user_id: int
-    ) -> DuplicateCheckResult:
+    def detect_duplicate(self, new_project: ProjectData, user_id: int) -> DuplicateCheckResult:
         """
         Detect if a project is a duplicate using similarity matching.
 

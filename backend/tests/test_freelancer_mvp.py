@@ -9,7 +9,7 @@ Tests RN09-RN13:
 """
 
 import time
-from datetime import date, timedelta
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,7 +24,6 @@ from services.freelancer import (
     PlatformRateLimiter,
     ProjectDuplicationPrevention,
     RateLimitExceeded,
-    TaxRegime,
     UpworkRateLimiter,
 )
 
@@ -538,9 +537,7 @@ class TestIntegrationService:
         assert service.risk_assessment is not None
         assert service.lgpd is not None
 
-    def test_process_opportunity_complete_pipeline(
-        self, integration_service, db_session
-    ):
+    def test_process_opportunity_complete_pipeline(self, integration_service, db_session):
         """
         Test complete opportunity processing pipeline.
 
@@ -610,9 +607,7 @@ class TestIntegrationService:
         # Verify final recommendation
         assert result["final_recommendation"]["decision"] == "accept"
 
-    def test_process_opportunity_high_risk_rejection(
-        self, integration_service, db_session
-    ):
+    def test_process_opportunity_high_risk_rejection(self, integration_service, db_session):
         """
         Test pipeline with high-risk project.
 
@@ -657,9 +652,7 @@ class TestIntegrationService:
         # Final recommendation should be reject
         assert result["final_recommendation"]["decision"] == "reject"
 
-    def test_process_opportunity_duplicate_detected(
-        self, integration_service, db_session
-    ):
+    def test_process_opportunity_duplicate_detected(self, integration_service, db_session):
         """
         Test duplicate detection stops processing.
 
@@ -675,9 +668,9 @@ class TestIntegrationService:
         mock_existing.client_name = "Test Client"
         mock_existing.budget = 3000.0
 
-        db_session.query.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
-            [mock_existing]
-        )
+        db_session.query.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = [
+            mock_existing
+        ]
 
         opportunity_data = OpportunityProcessingInput(
             title="Build Django API",  # Same title
@@ -719,9 +712,7 @@ class TestIntegrationService:
             gross_usd=5000.0, platform="upwork", tax_regime="Simples_Nacional"
         )
 
-        financial_result = integration_service.financial.calculate_net_value(
-            financial_input
-        )
+        financial_result = integration_service.financial.calculate_net_value(financial_input)
 
         # Risk assessment
         risk_input = ProjectRiskInput(
@@ -795,9 +786,7 @@ class TestEdgeCases:
             client_projects_count=None,  # Missing
         )
 
-        result = risk.score_project(
-            project=project, fair_value_usd=1000.0, estimated_hours=20
-        )
+        result = risk.score_project(project=project, fair_value_usd=1000.0, estimated_hours=20)
 
         # Should still return valid result (with default penalties)
         assert "risk_score" in result

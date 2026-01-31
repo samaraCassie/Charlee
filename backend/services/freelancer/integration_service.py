@@ -30,7 +30,10 @@ from services.freelancer.financial_calculator import (
     FreelancerFinancialCalculator,
 )
 from services.freelancer.lgpd_compliance import LGPDCompliance
-from services.freelancer.rate_limiter import PlatformRateLimiter, RateLimitStatus, create_rate_limiter
+from services.freelancer.rate_limiter import (
+    PlatformRateLimiter,
+    create_rate_limiter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +220,10 @@ class FreelancerIntegrationService:
 
         logger.info(
             "Initialized FreelancerIntegrationService",
-            extra={"has_redis": redis_client is not None, "has_encryption": encryption_key is not None},
+            extra={
+                "has_redis": redis_client is not None,
+                "has_encryption": encryption_key is not None,
+            },
         )
 
     def get_rate_limiter(self, platform: str) -> PlatformRateLimiter:
@@ -241,9 +247,7 @@ class FreelancerIntegrationService:
         """
         if platform not in self._rate_limiters:
             self._rate_limiters[platform] = create_rate_limiter(self.redis, platform)
-            logger.debug(
-                "Created rate limiter for platform", extra={"platform": platform}
-            )
+            logger.debug("Created rate limiter for platform", extra={"platform": platform})
 
         return self._rate_limiters[platform]
 
@@ -339,7 +343,7 @@ class FreelancerIntegrationService:
             result["checks_passed"].append("duplicate_detection")
 
             # Step 2: Encrypt PII (RN13 - LGPD)
-            encrypted_data = self.lgpd.encrypt_opportunity_pii(opportunity_data)
+            self.lgpd.encrypt_opportunity_pii(opportunity_data)
             result["encrypted_pii"] = True
             result["checks_passed"].append("lgpd_encryption")
             logger.debug("PII encrypted successfully")
@@ -522,9 +526,7 @@ class FreelancerIntegrationService:
 
     # Convenience Methods (delegate to sub-services)
 
-    def acquire_processing_lock(
-        self, opportunity_id: int, timeout: int = 300
-    ) -> Optional[str]:
+    def acquire_processing_lock(self, opportunity_id: int, timeout: int = 300) -> Optional[str]:
         """
         Acquire distributed processing lock for an opportunity.
 
@@ -565,9 +567,7 @@ class FreelancerIntegrationService:
         """
         return self.duplication.release_processing_lock(opportunity_id, lock_token)
 
-    def check_rate_limit(
-        self, platform: str, user_id: Optional[int] = None
-    ) -> bool:
+    def check_rate_limit(self, platform: str, user_id: Optional[int] = None) -> bool:
         """
         Check if API request can be made without exceeding rate limit.
 
@@ -592,9 +592,7 @@ class FreelancerIntegrationService:
         rate_limiter = self.get_rate_limiter(platform)
         return rate_limiter.can_make_request(user_id)
 
-    def get_rate_limit_status(
-        self, platform: str, user_id: Optional[int] = None
-    ) -> RateLimitInfo:
+    def get_rate_limit_status(self, platform: str, user_id: Optional[int] = None) -> RateLimitInfo:
         """
         Get current rate limit status for a platform.
 

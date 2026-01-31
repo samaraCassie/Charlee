@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { Briefcase, BarChart3, Settings, TrendingUp } from 'lucide-react';
+import { Briefcase, BarChart3, Settings } from 'lucide-react';
 import { useFreelancerStore } from '../stores/freelancerStore';
 
 export default function FreelancerLayout({ children }: { children: React.ReactNode }) {

@@ -30,11 +30,13 @@ def upgrade() -> None:
     )
 
     # Update existing superusers to have admin role
-    op.execute("""
+    op.execute(
+        """
         UPDATE users
         SET role = 'admin'
         WHERE is_superuser = true
-    """)
+    """
+    )
 
     # Create index for faster role-based queries
     op.create_index("idx_users_role", "users", ["role"], unique=False)

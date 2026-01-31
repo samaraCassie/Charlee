@@ -535,7 +535,8 @@ class FreelancerFinancialCalculator:
                     )
                 except Exception as e:
                     logger.warning(
-                        "Error caching exchange rate", extra={"cache_key": cache_key, "error": str(e)}
+                        "Error caching exchange rate",
+                        extra={"cache_key": cache_key, "error": str(e)},
                     )
 
             logger.info(

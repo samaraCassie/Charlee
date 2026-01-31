@@ -16,7 +16,7 @@ import {
   MessageSquare,
   ExternalLink,
 } from 'lucide-react';
-import { FreelanceOpportunity } from '../types/freelancer';
+import type { FreelanceOpportunity } from '../types/freelancer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -32,7 +32,6 @@ export default function FreelancerOpportunities() {
     fetchPlatforms,
     fetchStats,
     createOpportunity,
-    updateOpportunityStatus,
     processOpportunity,
   } = useFreelancerStore();
 
@@ -290,12 +289,13 @@ export default function FreelancerOpportunities() {
               </CardContent>
 
               <CardFooter className="flex gap-2">
-                <Button asChild variant="outline" size="sm" className="flex-1">
-                  <Link to={`/freelancer/opportunities/${opportunity.id}`}>
-                    <ExternalLink className="h-4 w-4" />
-                    Ver Detalhes
-                  </Link>
-                </Button>
+                <Link
+                  to={`/freelancer/opportunities/${opportunity.id}`}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 px-3 flex-1"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Ver Detalhes
+                </Link>
                 {!opportunity.risk_assessment && (
                   <Button
                     size="sm"

@@ -13,9 +13,9 @@ Learning Strategy:
 """
 
 import logging
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -23,7 +23,6 @@ from sqlalchemy.orm import Session
 from database.models import (
     FreelanceOpportunity,
     LearningRecord,
-    Negotiation,
 )
 
 logger = logging.getLogger(__name__)

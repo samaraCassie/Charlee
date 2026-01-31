@@ -8,7 +8,6 @@ Usage:
 This script demonstrates all 7 agents + 3 learning components without needing a frontend.
 """
 
-import asyncio
 import sys
 from pathlib import Path
 
@@ -25,7 +24,6 @@ from database.models import (
 from services.freelancer import (
     ClientRiskAssessment,
     FreelancerFinancialCalculator,
-    FreelancerIntegrationService,
     HourlyRateOptimizer,
     PricingLearner,
     ProjectDuplicationPrevention,
@@ -70,9 +68,7 @@ def test_duplication_prevention(db):
 
     print(f"✓ Created opportunity: {opp1.title}")
     print(f"✓ Duplicate detection: {is_dup}")
-    print(
-        f"  Similarity threshold: {dup_service.similarity_threshold * 100}% (Jaccard index)"
-    )
+    print(f"  Similarity threshold: {dup_service.similarity_threshold * 100}% (Jaccard index)")
 
 
 def test_financial_calculator(db):
@@ -93,9 +89,7 @@ def test_financial_calculator(db):
     print(f"✓ Exchange rate: R$ {result['exchange_rate']}")
     print(f"✓ Gross (BRL): R$ {result['gross_brl']}")
     print(f"✓ Platform fee (Upwork 10%): R$ {result['breakdown']['platform_fee_brl']}")
-    print(
-        f"✓ Simples Nacional tax: R$ {result['breakdown']['simples_nacional_tax_brl']}"
-    )
+    print(f"✓ Simples Nacional tax: R$ {result['breakdown']['simples_nacional_tax_brl']}")
     print(f"✓ Net income (BRL): R$ {result['net_brl']}")
     print(f"✓ Effective tax rate: {result['effective_tax_rate'] * 100:.2f}%")
 
@@ -115,7 +109,7 @@ def test_client_risk_assessment(db):
         client_country="Unknown",
     )
 
-    print(f"✓ High-risk client:")
+    print("✓ High-risk client:")
     print(f"  - Risk score: {high_risk['risk_score']:.2f}/10")
     print(f"  - Risk level: {high_risk['risk_level']}")
     print(f"  - Red flags: {', '.join(high_risk['red_flags'])}")
@@ -130,7 +124,7 @@ def test_client_risk_assessment(db):
         client_country="United States",
     )
 
-    print(f"\n✓ Low-risk client:")
+    print("\n✓ Low-risk client:")
     print(f"  - Risk score: {low_risk['risk_score']:.2f}/10")
     print(f"  - Risk level: {low_risk['risk_level']}")
     print(f"  - Green flags: {', '.join(low_risk['green_flags'])}")
@@ -146,7 +140,7 @@ def test_pricing_learner(db):
     # Analyze pricing performance
     performance = learner.analyze_pricing_performance(days=90)
 
-    print(f"✓ Pricing performance analysis:")
+    print("✓ Pricing performance analysis:")
     print(f"  - Total learning records: {performance['total_records']}")
 
     if performance["total_records"] > 0:
@@ -167,7 +161,7 @@ def test_rejection_pattern_learner(db):
     # Analyze rejection patterns
     patterns = learner.analyze_rejection_patterns(days=90)
 
-    print(f"✓ Rejection pattern analysis:")
+    print("✓ Rejection pattern analysis:")
     print(f"  - Total opportunities: {patterns['total_opportunities']}")
 
     if patterns["total_opportunities"] > 0:
@@ -176,11 +170,9 @@ def test_rejection_pattern_learner(db):
         print(f"  - Rejection rate: {patterns['rejection_rate']:.1%}")
 
         if patterns["high_risk_flags"]:
-            print(f"\n  High-risk red flags (>70% rejection probability):")
+            print("\n  High-risk red flags (>70% rejection probability):")
             for flag in patterns["high_risk_flags"][:3]:
-                print(
-                    f"    - {flag['flag']}: {flag['rejection_probability']:.1%} rejection"
-                )
+                print(f"    - {flag['flag']}: {flag['rejection_probability']:.1%} rejection")
     else:
         print(f"  - {patterns['message']}")
         print("  - (This is expected if no opportunities have been analyzed yet)")
@@ -195,14 +187,12 @@ def test_hourly_rate_optimizer(db):
     # Suggest rate adjustment
     suggestion = optimizer.suggest_rate_adjustment(target_acceptance_rate=0.60)
 
-    print(f"✓ Hourly rate optimization:")
+    print("✓ Hourly rate optimization:")
 
     if "current_rate" in suggestion:
         print(f"  - Current rate: ${suggestion['current_rate']}/hr")
         print(f"  - Suggested rate: ${suggestion['suggested_rate']}/hr")
-        print(
-            f"  - Current acceptance rate: {suggestion['current_acceptance_rate']:.1%}"
-        )
+        print(f"  - Current acceptance rate: {suggestion['current_acceptance_rate']:.1%}")
         print(f"  - Adjustment suggested: {suggestion['adjustment_suggested']}")
         print(f"  - Reason: {suggestion['reason']}")
     else:
@@ -216,12 +206,12 @@ def test_integration_service(db):
 
     integration_service = create_integration_service(db, user_id=1)
 
-    print(f"✓ Integration service created successfully")
-    print(f"  - Duplication Prevention: ✓")
-    print(f"  - Rate Limiter: ✓")
-    print(f"  - Financial Calculator: ✓")
-    print(f"  - Risk Assessment: ✓")
-    print(f"  - LGPD Compliance: ✓")
+    print("✓ Integration service created successfully")
+    print("  - Duplication Prevention: ✓")
+    print("  - Rate Limiter: ✓")
+    print("  - Financial Calculator: ✓")
+    print("  - Risk Assessment: ✓")
+    print("  - LGPD Compliance: ✓")
 
     # Test full pipeline
     result = integration_service.process_opportunity(
@@ -235,11 +225,13 @@ def test_integration_service(db):
         client_payment_verified=True,
     )
 
-    print(f"\n✓ Full pipeline test:")
+    print("\n✓ Full pipeline test:")
     print(f"  - Is duplicate: {result['is_duplicate']}")
     print(f"  - Risk assessment: {result['risk_assessment']['risk_level']}")
     print(f"  - Financial calculation: R$ {result['financial_calculation']['net_brl']}")
-    print(f"  - Rate limit status: {result['rate_limit_status']['requests_remaining']} requests remaining")
+    print(
+        f"  - Rate limit status: {result['rate_limit_status']['requests_remaining']} requests remaining"
+    )
 
 
 def main():
@@ -269,7 +261,7 @@ def main():
         # Ensure pricing parameters exist
         params = (
             db.query(PricingParameter)
-            .filter(PricingParameter.user_id == 1, PricingParameter.active == True)
+            .filter(PricingParameter.user_id == 1, PricingParameter.active.is_(True))
             .first()
         )
         if not params:

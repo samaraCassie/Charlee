@@ -14,7 +14,7 @@ import {
   CheckCircle,
   Activity,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -202,12 +202,13 @@ export default function FreelancerAnalytics() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ platform, revenue }) => `${platform}: $${revenue.toFixed(0)}`}
+                        label={({ name, value }) => `${name}: $${Number(value).toFixed(0)}`}
+                        nameKey="platform"
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="revenue"
                       >
-                        {careerInsights.top_platforms.map((entry, index) => (
+                        {careerInsights.top_platforms.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>

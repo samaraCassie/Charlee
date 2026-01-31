@@ -6,7 +6,6 @@ module to continuously improve through feedback and historical data analysis.
 
 import pytest
 from datetime import date, datetime, timedelta, timezone
-from unittest.mock import MagicMock
 
 from services.freelancer import (
     PricingLearner,
@@ -15,7 +14,6 @@ from services.freelancer import (
 )
 from database.models import (
     FreelanceOpportunity,
-    FreelancePlatform,
     LearningRecord,
     Negotiation,
     PricingParameter,
@@ -396,7 +394,10 @@ class TestRejectionPatternLearner:
         assert learning_record.learning_type == "classification"
         assert learning_record.user_id == sample_user.id
         assert learning_record.related_opportunity_id == opp.id
-        assert learning_record.user_feedback == "Client communication was poor and timeline unrealistic"
+        assert (
+            learning_record.user_feedback
+            == "Client communication was poor and timeline unrealistic"
+        )
         assert learning_record.accuracy_score == 1.0  # Model correctly predicted rejection
 
     def test_suggest_risk_weight_adjustments(
@@ -676,7 +677,10 @@ class TestHourlyRateOptimizer:
         assert "frontend" in result["category_stats"]
 
         # AI/ML should have higher average rate
-        assert result["category_stats"]["ai_ml"]["avg_rate"] > result["category_stats"]["frontend"]["avg_rate"]
+        assert (
+            result["category_stats"]["ai_ml"]["avg_rate"]
+            > result["category_stats"]["frontend"]["avg_rate"]
+        )
 
 
 # ==================== Integration Tests ====================
@@ -686,8 +690,13 @@ class TestLearningComponentsIntegration:
     """Test integration between learning components."""
 
     def test_full_learning_cycle(
-        self, pricing_learner, rejection_learner, rate_optimizer,
-        sample_completed_execution, sample_pricing_params, db
+        self,
+        pricing_learner,
+        rejection_learner,
+        rate_optimizer,
+        sample_completed_execution,
+        sample_pricing_params,
+        db,
     ):
         """
         Test complete learning cycle across all components.

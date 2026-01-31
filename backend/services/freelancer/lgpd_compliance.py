@@ -875,6 +875,4 @@ class LGPDCompliance:
                 },
                 exc_info=True,
             )
-            return DataRetentionStatus(
-                opportunity_id=opportunity_id, status="error", error=str(e)
-            )
+            return DataRetentionStatus(opportunity_id=opportunity_id, status="error", error=str(e))

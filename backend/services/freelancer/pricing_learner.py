@@ -12,9 +12,9 @@ Learning Strategy:
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from database.models import (
@@ -356,7 +356,7 @@ class PricingLearner:
             # Extract complexity number (e.g., "5-6" -> 5.5)
             try:
                 parts = complexity_range.split("-")
-                complexity_mid = (int(parts[0]) + int(parts[1])) / 2
+                _ = (int(parts[0]) + int(parts[1])) / 2  # Validate range format
             except (ValueError, IndexError):
                 continue
 

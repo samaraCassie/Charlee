@@ -14,17 +14,14 @@ Optimization Strategy:
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from database.models import (
     FreelanceOpportunity,
-    LearningRecord,
-    Negotiation,
     PricingParameter,
-    ProjectExecution,
 )
 
 logger = logging.getLogger(__name__)
