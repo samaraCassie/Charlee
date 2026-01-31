@@ -161,8 +161,7 @@ def upgrade():
         )
 
     # Update notification type constraint to include external sources
-    op.execute(
-        """
+    op.execute("""
         ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
         ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (
             type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change',
@@ -170,8 +169,7 @@ def upgrade():
                      'slack', 'linkedin', 'github', 'whatsapp', 'telegram',
                      'discord', 'trello', 'notion')
         );
-        """
-    )
+        """)
 
     # Create new indexes on notifications
     op.create_index("ix_notifications_external_id", "notifications", ["external_id"])
@@ -402,15 +400,13 @@ def downgrade():
     op.drop_index("ix_notifications_external_id", table_name="notifications")
 
     # Revert notification type constraint
-    op.execute(
-        """
+    op.execute("""
         ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
         ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (
             type IN ('task_due_soon', 'capacity_overload', 'cycle_phase_change',
                      'freelance_invoice_ready', 'system', 'achievement')
         );
-        """
-    )
+        """)
 
     # Remove new columns from notifications
     with op.batch_alter_table("notifications") as batch_op:
