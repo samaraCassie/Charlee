@@ -153,10 +153,11 @@ class RejectionPatternLearner:
             LearningRecord if learning was successful, None otherwise
         """
         try:
-            # Extract risk analysis from opportunity
-            risk_analysis = opportunity.risk_analysis or {}
-            red_flags = risk_analysis.get("red_flags", [])
-            risk_score = risk_analysis.get("risk_score", 0)
+            # Extract risk data from opportunity (using actual model fields)
+            red_flags = opportunity.red_flags or []
+            extracted_context = opportunity.extracted_context or {}
+            risk_score = extracted_context.get("risk_score", 0)
+            risk_level = extracted_context.get("risk_level", "unknown")
 
             # Input features
             input_features = {
@@ -173,7 +174,7 @@ class RejectionPatternLearner:
             # Predicted vs actual
             predicted_output = {
                 "recommendation": opportunity.recommendation,
-                "risk_level": risk_analysis.get("risk_level", "unknown"),
+                "risk_level": risk_level,
             }
 
             actual_output = {
@@ -318,8 +319,9 @@ class RejectionPatternLearner:
         """Extract red flags from list of opportunities."""
         red_flags_list = []
         for opp in opportunities:
-            if opp.risk_analysis and "red_flags" in opp.risk_analysis:
-                red_flags_list.append(opp.risk_analysis["red_flags"])
+            # Use red_flags field directly from the model
+            if opp.red_flags:
+                red_flags_list.append(opp.red_flags)
             else:
                 red_flags_list.append([])
         return red_flags_list

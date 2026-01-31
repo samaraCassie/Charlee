@@ -68,7 +68,7 @@ class HourlyRateOptimizer:
                 and_(
                     FreelanceOpportunity.user_id == self.user_id,
                     FreelanceOpportunity.created_at >= cutoff_date,
-                    FreelanceOpportunity.suggested_pricing.isnot(None),
+                    FreelanceOpportunity.suggested_price.isnot(None),
                 )
             )
             .all()
@@ -88,7 +88,13 @@ class HourlyRateOptimizer:
         }
 
         for opp in opportunities:
-            suggested_rate = opp.suggested_pricing.get("suggested_hourly_rate")
+            # Calculate hourly rate from suggested_price and estimated_hours
+            if opp.estimated_hours and opp.estimated_hours > 0:
+                suggested_rate = opp.suggested_price / opp.estimated_hours
+            elif opp.extracted_context:
+                suggested_rate = opp.extracted_context.get("suggested_hourly_rate")
+            else:
+                continue
             if not suggested_rate:
                 continue
 
@@ -103,7 +109,7 @@ class HourlyRateOptimizer:
             if opp.status in ("accepted", "negotiating") or opp.recommendation == "accept":
                 range_stats[range_name]["accepted"] += 1
                 # Add negotiated or suggested value
-                value = opp.client_budget or opp.suggested_pricing.get("suggested_value", 0.0)
+                value = opp.client_budget or opp.suggested_price or 0.0
                 range_stats[range_name]["revenue"] += value
             elif opp.status == "rejected" or opp.recommendation == "reject":
                 range_stats[range_name]["rejected"] += 1
@@ -146,15 +152,15 @@ class HourlyRateOptimizer:
         """
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-        # Get opportunities with semantic analysis
+        # Get opportunities with category data
         opportunities = (
             self.db.query(FreelanceOpportunity)
             .filter(
                 and_(
                     FreelanceOpportunity.user_id == self.user_id,
                     FreelanceOpportunity.created_at >= cutoff_date,
-                    FreelanceOpportunity.semantic_analysis.isnot(None),
-                    FreelanceOpportunity.suggested_pricing.isnot(None),
+                    FreelanceOpportunity.category.isnot(None),
+                    FreelanceOpportunity.suggested_price.isnot(None),
                 )
             )
             .all()
@@ -170,8 +176,14 @@ class HourlyRateOptimizer:
         category_stats = {}
 
         for opp in opportunities:
-            category = opp.semantic_analysis.get("category", "other")
-            suggested_rate = opp.suggested_pricing.get("suggested_hourly_rate")
+            category = opp.category or "other"
+            # Calculate hourly rate from suggested_price and estimated_hours
+            if opp.estimated_hours and opp.estimated_hours > 0:
+                suggested_rate = opp.suggested_price / opp.estimated_hours
+            elif opp.extracted_context:
+                suggested_rate = opp.extracted_context.get("suggested_hourly_rate")
+            else:
+                suggested_rate = None
 
             if not suggested_rate:
                 continue

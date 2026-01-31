@@ -82,39 +82,30 @@ class PricingLearner:
                 .first()
             )
 
-            # Extract features
+            # Extract features (using actual model fields)
             input_features = {
-                "complexity": (
-                    opportunity.semantic_analysis.get("complexity")
-                    if opportunity.semantic_analysis
-                    else 5
-                ),
-                "category": (
-                    opportunity.semantic_analysis.get("category")
-                    if opportunity.semantic_analysis
-                    else "other"
-                ),
+                "complexity": opportunity.estimated_complexity or 5,
+                "category": opportunity.category or "other",
                 "client_budget": opportunity.client_budget or 0.0,
                 "estimated_hours": opportunity.estimated_hours or 0.0,
                 "client_rating": opportunity.client_rating or 0.0,
                 "client_projects_count": opportunity.client_projects_count or 0,
             }
 
-            # Calculate predicted vs actual
-            predicted_value = (
-                opportunity.suggested_pricing.get("suggested_value")
-                if opportunity.suggested_pricing
-                else None
-            )
+            # Calculate predicted vs actual (using actual model fields)
+            predicted_value = opportunity.suggested_price
             actual_value = execution.negotiated_value
+
+            # Calculate hourly rate from suggested_price and estimated_hours
+            suggested_hourly_rate = None
+            if opportunity.suggested_price and opportunity.estimated_hours:
+                suggested_hourly_rate = opportunity.suggested_price / opportunity.estimated_hours
+            elif opportunity.extracted_context:
+                suggested_hourly_rate = opportunity.extracted_context.get("suggested_hourly_rate")
 
             predicted_output = {
                 "suggested_value": predicted_value,
-                "suggested_hourly_rate": (
-                    opportunity.suggested_pricing.get("suggested_hourly_rate")
-                    if opportunity.suggested_pricing
-                    else None
-                ),
+                "suggested_hourly_rate": suggested_hourly_rate,
             }
 
             actual_output = {
