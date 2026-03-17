@@ -8,15 +8,34 @@ export interface FreelanceOpportunity {
   title: string;
   description: string;
   client_budget?: number;
+  client_budget_min?: number; // For budget ranges (Smart Paste/Bookmarklet)
+  client_name?: string;
   client_rating?: number;
   client_projects_count?: number;
   client_payment_verified?: boolean;
+  client_total_spent?: number;
   client_country?: string;
   estimated_hours?: number;
   skills_required?: string[];
-  status: 'pending' | 'accepted' | 'rejected' | 'negotiating' | 'completed';
+  status: 'new' | 'analyzed' | 'pending' | 'accepted' | 'rejected' | 'negotiating' | 'completed';
   created_at: string;
   updated_at: string;
+
+  // Smart Paste / Bookmarklet fields (RF01)
+  source_url?: string; // URL of origin
+  raw_input_text?: string; // Original pasted text
+
+  // Analysis results
+  recommendation?: string; // accept, negotiate, reject
+  recommendation_reason?: string;
+  red_flags?: (string | Record<string, unknown>)[]; // Can be string[] or object[]
+  opportunities?: (string | Record<string, unknown>)[]; // Can be string[] or object[]
+  final_score?: number;
+  extracted_context?: {
+    risk_score?: number;
+    risk_level?: string;
+    [key: string]: unknown;
+  };
 
   // Relationships
   platform?: FreelancePlatform;
@@ -83,19 +102,64 @@ export interface PricingSuggestion {
 
 export interface PricingParameter {
   id: number;
-  user_id: number;
+  user_id?: number;
   version: number;
   base_hourly_rate: number;
   minimum_margin: number;
-  currency: string;
+  minimum_project_value: number;
   complexity_factors: Record<string, number>;
   specialization_factors: Record<string, number>;
   deadline_factors: Record<string, number>;
   client_factors: Record<string, number>;
-  minimum_project_value: number;
-  minimum_deadline_days: number;
+  active: boolean;
+  auto_adjusted: boolean;
+  based_on_executions_count: number;
+  adjustment_reason?: string;
+  created_at: string;
+}
+
+export interface RedFlag {
+  name: string;
+  keywords?: string[];
+  threshold?: number;
+  weight: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  details?: string;
+}
+
+export interface GreenFlag {
+  name: string;
+  min_words?: number;
+  min_projects?: number;
+  min_rating?: number;
+  min_ratio?: number;
+  buffer_ratio?: number;
+  keywords?: string[];
+  weight: number;
+}
+
+export interface EvaluationCriteria {
+  id: number;
+  user_id: number;
+  version: number;
+  red_flags: Record<string, RedFlag>;
+  green_flags: Record<string, GreenFlag>;
+  score_weights: {
+    viability: number;
+    alignment: number;
+    strategic: number;
+  };
+  minimum_risk_score: number;
+  minimum_final_score: number;
+  risk_tolerance: 'conservative' | 'moderate' | 'aggressive';
+  auto_adjust_enabled: boolean;
+  adjustment_threshold: number;
+  based_on_evaluations_count: number;
+  last_adjustment_reason?: string;
   active: boolean;
   created_at: string;
+  updated_at: string;
+  activated_at?: string;
 }
 
 export interface NegotiationResponse {
