@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useFreelancerStore } from '../stores/freelancerStore';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -18,19 +18,55 @@ import {
   Briefcase,
   Calendar,
   RefreshCw,
+  Trash2,
+  Pencil,
+  Shield,
+  Settings,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
 import * as freelancerService from '../services/freelancerService';
+import type { NegotiationResponse, FreelanceOpportunity } from '../types/freelancer';
 import { useToast } from '../hooks/use-toast';
 
 export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { selectedOpportunity, fetchOpportunityById, updateOpportunityStatus } = useFreelancerStore();
+  const { selectedOpportunity, fetchOpportunityById, updateOpportunityStatus, acceptOpportunity, updateOpportunity, deleteOpportunity } = useFreelancerStore();
 
   const [processing, setProcessing] = useState(false);
   const [negotiating, setNegotiating] = useState(false);
-  const [negotiationResult, setNegotiationResult] = useState<any>(null);
+  const [negotiationResult, setNegotiationResult] = useState<NegotiationResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    client_budget: 0,
+    client_name: '',
+    client_country: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -38,22 +74,34 @@ export default function OpportunityDetail() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (selectedOpportunity) {
+      setEditForm({
+        title: selectedOpportunity.title || '',
+        description: selectedOpportunity.description || '',
+        client_budget: selectedOpportunity.client_budget || 0,
+        client_name: selectedOpportunity.client_name || '',
+        client_country: selectedOpportunity.client_country || '',
+      });
+    }
+  }, [selectedOpportunity]);
+
   const handleProcessOpportunity = async () => {
     if (!selectedOpportunity) return;
 
     setProcessing(true);
     try {
-      const result = await freelancerService.processOpportunity({ opportunity_id: selectedOpportunity.id });
+      const result = await freelancerService.analyzeOpportunity(selectedOpportunity.id);
       await fetchOpportunityById(selectedOpportunity.id);
 
       toast({
-        title: 'Oportunidade processada!',
-        description: `Recomendação: ${result.risk_assessment.recommendation}`,
+        title: 'Oportunidade analisada!',
+        description: `Recomendação: ${result.opportunity.recommendation || result.analysis.final_recommendation?.decision}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
-        title: 'Erro ao processar',
-        description: error.message,
+        title: 'Erro ao analisar',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
     } finally {
@@ -75,10 +123,10 @@ export default function OpportunityDetail() {
         title: 'Negociação gerada!',
         description: `Contra-oferta: $${result.counter_offer}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao gerar negociação',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
     } finally {
@@ -86,7 +134,30 @@ export default function OpportunityDetail() {
     }
   };
 
-  const handleStatusChange = async (status: any) => {
+  const handleAcceptOpportunity = async () => {
+    if (!selectedOpportunity) return;
+
+    setAccepting(true);
+    try {
+      const result = await acceptOpportunity(selectedOpportunity.id);
+      if (result) {
+        toast({
+          title: 'Oportunidade aceita!',
+          description: result.message,
+        });
+      }
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro ao aceitar',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setAccepting(false);
+    }
+  };
+
+  const handleStatusChange = async (status: FreelanceOpportunity['status']) => {
     if (!selectedOpportunity) return;
 
     try {
@@ -95,12 +166,64 @@ export default function OpportunityDetail() {
         title: 'Status atualizado!',
         description: `Oportunidade marcada como ${status}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao atualizar status',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedOpportunity) return;
+
+    setDeleting(true);
+    try {
+      await deleteOpportunity(selectedOpportunity.id);
+      toast({
+        title: 'Oportunidade excluída!',
+        description: 'A oportunidade foi removida com sucesso.',
+      });
+      navigate('/freelancer/opportunities');
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro ao excluir',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedOpportunity) return;
+
+    setSaving(true);
+    try {
+      // Clean up form data - convert empty/zero values to null for backend validation
+      const cleanedData: Record<string, string | number> = {};
+      if (editForm.title?.trim()) cleanedData.title = editForm.title.trim();
+      if (editForm.description?.trim()) cleanedData.description = editForm.description.trim();
+      if (editForm.client_budget && editForm.client_budget > 0) cleanedData.client_budget = editForm.client_budget;
+      if (editForm.client_name?.trim()) cleanedData.client_name = editForm.client_name.trim();
+      if (editForm.client_country?.trim()) cleanedData.client_country = editForm.client_country.trim();
+
+      await updateOpportunity(selectedOpportunity.id, cleanedData);
+      setEditDialogOpen(false);
+      toast({
+        title: 'Oportunidade atualizada!',
+        description: 'As alterações foram salvas com sucesso.',
+      });
+    } catch (error: unknown) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -112,7 +235,42 @@ export default function OpportunityDetail() {
     );
   }
 
-  const risk = selectedOpportunity.risk_assessment;
+  // Build risk object from opportunity data
+  // Check if opportunity has been analyzed
+  const hasRecommendation = selectedOpportunity.recommendation && selectedOpportunity.recommendation !== '';
+  const hasRedFlags = selectedOpportunity.red_flags && Array.isArray(selectedOpportunity.red_flags) && selectedOpportunity.red_flags.length > 0;
+  const hasRiskAssessment = selectedOpportunity.risk_assessment !== undefined && selectedOpportunity.risk_assessment !== null;
+  const hasExtractedContext = selectedOpportunity.extracted_context?.risk_score !== undefined;
+
+  const hasAnalysis = hasRecommendation || hasRedFlags || hasRiskAssessment || hasExtractedContext;
+
+  console.log('[OpportunityDetail] Analysis check:', {
+    hasRecommendation,
+    hasRedFlags,
+    hasRiskAssessment,
+    hasExtractedContext,
+    hasAnalysis,
+    recommendation: selectedOpportunity.recommendation,
+    red_flags: selectedOpportunity.red_flags
+  });
+
+  const risk = hasAnalysis ? {
+    risk_score: selectedOpportunity.extracted_context?.risk_score ||
+                selectedOpportunity.final_score ||
+                (selectedOpportunity.recommendation === 'reject' ? 8.0 :
+                 selectedOpportunity.recommendation === 'negotiate' ? 5.0 : 2.0),
+    risk_level: selectedOpportunity.extracted_context?.risk_level ||
+                (selectedOpportunity.recommendation === 'reject' ? 'high' :
+                 selectedOpportunity.recommendation === 'negotiate' ? 'medium' : 'low'),
+    recommendation: selectedOpportunity.recommendation,
+    recommendation_reason: selectedOpportunity.recommendation_reason,
+    red_flags: selectedOpportunity.red_flags || [],
+    green_flags: selectedOpportunity.opportunities || [],
+    ...selectedOpportunity.risk_assessment
+  } : null;
+
+  console.log('[OpportunityDetail] Risk object:', risk);
+
   const pricing = selectedOpportunity.pricing_suggestion;
   const financial = selectedOpportunity.financial_calculation;
 
@@ -132,75 +290,135 @@ export default function OpportunityDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/freelancer/opportunities')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{selectedOpportunity.title}</h1>
-            <p className="text-muted-foreground">
-              {selectedOpportunity.platform?.name} · ID: {selectedOpportunity.external_id}
-            </p>
-          </div>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/freelancer/opportunities')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{selectedOpportunity.title}</h1>
+          <p className="text-muted-foreground">
+            {selectedOpportunity.platform?.name} · ID: {selectedOpportunity.external_id}
+          </p>
         </div>
-
-        {!risk && (
-          <Button onClick={handleProcessOpportunity} disabled={processing}>
-            {processing ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <TrendingUp className="h-4 w-4" />
-                Analisar Oportunidade
-              </>
-            )}
-          </Button>
-        )}
       </div>
 
       {/* Status and Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle>Status e Ações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle>Status e Ações</CardTitle>
             <Badge
               variant={
                 selectedOpportunity.status === 'accepted'
                   ? 'success'
                   : selectedOpportunity.status === 'rejected'
                   ? 'destructive'
+                  : selectedOpportunity.status === 'analyzed'
+                  ? 'default'
                   : 'secondary'
               }
+              className="text-sm"
             >
-              {selectedOpportunity.status}
+              {selectedOpportunity.status === 'new' ? 'Nova' :
+               selectedOpportunity.status === 'analyzed' ? 'Analisada' :
+               selectedOpportunity.status === 'accepted' ? 'Aceita' :
+               selectedOpportunity.status === 'rejected' ? 'Rejeitada' :
+               selectedOpportunity.status}
             </Badge>
-
-            {selectedOpportunity.status === 'pending' && risk && (
-              <>
-                {risk.recommendation === 'accept' && (
-                  <Button size="sm" onClick={() => handleStatusChange('accepted')}>
-                    <CheckCircle className="h-4 w-4" />
-                    Aceitar
-                  </Button>
-                )}
-                {risk.recommendation === 'negotiate' && (
-                  <Button size="sm" variant="outline" onClick={handleGenerateNegotiation} disabled={negotiating}>
-                    <MessageSquare className="h-4 w-4" />
-                    {negotiating ? 'Gerando...' : 'Negociar'}
-                  </Button>
-                )}
-                <Button size="sm" variant="destructive" onClick={() => handleStatusChange('rejected')}>
-                  <XCircle className="h-4 w-4" />
-                  Rejeitar
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Action Buttons - Organized in rows */}
+          <div className="flex flex-col gap-4">
+            {/* Primary Actions Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Analyze Button */}
+                <Button
+                  onClick={handleProcessOpportunity}
+                  disabled={processing}
+                  variant={hasAnalysis ? "outline" : "default"}
+                >
+                  {processing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      {hasAnalysis ? <RefreshCw className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                      {hasAnalysis ? 'Re-analisar' : 'Analisar'}
+                    </>
+                  )}
                 </Button>
-              </>
-            )}
+
+                {/* Accept/Negotiate/Reject buttons - show after analysis or for any non-decided status */}
+                {selectedOpportunity.status !== 'accepted' && selectedOpportunity.status !== 'rejected' && selectedOpportunity.status !== 'completed' && (
+                  <>
+                    <Button onClick={handleAcceptOpportunity} disabled={accepting}>
+                      <CheckCircle className="h-4 w-4" />
+                      {accepting ? 'Aceitando...' : 'Aceitar'}
+                    </Button>
+                    <Button variant="outline" onClick={handleGenerateNegotiation} disabled={negotiating || !hasAnalysis}>
+                      <MessageSquare className="h-4 w-4" />
+                      {negotiating ? 'Gerando...' : 'Negociar'}
+                    </Button>
+                    <Button variant="outline" onClick={() => handleStatusChange('rejected')}>
+                      <XCircle className="h-4 w-4" />
+                      Rejeitar
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Management Actions - Right aligned */}
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/freelancer/criteria">
+                    <Shield className="h-4 w-4" />
+                    Critérios
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/freelancer/pricing">
+                    <Settings className="h-4 w-4" />
+                    Pricing
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditDialogOpen(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Editar
+                </Button>
+
+                {/* Delete Button with Confirmation */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={deleting}>
+                      <Trash2 className="h-4 w-4" />
+                      {deleting ? 'Excluindo...' : 'Excluir'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir oportunidade?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Essa ação não pode ser desfeita. A oportunidade será permanentemente removida.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -295,6 +513,20 @@ export default function OpportunityDetail() {
               </div>
             )}
 
+            {selectedOpportunity.client_total_spent !== undefined && selectedOpportunity.client_total_spent > 0 && (
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Gasto</p>
+                  <p className="font-semibold">
+                    ${selectedOpportunity.client_total_spent >= 1000
+                      ? `${(selectedOpportunity.client_total_spent / 1000).toFixed(0)}K`
+                      : selectedOpportunity.client_total_spent.toFixed(0)}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {selectedOpportunity.client_payment_verified !== undefined && (
               <div className="flex items-center gap-2">
                 {selectedOpportunity.client_payment_verified ? (
@@ -348,9 +580,9 @@ export default function OpportunityDetail() {
                   Red Flags
                 </h4>
                 <div className="space-y-1">
-                  {risk.red_flags.map((flag) => (
-                    <Badge key={flag} variant="destructive" className="mr-2">
-                      {flag}
+                  {risk.red_flags.map((flag: string | { name?: string; type?: string }, idx: number) => (
+                    <Badge key={idx} variant="destructive" className="mr-2">
+                      {typeof flag === 'string' ? flag : flag.name || flag.type}
                     </Badge>
                   ))}
                 </div>
@@ -364,9 +596,9 @@ export default function OpportunityDetail() {
                   Green Flags
                 </h4>
                 <div className="space-y-1">
-                  {risk.green_flags.map((flag) => (
-                    <Badge key={flag} variant="success" className="mr-2">
-                      {flag}
+                  {risk.green_flags.map((flag: string | { name?: string; type?: string }, idx: number) => (
+                    <Badge key={idx} variant="success" className="mr-2">
+                      {typeof flag === 'string' ? flag : flag.name || flag.type}
                     </Badge>
                   ))}
                 </div>
@@ -503,6 +735,72 @@ export default function OpportunityDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Editar Oportunidade</DialogTitle>
+            <DialogDescription>
+              Faça alterações nas informações da oportunidade.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Título</label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="Título da oportunidade"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descrição</label>
+              <textarea
+                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Descrição do projeto"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Orçamento (USD)</label>
+                <Input
+                  type="number"
+                  value={editForm.client_budget}
+                  onChange={(e) => setEditForm({ ...editForm, client_budget: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome do Cliente</label>
+                <Input
+                  value={editForm.client_name}
+                  onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
+                  placeholder="Nome do cliente"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">País do Cliente</label>
+              <Input
+                value={editForm.client_country}
+                onChange={(e) => setEditForm({ ...editForm, client_country: e.target.value })}
+                placeholder="País"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

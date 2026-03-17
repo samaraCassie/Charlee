@@ -15,11 +15,20 @@ import {
   Clock,
   MessageSquare,
   ExternalLink,
+  ClipboardPaste,
+  Bookmark,
+  PlayCircle,
+  RefreshCw,
+  Shield,
+  Settings,
 } from 'lucide-react';
 import type { FreelanceOpportunity } from '../types/freelancer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { SmartPasteDialog } from '../components/SmartPasteDialog';
+import { bookmarkletOpportunity, type BookmarkletRequest } from '../services/freelancerService';
+import { useToast } from '../hooks/use-toast';
 
 export default function FreelancerOpportunities() {
   const {
@@ -33,17 +42,69 @@ export default function FreelancerOpportunities() {
     fetchStats,
     createOpportunity,
     processOpportunity,
+    analyzeAllNewOpportunities,
   } = useFreelancerStore();
 
+  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showSmartPasteDialog, setShowSmartPasteDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [analyzingAll, setAnalyzingAll] = useState(false);
 
   useEffect(() => {
     fetchOpportunities();
     fetchPlatforms();
     fetchStats();
   }, []);
+
+  // Process bookmarklet data from sessionStorage
+  useEffect(() => {
+    const bookmarkletDataEncoded = sessionStorage.getItem('charlee_bookmarklet_data');
+    console.log('[Charlee Debug] sessionStorage data:', bookmarkletDataEncoded ? 'present' : 'null');
+
+    if (bookmarkletDataEncoded) {
+      try {
+        // Clear immediately to avoid reprocessing
+        sessionStorage.removeItem('charlee_bookmarklet_data');
+
+        // Decode URI encoded JSON string
+        const bookmarkletDataStr = decodeURIComponent(bookmarkletDataEncoded);
+        console.log('[Charlee Debug] Decoded data length:', bookmarkletDataStr.length);
+
+        const data: BookmarkletRequest = JSON.parse(bookmarkletDataStr);
+        console.log('[Charlee Debug] Parsed data:', data);
+
+        // Call bookmarklet API
+        console.log('[Charlee Debug] Calling bookmarkletOpportunity API...');
+        bookmarkletOpportunity(data)
+          .then((result) => {
+            console.log('[Charlee Debug] API success:', result);
+            toast({
+              title: 'Oportunidade importada!',
+              description: `"${result.title}" foi adicionada com sucesso.`,
+            });
+            fetchOpportunities();
+            fetchStats();
+          })
+          .catch((error) => {
+            console.error('[Charlee Debug] API error:', error);
+            toast({
+              title: 'Erro ao importar',
+              description: error.message || 'Não foi possível importar a oportunidade.',
+              variant: 'destructive',
+            });
+          });
+      } catch (error) {
+        console.error('[Charlee Debug] Failed to decode/parse bookmarklet data:', error);
+        toast({
+          title: 'Erro ao processar dados',
+          description: 'Dados do bookmarklet inválidos.',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [fetchOpportunities, fetchStats, toast]);
 
   const handleProcessOpportunity = async (id: number) => {
     setProcessingId(id);
@@ -54,6 +115,39 @@ export default function FreelancerOpportunities() {
       setProcessingId(null);
     }
   };
+
+  const handleAnalyzeAll = async () => {
+    const newCount = opportunities.filter((o) => o.status === 'new').length;
+    if (newCount === 0) {
+      toast({
+        title: 'Nenhuma oportunidade nova',
+        description: 'Não há oportunidades com status "nova" para analisar.',
+      });
+      return;
+    }
+
+    setAnalyzingAll(true);
+    try {
+      const result = await analyzeAllNewOpportunities();
+      if (result) {
+        toast({
+          title: 'Análise em lote concluída!',
+          description: `${result.success} de ${result.total} oportunidades analisadas com sucesso.`,
+        });
+        fetchStats();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro na análise em lote',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setAnalyzingAll(false);
+    }
+  };
+
+  const newOpportunitiesCount = opportunities.filter((o) => o.status === 'new').length;
 
   const getRiskLevelColor = (level?: string) => {
     switch (level) {
@@ -108,10 +202,51 @@ export default function FreelancerOpportunities() {
             Gerencie e avalie projetos de plataformas freelance com análise automatizada
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4" />
             Filtros
+          </Button>
+          {newOpportunitiesCount > 0 && (
+            <Button
+              variant="default"
+              onClick={handleAnalyzeAll}
+              disabled={analyzingAll}
+            >
+              {analyzingAll ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4" />
+                  Analisar Todas ({newOpportunitiesCount})
+                </>
+              )}
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setShowSmartPasteDialog(true)}>
+            <ClipboardPaste className="h-4 w-4" />
+            Smart Paste
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/bookmarklet-setup.html" target="_blank" rel="noopener noreferrer">
+              <Bookmark className="h-4 w-4" />
+              Bookmarklet
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/freelancer/criteria">
+              <Shield className="h-4 w-4" />
+              Critérios
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/freelancer/pricing">
+              <Settings className="h-4 w-4" />
+              Pricing
+            </Link>
           </Button>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
@@ -310,6 +445,16 @@ export default function FreelancerOpportunities() {
           ))
         )}
       </div>
+
+      {/* Smart Paste Dialog */}
+      <SmartPasteDialog
+        open={showSmartPasteDialog}
+        onOpenChange={setShowSmartPasteDialog}
+        onSuccess={(_opportunityId) => {
+          fetchOpportunities();
+          fetchStats();
+        }}
+      />
     </div>
   );
 }
