@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlee Bookmarklet - Setup</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 2rem;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2 .step {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .bookmarklet-container {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.1) 100%);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .bookmarklet-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: move;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+
+        .bookmarklet-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+        }
+
+        .instruction {
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .instruction strong {
+            color: var(--text);
+        }
+
+        .platforms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .platform {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        .platform-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .upwork { background: #14a800; }
+        .freelancer { background: #0e1724; border: 1px solid var(--border); }
+        .linkedin { background: #0077b5; }
+
+        .platform-name {
+            font-weight: 500;
+        }
+
+        .platform-status {
+            font-size: 0.75rem;
+            color: var(--success);
+        }
+
+        ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.75rem;
+        }
+
+        code {
+            background: rgba(255,255,255,0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .tip {
+            background: rgba(16,185,129,0.1);
+            border-left: 3px solid var(--success);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 1rem;
+        }
+
+        .tip strong {
+            color: var(--success);
+        }
+
+        .warning {
+            background: rgba(245,158,11,0.1);
+            border-left: 3px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 1rem;
+        }
+
+        .warning strong {
+            color: #f59e0b;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 0;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .bookmarklet-button {
+                padding: 0.875rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Charlee</div>
+            <h1>Bookmarklet Setup</h1>
+            <p class="subtitle">Importe oportunidades com 1 clique</p>
+        </header>
+
+        <div class="card">
+            <h2><span class="step">1</span> Arraste para a barra de favoritos</h2>
+
+            <div class="bookmarklet-container">
+                <a href="javascript:(function(){const s=document.createElement('script');s.src='http://localhost:3000/bookmarklet.js?t='+Date.now();document.body.appendChild(s);})();"
+                   class="bookmarklet-button"
+                   onclick="event.preventDefault(); alert('Arraste este botao para sua barra de favoritos!');">
+                    Charlee Import
+                </a>
+
+                <p class="instruction">
+                    <strong>Arraste</strong> o botao acima para sua <strong>barra de favoritos</strong>
+                    <br>
+                    (Nao clique - arraste!)
+                </p>
+            </div>
+
+            <div class="tip">
+                <strong>Dica:</strong> Se sua barra de favoritos nao estiver visivel, pressione <code>Ctrl+Shift+B</code> (Windows/Linux) ou <code>Cmd+Shift+B</code> (Mac).
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="step">2</span> Como usar</h2>
+            <ol>
+                <li>Navegue ate uma pagina de projeto em uma plataforma suportada</li>
+                <li>Clique no bookmark <strong>"Charlee Import"</strong></li>
+                <li>A oportunidade sera criada automaticamente no Charlee</li>
+                <li>Uma notificacao confirmara a importacao</li>
+            </ol>
+
+            <div class="warning">
+                <strong>Importante:</strong> Voce precisa estar logado no Charlee para que a importacao funcione automaticamente. Se nao estiver logado, o Charlee abrira em uma nova aba com os dados pre-preenchidos.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="step">3</span> Plataformas suportadas</h2>
+
+            <div class="platforms">
+                <div class="platform">
+                    <div class="platform-icon upwork">U</div>
+                    <div>
+                        <div class="platform-name">Upwork</div>
+                        <div class="platform-status">Suportado</div>
+                    </div>
+                </div>
+
+                <div class="platform">
+                    <div class="platform-icon freelancer">F</div>
+                    <div>
+                        <div class="platform-name">Freelancer.com</div>
+                        <div class="platform-status">Suportado</div>
+                    </div>
+                </div>
+
+                <div class="platform">
+                    <div class="platform-icon linkedin">in</div>
+                    <div>
+                        <div class="platform-name">LinkedIn Jobs</div>
+                        <div class="platform-status">Suportado</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tip">
+                <strong>Outras plataformas:</strong> O bookmarklet tentara extrair dados basicos (titulo e descricao) de qualquer pagina, mas funciona melhor nas plataformas listadas.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="step">4</span> O que e extraido</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 0.5rem;">Titulo do projeto</li>
+                <li style="margin-bottom: 0.5rem;">Descricao completa</li>
+                <li style="margin-bottom: 0.5rem;">Orcamento (quando disponivel)</li>
+                <li style="margin-bottom: 0.5rem;">Skills requeridas</li>
+                <li style="margin-bottom: 0.5rem;">Informacoes do cliente (nome, rating, pais)</li>
+                <li style="margin-bottom: 0.5rem;">URL original para referencia</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>Problemas?</h2>
+            <p style="color: var(--text-muted);">
+                Se o bookmarklet nao estiver funcionando:
+            </p>
+            <ol style="margin-top: 1rem; color: var(--text-muted);">
+                <li>Verifique se voce esta logado no Charlee</li>
+                <li>Certifique-se de que esta na pagina de um projeto especifico (nao na listagem)</li>
+                <li>Alguns ad-blockers podem interferir - tente desativar temporariamente</li>
+                <li>Se nada funcionar, use o <strong>Smart Paste</strong> para colar o texto do projeto manualmente</li>
+            </ol>
+        </div>
+
+        <footer>
+            <p>Charlee v1.0 | Desenvolvido para Samara</p>
+        </footer>
+    </div>
+</body>
+</html>

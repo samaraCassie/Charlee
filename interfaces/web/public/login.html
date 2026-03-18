@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlee - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .quick-login {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .quick-login h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .quick-login code {
+            display: block;
+            background: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 12px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🌸 Charlee</h1>
+        <p>Login para o módulo Freelancer</p>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" value="testuser" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" value="Test123456" required>
+            </div>
+
+            <button type="submit">Entrar</button>
+        </form>
+
+        <div class="message" id="message"></div>
+
+        <div class="quick-login">
+            <h3>Credenciais de Teste</h3>
+            <code>Usuário: testuser</code>
+            <code>Senha: Test123456</code>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('message');
+
+            messageEl.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Erro ao fazer login');
+                }
+
+                const data = await response.json();
+
+                // Save token to localStorage
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('user', JSON.stringify({
+                    username: username,
+                    email: data.email || `${username}@charlee.com`
+                }));
+
+                // Show success message
+                messageEl.className = 'message success';
+                messageEl.textContent = '✅ Login realizado com sucesso! Redirecionando...';
+                messageEl.style.display = 'block';
+
+                // Check if we came from bookmarklet
+                const urlParams = new URLSearchParams(window.location.search);
+                const bookmarkletData = urlParams.get('bookmarklet_data');
+
+                // Store bookmarklet data in sessionStorage if present
+                if (bookmarkletData) {
+                    sessionStorage.setItem('charlee_bookmarklet_data', bookmarkletData);
+                }
+
+                // Redirect to original page or default to freelancer opportunities
+                const redirectPath = sessionStorage.getItem('charlee_redirect_after_login');
+                sessionStorage.removeItem('charlee_redirect_after_login');
+
+                setTimeout(() => {
+                    window.location.href = redirectPath || '/freelancer/opportunities';
+                }, 1000);
+
+            } catch (error) {
+                messageEl.className = 'message error';
+                messageEl.textContent = '❌ ' + error.message;
+                messageEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
