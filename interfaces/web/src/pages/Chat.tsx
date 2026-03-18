@@ -47,9 +47,15 @@ export default function Chat() {
       await sendMessage(message);
       setMessage('');
     } catch (e) {
+      // Don't show error for auth issues - the interceptor will redirect to login
+      const error = e as { response?: { status?: number } };
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        return;
+      }
+
       toast({
         title: 'Erro',
-        description: `Não foi possível enviar a mensagem. Tente novamente. ${e}`,
+        description: `Não foi possível enviar a mensagem. Tente novamente.`,
         variant: 'destructive',
       });
     }

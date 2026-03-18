@@ -1,9 +1,11 @@
 """Tests for Calendar API Routes."""
 
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi import status
-from datetime import datetime, timedelta, timezone
-from unittest.mock import patch, MagicMock
+
 from database.models import CalendarConnection, CalendarEvent
 
 
@@ -211,8 +213,8 @@ class TestCalendarConnectionManagement:
 
     def test_get_connection_unauthorized(self, client, auth_headers, db):
         """Should return 403 for accessing another user's connection."""
-        from database.models import User, CalendarConnection
         from api.auth.password import hash_password
+        from database.models import CalendarConnection, User
 
         # Create another user's connection
         other_user = User(

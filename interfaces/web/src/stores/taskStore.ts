@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { taskService } from '@/services/taskService';
-import type { TarefaAPI } from '@/services/taskService';
+import type { TaskAPI } from '@/services/taskService';
 
 export interface Task {
   id: string;
@@ -38,28 +38,22 @@ interface TaskState {
 }
 
 // Helper: Convert API task to frontend task
-function apiToTask(apiTask: TarefaAPI): Task {
+function apiToTask(apiTask: TaskAPI): Task {
   let status: 'pending' | 'in_progress' | 'completed' = 'pending';
-  if (apiTask.status === 'Concluída') status = 'completed';
-  else if (apiTask.status === 'Em Progresso') status = 'in_progress';
-
-  // Map prioridade_calculada (1-10) to priority (1-3)
-  let priority: 1 | 2 | 3 = 2;
-  if (apiTask.prioridade_calculada && apiTask.prioridade_calculada <= 3) priority = 1;
-  else if (apiTask.prioridade_calculada && apiTask.prioridade_calculada <= 7) priority = 2;
-  else priority = 3;
+  if (apiTask.status === 'completed') status = 'completed';
+  else if (apiTask.status === 'in_progress') status = 'in_progress';
 
   return {
     id: apiTask.id.toString(),
-    title: apiTask.descricao,
-    description: apiTask.descricao,
-    priority,
+    title: apiTask.description,
+    description: apiTask.description,
+    priority: 2, // Default priority - backend doesn't expose calculated priority directly
     status,
     deadline: apiTask.deadline || undefined,
     bigRockId: apiTask.big_rock_id ? apiTask.big_rock_id.toString() : undefined,
-    createdAt: apiTask.criado_em,
-    updatedAt: apiTask.atualizado_em,
-    completedAt: apiTask.concluido_em || undefined,
+    createdAt: apiTask.created_at,
+    updatedAt: apiTask.updated_at,
+    completedAt: apiTask.completed_at || undefined,
   };
 }
 
@@ -86,16 +80,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const apiTask = await taskService.createTask({
-        descricao: taskData.title,
-        tipo: 'Tarefa',
+        description: taskData.title,
+        type: 'task',
         deadline: taskData.deadline,
         big_rock_id: taskData.bigRockId ? parseInt(taskData.bigRockId) : undefined,
       });
 
       const newTask = apiToTask(apiTask);
-      set((state) => ({ 
+      set((state) => ({
         tasks: [...state.tasks, newTask],
-        loading: false 
+        loading: false
       }));
     } catch (error) {
       console.error('Error creating task:', error);
@@ -108,7 +102,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const apiTask = await taskService.updateTask(parseInt(id), {
-        descricao: updates.title,
+        description: updates.title,
         deadline: updates.deadline,
         big_rock_id: updates.bigRockId ? parseInt(updates.bigRockId) : undefined,
       });

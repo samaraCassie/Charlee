@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures."""
 
 import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -22,6 +23,11 @@ def setup_test_env():
     os.environ["MICROSOFT_CLIENT_ID"] = "test_microsoft_client_id"
     os.environ["MICROSOFT_CLIENT_SECRET"] = "test_microsoft_client_secret"
     os.environ["MICROSOFT_TENANT_ID"] = "common"
+
+    # Freelancer module environment variables
+    os.environ["ENCRYPTION_KEY"] = "test_encryption_key_for_lgpd_compliance_32b"
+    os.environ["REDIS_URL"] = "redis://localhost:6379/1"  # Use DB 1 for tests
+
     yield
     # Cleanup after all tests
     for key in [
@@ -30,6 +36,8 @@ def setup_test_env():
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
+        "ENCRYPTION_KEY",
+        "REDIS_URL",
     ]:
         os.environ.pop(key, None)
 
@@ -438,3 +446,153 @@ def sample_negotiation(db, sample_user, sample_opportunity):
     db.commit()
     db.refresh(negotiation)
     return negotiation
+
+
+# ==================== Freelancer MVP Module Fixtures ====================
+
+
+@pytest.fixture(scope="function")
+def redis_client():
+    """
+    Redis client fixture for rate limiting and caching tests.
+
+    Uses fakeredis for unit tests (no Redis server required).
+    For integration tests, set REDIS_URL environment variable.
+
+    Yields:
+        Redis client (real or fake)
+    """
+    try:
+        # Try to use real Redis if available (integration tests)
+        import redis
+
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/1")
+        client = redis.from_url(redis_url, decode_responses=True)
+        # Test connection
+        client.ping()
+        # Flush test database before and after
+        client.flushdb()
+        yield client
+        client.flushdb()
+        client.close()
+    except (redis.exceptions.ConnectionError, ModuleNotFoundError):
+        # Fall back to fakeredis for unit tests (no Redis server needed)
+        import fakeredis
+
+        client = fakeredis.FakeRedis(decode_responses=True)
+        yield client
+
+
+@pytest.fixture(scope="session")
+def encryption_key():
+    """
+    Encryption key for LGPD compliance tests.
+
+    Returns:
+        str: Base64-encoded Fernet encryption key for testing
+    """
+    from cryptography.fernet import Fernet
+
+    # Generate a valid Fernet key for testing
+    # CRITICAL: This is ONLY for tests, NEVER use generated keys in production
+    key = Fernet.generate_key().decode()
+    return key
+
+
+@pytest.fixture(scope="function")
+def lgpd_service(db, encryption_key):
+    """
+    LGPDCompliance service fixture with database and encryption key.
+
+    Args:
+        db: Database session fixture
+        encryption_key: Encryption key fixture
+
+    Returns:
+        LGPDCompliance: Configured LGPD compliance service
+    """
+    from services.freelancer import LGPDCompliance
+
+    return LGPDCompliance(db, encryption_key)
+
+
+@pytest.fixture(scope="function")
+def financial_calculator(redis_client):
+    """
+    FreelancerFinancialCalculator fixture with Redis client.
+
+    Args:
+        redis_client: Redis client fixture
+
+    Returns:
+        FreelancerFinancialCalculator: Configured financial calculator
+    """
+    from services.freelancer import FreelancerFinancialCalculator
+
+    return FreelancerFinancialCalculator(redis_client)
+
+
+@pytest.fixture(scope="function")
+def duplication_prevention(db, redis_client):
+    """
+    ProjectDuplicationPrevention fixture with database and Redis.
+
+    Args:
+        db: Database session fixture
+        redis_client: Redis client fixture
+
+    Returns:
+        ProjectDuplicationPrevention: Configured duplication prevention service
+    """
+    from services.freelancer import ProjectDuplicationPrevention
+
+    return ProjectDuplicationPrevention(db, redis_client)
+
+
+@pytest.fixture(scope="function")
+def rate_limiter(redis_client):
+    """
+    Rate limiter fixture for testing API rate limits.
+
+    Args:
+        redis_client: Redis client fixture
+
+    Returns:
+        UpworkRateLimiter: Configured rate limiter (Upwork defaults)
+    """
+    from services.freelancer import UpworkRateLimiter
+
+    return UpworkRateLimiter(redis_client)
+
+
+@pytest.fixture(scope="function")
+def client_risk_assessment():
+    """
+    ClientRiskAssessment fixture (no dependencies).
+
+    Returns:
+        ClientRiskAssessment: Risk assessment service
+    """
+    from services.freelancer import ClientRiskAssessment
+
+    return ClientRiskAssessment()
+
+
+@pytest.fixture(scope="function")
+def integration_service(db, redis_client, encryption_key):
+    """
+    FreelancerIntegrationService fixture with all dependencies.
+
+    Orchestrator that coordinates all MVP services (RN09-RN13).
+
+    Args:
+        db: Database session fixture
+        redis_client: Redis client fixture
+        encryption_key: Encryption key fixture
+
+    Returns:
+        FreelancerIntegrationService: Configured integration service
+    """
+    from services.freelancer import create_integration_service
+
+    return create_integration_service(db, redis_client, encryption_key)

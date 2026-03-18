@@ -1,39 +1,37 @@
 import api from './api';
 
-// Types matching backend
-export interface TarefaAPI {
+// Types matching backend TaskResponse schema
+export interface TaskAPI {
   id: number;
-  descricao: string;
-  tipo: 'Compromisso Fixo' | 'Tarefa' | 'Contínuo';
+  description: string;
+  type: 'fixed_appointment' | 'task' | 'continuous';
   deadline: string | null;
   big_rock_id: number | null;
-  status: 'Pendente' | 'Em Progresso' | 'Concluída' | 'Cancelada';
-  prioridade_calculada: number;
-  pontuacao_prioridade: number;
-  criado_em: string;
-  atualizado_em: string;
-  concluido_em: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
   big_rock?: {
     id: number;
-    nome: string;
-    cor: string | null;
-    ativo: boolean;
+    name: string;
+    color: string | null;
+    active: boolean;
   };
 }
 
-export interface TarefaCreate {
-  descricao: string;
-  tipo?: 'Compromisso Fixo' | 'Tarefa' | 'Contínuo';
+export interface TaskCreate {
+  description: string;
+  type?: 'fixed_appointment' | 'task' | 'continuous';
   deadline?: string; // YYYY-MM-DD
   big_rock_id?: number;
 }
 
-export interface TarefaUpdate {
-  descricao?: string;
-  tipo?: 'Compromisso Fixo' | 'Tarefa' | 'Contínuo';
+export interface TaskUpdate {
+  description?: string;
+  type?: 'fixed_appointment' | 'task' | 'continuous';
   deadline?: string;
   big_rock_id?: number;
-  status?: 'Pendente' | 'Em Progresso' | 'Concluída' | 'Cancelada';
+  status?: string;
 }
 
 export const taskService = {
@@ -41,66 +39,63 @@ export const taskService = {
   async getTasks(params?: {
     status?: string;
     big_rock_id?: number;
-    tipo?: string;
+    task_type?: string;
     limit?: number;
-  }): Promise<TarefaAPI[]> {
-    const response = await api.get('/v1/tarefas/', { params });
-    return response.data.tarefas;
+  }): Promise<TaskAPI[]> {
+    const response = await api.get('/v1/tasks/', { params });
+    return response.data.tasks;
   },
 
   // Get task by ID
-  async getTask(id: number): Promise<TarefaAPI> {
-    const response = await api.get(`/v1/tarefas/${id}`);
+  async getTask(id: number): Promise<TaskAPI> {
+    const response = await api.get(`/v1/tasks/${id}`);
     return response.data;
   },
 
   // Create new task
-  async createTask(tarefa: TarefaCreate): Promise<TarefaAPI> {
-    const response = await api.post('/v1/tarefas/', tarefa);
+  async createTask(task: TaskCreate): Promise<TaskAPI> {
+    const response = await api.post('/v1/tasks/', task);
     return response.data;
   },
 
   // Update task
-  async updateTask(id: number, updates: TarefaUpdate): Promise<TarefaAPI> {
-    const response = await api.patch(`/v1/tarefas/${id}`, updates);
+  async updateTask(id: number, updates: TaskUpdate): Promise<TaskAPI> {
+    const response = await api.patch(`/v1/tasks/${id}`, updates);
     return response.data;
   },
 
   // Delete task
   async deleteTask(id: number): Promise<void> {
-    await api.delete(`/v1/tarefas/${id}`);
+    await api.delete(`/v1/tasks/${id}`);
   },
 
-  // Mark as completed
-  async toggleTaskStatus(id: number): Promise<TarefaAPI> {
+  // Mark as completed / reopen
+  async toggleTaskStatus(id: number): Promise<TaskAPI> {
     const task = await this.getTask(id);
-    
-    if (task.status === 'Concluída') {
-      // Reopen task
-      const response = await api.post(`/v1/tarefas/${id}/reabrir`);
+
+    if (task.status === 'completed') {
+      const response = await api.post(`/v1/tasks/${id}/reopen`);
       return response.data;
     } else {
-      // Complete task
-      const response = await api.post(`/v1/tarefas/${id}/concluir`);
+      const response = await api.post(`/v1/tasks/${id}/complete`);
       return response.data;
     }
   },
 
   // Get tasks by big rock
-  async getTasksByBigRock(bigRockId: number): Promise<TarefaAPI[]> {
+  async getTasksByBigRock(bigRockId: number): Promise<TaskAPI[]> {
     return this.getTasks({ big_rock_id: bigRockId });
   },
 
-  // Get tasks by priority (using prioridade_calculada)
-  async getTasksByPriority(priority: number): Promise<TarefaAPI[]> {
-    const allTasks = await this.getTasks({ status: 'Pendente' });
-    return allTasks.filter(t => t.prioridade_calculada === priority);
+  // Get tasks by status
+  async getTasksByStatus(status: string): Promise<TaskAPI[]> {
+    return this.getTasks({ status });
   },
 
   // Get today's tasks
-  async getTodayTasks(): Promise<TarefaAPI[]> {
+  async getTodayTasks(): Promise<TaskAPI[]> {
     const today = new Date().toISOString().split('T')[0];
-    const allTasks = await this.getTasks({ status: 'Pendente' });
+    const allTasks = await this.getTasks({ status: 'pending' });
     return allTasks.filter(t => t.deadline === today);
   },
 

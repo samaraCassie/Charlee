@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu, LogOut } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
 import BigRocks from './pages/BigRocks';
@@ -10,6 +10,11 @@ import Chat from './pages/Chat';
 import Tasks from './pages/Tasks';
 import Wellness from './pages/Wellness';
 import TranscriptionHistory from './pages/TranscriptionHistory';
+import FreelancerOpportunities from './pages/FreelancerOpportunities';
+import OpportunityDetail from './pages/OpportunityDetail';
+import FreelancerAnalytics from './pages/FreelancerAnalytics';
+import PricingParameters from './pages/PricingParameters';
+import EvaluationCriteria from './pages/EvaluationCriteria';
 import { Button } from './components/ui/button';
 import {
   Sheet,
@@ -38,6 +43,15 @@ function AppContent() {
   }, [darkMode]);
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    window.location.href = '/login.html';
+  };
+
+  const isAuthenticated = !!localStorage.getItem('token');
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -106,6 +120,16 @@ function AppContent() {
             >
               Histórico
             </Link>
+            <Link
+              to="/freelancer/opportunities"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive('/freelancer/opportunities') || isActive('/freelancer/analytics') || isActive('/freelancer/pricing') || isActive('/freelancer/criteria')
+                  ? ''
+                  : 'text-muted-foreground'
+              }`}
+            >
+              Freelancer
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -120,8 +144,19 @@ function AppContent() {
               ) : (
                 <Moon className="h-4 w-4 md:h-5 md:w-5 transition-all" />
               )}
-              <span className="sr-only">Toggle theme</span>
+              <span className="sr-only">Alternar tema</span>
             </Button>
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="rounded-full h-9 w-9 md:h-10 md:w-10 text-muted-foreground hover:text-destructive"
+              >
+                <LogOut className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="sr-only">Sair</span>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -138,6 +173,11 @@ function AppContent() {
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/wellness" element={<Wellness />} />
           <Route path="/transcriptions" element={<TranscriptionHistory />} />
+          <Route path="/freelancer/opportunities" element={<FreelancerOpportunities />} />
+          <Route path="/freelancer/opportunities/:id" element={<OpportunityDetail />} />
+          <Route path="/freelancer/analytics" element={<FreelancerAnalytics />} />
+          <Route path="/freelancer/pricing" element={<PricingParameters />} />
+          <Route path="/freelancer/criteria" element={<EvaluationCriteria />} />
         </Routes>
       </main>
 
@@ -211,6 +251,24 @@ function AppContent() {
             >
               Histórico
             </Link>
+            <Link
+              to="/freelancer/opportunities"
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent ${
+                isActive('/freelancer/opportunities') ? '' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Freelancer
+            </Link>
+            {isAuthenticated && (
+              <button
+                onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-destructive hover:bg-destructive/10 mt-4 border-t pt-4"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            )}
           </nav>
         </SheetContent>
       </Sheet>

@@ -1,15 +1,15 @@
 import api from './api';
-import type { TarefaAPI } from './taskService';
+import type { TaskAPI } from './taskService';
 
 export interface InboxResponse {
   inbox_text: string;
-  tarefas: TarefaAPI[];
+  tasks: TaskAPI[];
   total: number;
 }
 
 export const inboxService = {
   /**
-   * Get inbox rápido - top tarefas priorizadas
+   * Quick inbox - top prioritized tasks
    */
   async getInboxRapido(limite: number = 10): Promise<InboxResponse> {
     const response = await api.get('/v2/inbox/rapido', {
@@ -19,26 +19,26 @@ export const inboxService = {
   },
 
   /**
-   * Get tarefas com deadline hoje
+   * Tasks with today's deadline
    */
-  async getTarefasHoje(): Promise<TarefaAPI[]> {
+  async getTarefasHoje(): Promise<TaskAPI[]> {
     const response = await api.get('/v2/inbox/hoje');
-    return response.data.tarefas;
+    return response.data.tasks;
   },
 
   /**
-   * Get tarefas atrasadas
+   * Overdue tasks
    */
-  async getTarefasAtrasadas(): Promise<TarefaAPI[]> {
+  async getTarefasAtrasadas(): Promise<TaskAPI[]> {
     const response = await api.get('/v2/inbox/atrasadas');
-    return response.data.tarefas;
+    return response.data.tasks;
   },
 
   /**
-   * Get tarefas da próxima semana
+   * Tasks for next week
    */
-  async getTarefasProximaSemana(): Promise<TarefaAPI[]> {
+  async getTarefasProximaSemana(): Promise<TaskAPI[]> {
     const response = await api.get('/v2/inbox/proxima-semana');
-    return response.data.tarefas;
+    return response.data.tasks;
   },
 };

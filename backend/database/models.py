@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -16,7 +17,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
 
 from database.config import Base

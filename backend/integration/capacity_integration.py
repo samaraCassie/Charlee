@@ -1,14 +1,14 @@
 """Integration for Capacity Guardian with other modules."""
 
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
 from database.models import Task
+from integration.context_manager import ContextManager
 from integration.event_bus import Event, EventBus
 from integration.event_types import EventType
-from integration.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 

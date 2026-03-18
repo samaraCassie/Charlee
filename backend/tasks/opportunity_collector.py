@@ -5,12 +5,13 @@ freelance opportunities from configured platforms.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from celery import Task
-from celery_app import celery_app
 from database.session import SessionLocal
+
 from agent.specialized_agents.projects.auto_collector import AutoCollector
+from celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 

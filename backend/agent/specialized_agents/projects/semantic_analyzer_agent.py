@@ -270,8 +270,9 @@ Return ONLY valid JSON, no markdown formatting.
             return []
 
         try:
-            from database.models import FreelanceOpportunity
             from sqlalchemy import text
+
+            from database.models import FreelanceOpportunity
 
             # Query for similar projects using pgvector
             # Note: This requires the vector extension to be installed in PostgreSQL

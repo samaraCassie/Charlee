@@ -569,8 +569,9 @@ class AgentOrchestrator:
             Alert message if stagnation detected, empty string otherwise
         """
         try:
-            from database.models import ProjectExecution
             from datetime import datetime, timedelta
+
+            from database.models import ProjectExecution
 
             # Check completed projects in last 30 days
             thirty_days_ago = datetime.now() - timedelta(days=30)

@@ -12,11 +12,11 @@ export const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available (when implemented)
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Add auth token if available
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -34,11 +34,22 @@ api.interceptors.response.use(
 
       // Handle specific error codes
       switch (error.response.status) {
-        case 401:
-          // Handle unauthorized (when auth is implemented)
+        case 401: {
+          // Unauthorized - token expired or invalid, clear and redirect
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+
+          const currentPath = window.location.pathname + window.location.search;
+          if (currentPath !== '/login.html') {
+            sessionStorage.setItem('charlee_redirect_after_login', currentPath);
+            window.location.href = '/login.html';
+          }
           break;
+        }
         case 403:
-          // Handle forbidden
+          // Forbidden - user is authenticated but lacks permission
+          // Do NOT clear token here; 403 can be a normal auth check
           break;
         case 404:
           // Handle not found

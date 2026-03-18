@@ -1,6 +1,7 @@
 """Integration tests for Event Bus system."""
 
 import asyncio
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

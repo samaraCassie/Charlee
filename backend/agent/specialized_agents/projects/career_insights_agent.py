@@ -18,8 +18,8 @@ from sqlalchemy.orm import Session
 
 from database.models import (
     FreelanceOpportunity,
-    ProjectExecution,
     Negotiation,
+    ProjectExecution,
 )
 
 logger = logging.getLogger(__name__)

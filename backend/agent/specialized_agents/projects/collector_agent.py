@@ -16,11 +16,12 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from sqlalchemy.orm import Session
 
-from database.models import FreelancePlatform, FreelanceOpportunity
+from database.models import FreelanceOpportunity, FreelancePlatform
+
 from .integrations import (
     PlatformConfig,
-    create_upwork_integration,
     create_freelancer_com_integration,
+    create_upwork_integration,
 )
 
 logger = logging.getLogger(__name__)

@@ -67,7 +67,7 @@ Agente	Função Principal	Descrição
 
 O sistema suporta múltiplos métodos de entrada de oportunidades, priorizando abordagens legais e sustentáveis.
 
-#### Métodos de Coleta Implementados
+#### Métodos de Coleta
 
 | Método | Prioridade | Status | Descrição |
 |--------|------------|--------|-----------|
@@ -637,27 +637,27 @@ def learn_from_outcome(self, project_id: int, actual_price: float):
 
 ---
 
-🧠 6. Arquitetura de Agentes e Módulos
+#### 🧠 6. Arquitetura de Agentes e Módulos
 
 ┌──────────────────────────────┐
 │       Agente Gestor          │
 │ Coordena os demais agentes   │
 └──────────────┬───────────────┘
                │
-┌──────────────┼────────────────────────────────────────────────┐
-│              │                                                │
-│     Núcleo de Execução                                 Núcleo de Aprendizado    │
-│                                                    │
+┌──────────────┼──────────────────────────────────────────────────────────────────────────────┐
+│              │                                                                              │
+│     Núcleo de Execução                                 Núcleo de Aprendizado                │
+│                                                                                             │
 │ 🧩 Coletor  → coleta projetos                       🧠 Autoaprendizado → ajusta parâmetros  │
 │ 🧠 Analisador → entende escopo                      📊 Analítico → compila métricas         │
 │ ⚖️ Avaliador → precifica e avalia viabilidade       🪞 Branding → gera insights de carreira │
-│ 💬 Negociador → contra-propostas                    │
-└────────────────────────────────────────────────────┘
+│ 💬 Negociador → contra-propostas                                                            │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
 
 
 ---
 
-🧩 7. MVP (Versão 1.0)
+#### 🧩 7. MVP (Versão 1.0)
 
 Objetivo:
 
@@ -688,7 +688,7 @@ Análises de branding e comportamento.
 
 ---
 
-🚀 8. Versão 2.0 — Inteligência e Aprendizado
+#### 🚀 8. Versão 2.0 — Inteligência e Aprendizado
 
 Funcionalidades adicionadas:
 
@@ -713,7 +713,7 @@ API REST local para comunicação com UI futura.
 
 ---
 
-💡 9. Versão 3.0 — Inteligência Estratégica e Branding
+#### 💡 9. Versão 3.0 — Inteligência Estratégica e Branding
 
 Funcionalidades:
 
@@ -736,7 +736,7 @@ Análises emocionais e qualitativas baseadas nas observações manuais.
 
 ---
 
-🧠 10. Versão 4.0 — Autonomia e Coach Profissional
+#### 🧠 10. Versão 4.0 — Autonomia e Coach Profissional
 
 Funcionalidades:
 
@@ -754,7 +754,7 @@ Geração automática de material de portfólio (descrições otimizadas de proj
 
 ---
 
-💾 11. Estrutura de Dados (resumo)
+#### 💾 11. Estrutura de Dados (resumo)
 
 Entidade	Campos principais
 
@@ -768,12 +768,12 @@ Insight	data, tipo, descricao, impacto, recomendacao
 
 ---
 
-📊 12. Tecnologias sugeridas
+#### 📊 12. Tecnologias sugeridas
 
 Categoria	Ferramenta
 
 Framework de agentes	Agno
-LLM	GPT-5 / Claude 3.5
+LLM	GPT-4o-mini / Claude 3.5
 Banco de dados	DynamoDB (produção) / SQLite (MVP)
 Dashboard	Streamlit / LangFlow
 Scheduler	APScheduler / AWS Lambda
@@ -784,7 +784,7 @@ Integração	Telegram Bot, Gmail API (alertas)
 
 ---
 
-🧭 13. Roadmap sugerido
+#### 🧭 13. Roadmap sugerido
 
 Fase	Entrega	Período estimado
 
@@ -797,7 +797,7 @@ Fase 4	Autonomia e Preditividade	8–12 semanas
 
 ---
 
-🔐 14. Considerações Finais
+#### 🔐 14. Considerações Finais
 
 O sistema deve ser modular e evolutivo:
 cada agente atua de forma independente, mas compartilha memória e contexto global.
@@ -1772,6 +1772,388 @@ class ProjectEvaluatorAgent(Agent):
         return min(max(score, 0.0), 1.0)  # Clamp entre 0-1
 ```
 
+---
+
+## 18.5 Requisitos Adicionais Críticos para MVP
+
+> **Atualizado em:** 2026-01-28
+>
+> Requisitos essenciais identificados para garantir operação segura e eficiente em produção.
+
+### 18.5.1 Priorização de Requisitos
+
+| Prioridade | Quantidade | Implementação |
+|-----------|------------|---------------|
+| 🔴 **MVP Obrigatório** | 5 requisitos | Deve ser implementado antes de produção |
+| 🟡 **V2 do Módulo** | 7 requisitos | Qualidade e robustez |
+| 🟢 **V3+ Futuro** | 3 requisitos | Otimizações avançadas |
+
+---
+
+### 🔴 18.5.2 Requisitos Críticos do MVP
+
+#### **RN09: Prevenção de Análise Duplicada**
+
+**Contexto:** Evitar desperdício de recursos processando o mesmo projeto múltiplas vezes.
+
+**Regras:**
+- Projetos duplicados em diferentes plataformas devem ser detectados via similarity matching
+- Lock distribuído deve prevenir race conditions entre workers
+- Timeout de processamento: 5 minutos
+
+**Implementação:**
+```python
+# backend/services/freelancer/project_processor.py
+
+class ProjectDuplicationPrevention:
+    """Previne análise duplicada de projetos"""
+
+    def detect_duplicate(self, new_project):
+        """Detecta projetos duplicados via similarity matching"""
+
+        similar_projects = self.db.query("""
+            SELECT id, title, client_email, budget
+            FROM freelance_opportunities
+            WHERE created_at >= NOW() - INTERVAL '7 days'
+            ORDER BY created_at DESC
+            LIMIT 50
+        """)
+
+        for candidate in similar_projects:
+            is_duplicate = (
+                self._is_same_client(new_project, candidate) and
+                self._text_similarity(new_project.title, candidate.title) > 0.85 and
+                abs(new_project.budget - candidate.budget) / new_project.budget < 0.15
+            )
+
+            if is_duplicate:
+                return {'is_duplicate': True, 'original_id': candidate.id}
+
+        return {'is_duplicate': False}
+
+    def acquire_processing_lock(self, project_id, timeout=300):
+        """Adquire lock distribuído para processar projeto"""
+        lock_key = f"processing:project:{project_id}"
+        return self.redis.set(lock_key, 'processing', nx=True, ex=timeout)
+```
+
+**Esforço:** 4-6h | **Prioridade:** 🔴 Crítica
+
+---
+
+#### **RN10: Rate Limiting para APIs Externas**
+
+**Contexto:** Upwork limita a 100 requests/hora. Exceder resulta em bloqueio de conta.
+
+**Regras:**
+- Máximo 100 requests por hora para Upwork API
+- Implementar leaky bucket algorithm
+- Retry automático com exponential backoff
+
+**Implementação:**
+```python
+# backend/services/freelancer/upwork_client.py
+
+class UpworkRateLimiter:
+    """Rate limiter para Upwork API (100 req/hora)"""
+
+    def __init__(self, redis_client):
+        self.redis = redis_client
+        self.max_requests = 100
+        self.window_seconds = 3600
+
+    def can_make_request(self):
+        """Verifica se pode fazer request sem violar rate limit"""
+        key = "upwork:ratelimit"
+        now = time.time()
+
+        # Remove requests antigos
+        self.redis.zremrangebyscore(key, 0, now - self.window_seconds)
+
+        # Conta requests atuais
+        current_requests = self.redis.zcard(key)
+
+        if current_requests >= self.max_requests:
+            oldest = self.redis.zrange(key, 0, 0, withscores=True)
+            if oldest:
+                wait_time = (oldest[0][1] + self.window_seconds) - now
+                raise RateLimitExceeded(f"Aguarde {wait_time:.0f}s")
+
+        # Registra novo request
+        self.redis.zadd(key, {str(uuid.uuid4()): now})
+        self.redis.expire(key, self.window_seconds)
+        return True
+```
+
+**Esforço:** 2-3h | **Prioridade:** 🔴 Crítica
+
+---
+
+#### **RN11: Cálculo Financeiro Completo**
+
+**Contexto:** Precificação deve considerar impostos, comissões e custos de conversão para evitar prejuízo.
+
+**Regras:**
+- Calcular comissão da plataforma (Upwork: 20% até $500, 10% depois)
+- Aplicar cotação USD→BRL do Banco Central
+- Deduzir spread cambial (3%), IOF (1.1%), taxa bancária (1%)
+- Calcular imposto conforme regime tributário (Simples: 6%)
+
+**Implementação:**
+```python
+# backend/services/freelancer/financial_calculator.py
+
+class FreelancerFinancialCalculator:
+    """Calcula valor líquido considerando todos os custos"""
+
+    def calculate_net_value(self, gross_usd, platform='upwork', regime='Simples_Nacional'):
+        """Calcula quanto realmente vai cair na conta"""
+
+        # 1. Comissão da plataforma
+        if platform == 'upwork':
+            platform_fee = (500 * 0.20 + (gross_usd - 500) * 0.10) if gross_usd > 500 else gross_usd * 0.20
+        else:
+            platform_fee = 0
+
+        after_platform = gross_usd - platform_fee
+
+        # 2. Conversão USD → BRL (API Banco Central)
+        exchange_rate = self._get_exchange_rate('USD', 'BRL')
+        gross_brl = after_platform * exchange_rate
+
+        # 3. Custos de conversão
+        spread_fee = gross_brl * 0.03  # 3% spread
+        iof = gross_brl * 0.011  # 1.1% IOF
+        bank_fee = gross_brl * 0.01  # 1% taxa bancária
+
+        after_conversion = gross_brl - spread_fee - iof - bank_fee
+
+        # 4. Impostos Brasil
+        if regime == 'Simples_Nacional':
+            tax = after_conversion * 0.06  # 6% Anexo III
+        elif regime == 'MEI':
+            tax = 66.60  # Fixo mensal
+        else:
+            tax = 0
+
+        net_brl = after_conversion - tax
+
+        return {
+            'gross_usd': gross_usd,
+            'net_brl': net_brl,
+            'platform_fee_usd': platform_fee,
+            'tax_brl': tax,
+            'exchange_rate': exchange_rate,
+            'effective_rate': (gross_usd * exchange_rate - net_brl) / (gross_usd * exchange_rate)
+        }
+
+    def _get_exchange_rate(self, from_currency, to_currency):
+        """Busca cotação do Banco Central (cache 1h)"""
+        cache_key = f"forex:{from_currency}:{to_currency}"
+        cached = redis_client.get(cache_key)
+
+        if cached:
+            return float(cached)
+
+        response = requests.get(
+            f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
+            f"CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)?"
+            f"@moeda='{from_currency}'&@dataCotacao='{datetime.now().strftime('%m-%d-%Y')}'&$format=json"
+        )
+
+        rate = response.json()['value'][0]['cotacaoVenda']
+        redis_client.setex(cache_key, 3600, str(rate))
+        return rate
+```
+
+**Esforço:** 3-4h | **Prioridade:** 🔴 Crítica
+
+---
+
+#### **RN12: Avaliação de Risco de Clientes**
+
+**Contexto:** Identificar clientes problemáticos antes de aceitar projeto.
+
+**Regras:**
+- Score de risco: 0-100 (menor = mais risco)
+- Red flags detectados reduzem score
+- Score < 50: recomendar rejeição ou proteções extras
+
+**Red Flags:**
+- Requisitos vagos ("asap", "simple", "quick")
+- Orçamento < 70% do valor justo
+- Cliente sem histórico de pagamentos
+- Rating < 3.0 stars
+- Solicita trabalho grátis ("test task", "sample")
+
+**Implementação:**
+```python
+# backend/services/freelancer/client_risk.py
+
+class ClientRiskAssessment:
+    """Avalia risco de clientes"""
+
+    RED_FLAGS = {
+        'vague_requirements': {
+            'keywords': ['asap', 'simple', 'quick', 'easy', 'urgent'],
+            'weight': -15
+        },
+        'unrealistic_budget': {
+            'threshold': 0.7,
+            'weight': -25
+        },
+        'no_payment_history': {
+            'weight': -10
+        },
+        'low_rating': {
+            'threshold': 3.0,
+            'weight': -30
+        }
+    }
+
+    def score_project(self, project):
+        """Calcula risk score (0-100)"""
+        base_score = 70
+        flags_detected = []
+
+        # Detecta red flags
+        for flag_name, config in self.RED_FLAGS.items():
+            if self._detect_flag(project, flag_name, config):
+                base_score += config['weight']
+                flags_detected.append(flag_name)
+
+        risk_score = max(0, min(100, base_score))
+
+        if risk_score >= 70:
+            recommendation = 'safe_to_accept'
+        elif risk_score >= 50:
+            recommendation = 'accept_with_protection'
+        else:
+            recommendation = 'reject_high_risk'
+
+        return {
+            'risk_score': risk_score,
+            'recommendation': recommendation,
+            'red_flags': flags_detected
+        }
+```
+
+**Esforço:** 3-4h | **Prioridade:** 🔴 Crítica
+
+---
+
+#### **RN13: Compliance LGPD Básico**
+
+**Contexto:** Dados de clientes devem ser protegidos conforme LGPD.
+
+**Regras:**
+- Criptografar dados pessoais (nome, email de clientes)
+- Retenção máxima: 5 anos após conclusão do projeto
+- Auto-anonimização após período de retenção
+- Exportação de dados disponível (direito à portabilidade)
+
+**Implementação:**
+```python
+# backend/services/security/pii_encryption.py
+
+from cryptography.fernet import Fernet
+
+class PIIEncryption:
+    """Criptografia de dados pessoais (LGPD)"""
+
+    def __init__(self):
+        key = os.getenv('ENCRYPTION_KEY').encode()
+        self.cipher = Fernet(key)
+
+    def encrypt(self, data):
+        if not data:
+            return None
+        return self.cipher.encrypt(data.encode()).decode()
+
+    def decrypt(self, encrypted_data):
+        if not encrypted_data:
+            return None
+        return self.cipher.decrypt(encrypted_data.encode()).decode()
+
+
+# Modelo com propriedades criptografadas
+class FreelanceOpportunity(Base):
+    __tablename__ = 'freelance_opportunities'
+
+    _client_name_encrypted = Column('client_name', Text)
+    _client_email_encrypted = Column('client_email', Text)
+
+    data_processing_consent = Column(Boolean, default=False)
+    data_retention_until = Column(Date)  # Auto-delete após 5 anos
+
+    @hybrid_property
+    def client_name(self):
+        return pii_crypto.decrypt(self._client_name_encrypted)
+
+    @client_name.setter
+    def client_name(self, value):
+        self._client_name_encrypted = pii_crypto.encrypt(value)
+
+
+# Job diário de limpeza
+@celery_app.task
+def cleanup_expired_data():
+    """LGPD: Anonimiza dados expirados"""
+    expired = db.query(FreelanceOpportunity).filter(
+        FreelanceOpportunity.data_retention_until <= date.today()
+    ).all()
+
+    for project in expired:
+        project.client_name = None
+        project.client_email = None
+        project.anonymized = True
+
+    db.commit()
+```
+
+**Esforço:** 2-3h | **Prioridade:** 🔴 Crítica
+
+---
+
+### 🟡 18.5.3 Requisitos para V2
+
+> Implementar após validação do MVP
+
+1. **RN14:** Gestão de Capacidade (integração Google Calendar)
+2. **RN15:** Contratos Automatizados (geração + assinatura eletrônica)
+3. **RN16:** Negociação Multi-Rodadas (tracking de contra-propostas)
+4. **RN17:** Analytics Avançada (LTV, forecasting, benchmarks)
+5. **RN18:** Time Tracking Integration (Toggl, Clockify)
+6. **RN19:** ML Pricing Optimizer (ajuste automático)
+7. **RN20:** Client CRM (relacionamentos, follow-ups)
+
+---
+
+### 🟢 18.5.4 Requisitos para V3+
+
+1. **RN21:** Personal Branding Automation
+2. **RN22:** Network Management
+3. **RN23:** Advanced Integrations (Notion, GitHub, accounting)
+
+---
+
+### 18.5.5 Checklist de Implementação MVP
+
+**Antes de produção:**
+
+- [x] ✅ Modelo de dados (seção 18.3)
+- [ ] 🔴 RN09: Prevenção de duplicação
+- [ ] 🔴 RN10: Rate limiting Upwork
+- [ ] 🔴 RN11: Cálculo financeiro completo
+- [ ] 🔴 RN12: Client risk scoring
+- [ ] 🔴 RN13: LGPD compliance
+- [ ] Testes end-to-end
+- [ ] Monitoring (Sentry)
+
+**Tempo estimado:** 14-20 horas
+
+---
+
 Quer que eu continue com os próximos agentes?
 
 1. ✅ **NegotiatorAgent** (gera contra-propostas diplomáticas)
@@ -1779,11 +2161,3 @@ Quer que eu continue com os próximos agentes?
 3. ✅ **BrandingAdvisorAgent** (análise de posicionamento)
 4. ✅ **LearningAgent** (aprendizado contínuo)
 5. ✅ **OrchestratorAgent** (coordena todos)
-
-Ou prefere que eu gere:
-- **Fluxo completo** de análise (do Collector ao Negotiator)
-- **CLI** do módulo Projects
-- **Dashboard** de métricas
-- **Integração com Charlee principal**
-
-**O que prefere?** 🚀

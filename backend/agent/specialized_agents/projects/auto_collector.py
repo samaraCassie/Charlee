@@ -10,10 +10,11 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from database.models import FreelancePlatform
+
 from .integrations import (
     PlatformConfig,
-    create_upwork_integration,
     create_freelancer_com_integration,
+    create_upwork_integration,
 )
 
 logger = logging.getLogger(__name__)

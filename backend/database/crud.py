@@ -311,8 +311,9 @@ def get_work_log(db: Session, log_id: int, user_id: int):
 
 def create_work_log(db: Session, log_data, user_id: int):
     """Create a new work log for a user."""
-    from database.models import WorkLog
     from datetime import date
+
+    from database.models import WorkLog
 
     # Set work_date to today if not provided
     log_dict = log_data.model_dump()
@@ -401,8 +402,9 @@ def get_invoice(db: Session, invoice_id: int, user_id: int):
 
 def create_invoice(db: Session, invoice_data, user_id: int):
     """Create a new invoice for a user."""
-    from database.models import Invoice, WorkLog
     from datetime import date, timedelta
+
+    from database.models import Invoice, WorkLog
 
     project_id = invoice_data.project_id
     include_unbilled = invoice_data.include_unbilled_only
